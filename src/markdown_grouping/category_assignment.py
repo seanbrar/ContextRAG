@@ -11,6 +11,15 @@ load_dotenv()
 
 
 def read_markdown_files(folder_path: str = "markdown_grouping/markdown"):
+    """Read markdown files from the specified directory.
+
+    Args:
+        folder_path (str, optional): Path to the folder containing markdown files.
+            Defaults to "markdown_grouping/markdown".
+
+    Returns:
+        dict: Mapping of filenames to their contents.
+    """
     markdown_files = {}
     for filename in os.listdir(folder_path):
         if filename.endswith(".md"):
@@ -21,6 +30,14 @@ def read_markdown_files(folder_path: str = "markdown_grouping/markdown"):
 
 
 def main():
+    """Main function to process markdown files and assign categories.
+
+    This function:
+    1. Reads markdown files from the default directory
+    2. Processes each file using OpenAI's chat models
+    3. Extracts technical categories using AI analysis
+    4. Saves the results to a timestamped output file
+    """
     chat_manager = ChatManager()
     markdown_files: dict = read_markdown_files()
     system_message = "You are a helpful assistant. Your goal is to analyze markdown files from a corporate knowledge base. The files you will examine are highly technical, and may focus on hardware, software, or a mixture of the two. Focus on technical information rather than metadata such as author and creation date."

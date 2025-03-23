@@ -9,16 +9,37 @@ load_dotenv()
 # Initialize the Chroma client
 client = chromadb.Client()
 
+
 class VectorDB:
+    """A class to manage vector database operations using ChromaDB.
+
+    This class provides functionality to create and manage collections in ChromaDB,
+    add documents, and perform similarity searches using OpenAI embeddings.
+
+    Attributes:
+        collection_name (str): Name of the ChromaDB collection.
+        openai_ef: OpenAI embedding function instance.
+        collection: ChromaDB collection instance.
+    """
+
     def __init__(self, collection_name):
+        """Initialize VectorDB with a collection name.
+
+        Args:
+            collection_name (str): Name of the collection to create or load.
+        """
         self.collection_name = collection_name
         self.openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-            api_key=os.getenv("OPENAI_API_KEY"),
-            model_name="text-embedding-3-small"
+            api_key=os.getenv("OPENAI_API_KEY"), model_name="text-embedding-3-small"
         )
         self.collection = self.get_or_create_collection()
 
     def get_or_create_collection(self):
+        """Get an existing collection or create a new one if it doesn't exist.
+
+        Returns:
+            Collection: ChromaDB collection instance.
+        """
         try:
             collection = client.get_collection(self.collection_name)
             print(f"Loaded existing collection: {self.collection_name}")
@@ -26,27 +47,41 @@ class VectorDB:
             collection = client.create_collection(
                 name=self.collection_name,
                 embedding_function=self.openai_ef,
-                metadata={"hnsw:space": "cosine"}
+                metadata={"hnsw:space": "cosine"},
             )
             print(f"Created new collection: {self.collection_name}")
         return collection
 
     def add_documents(self, documents, ids=None):
+        """Add documents to the collection.
+
+        Args:
+            documents (list): List of document strings to add.
+            ids (list, optional): List of unique IDs for the documents.
+                If not provided, sequential IDs will be generated.
+        """
         if ids is None:
             ids = [f"doc{i+1}" for i in range(len(documents))]
-        self.collection.add(
-            documents=documents,
-            ids=ids
-        )
+        self.collection.add(documents=documents, ids=ids)
         print(f"Added {len(documents)} documents to the collection")
 
     def query(self, query_texts, n_results=3):
+        """Query the collection for similar documents.
+
+        Args:
+            query_texts (list): List of query strings.
+            n_results (int, optional): Number of results to return. Defaults to 3.
+
+        Returns:
+            dict: Query results containing documents and their distances.
+        """
         results = self.collection.query(
             query_texts=query_texts,
             n_results=n_results,
-            include=["documents", "distances"]
+            include=["documents", "distances"],
         )
         return results
+
 
 if __name__ == "__main__":
     # Usage example
@@ -56,7 +91,7 @@ if __name__ == "__main__":
         "The capital of California is Sacramento.",
         "Sacramento is known for its vibrant farm-to-fork dining scene, with numerous restaurants sourcing ingredients from the surrounding agricultural region.",
         "The capital of Texas is Austin.",
-        "Austin is famous for its live music scene, earning it the nickname \"Live Music Capital of the World.\"",
+        'Austin is famous for its live music scene, earning it the nickname "Live Music Capital of the World."',
         "The capital of Florida is Tallahassee.",
         "Tallahassee is home to the National High Magnetic Field Laboratory, which houses the world's most powerful magnets.",
         "The capital of New York is Albany.",
@@ -72,7 +107,7 @@ if __name__ == "__main__":
         "The capital of Colorado is Denver.",
         "Denver is known for its proximity to the Rocky Mountains, offering outdoor recreation opportunities such as skiing and hiking.",
         "The capital of Washington is Olympia.",
-        "Olympia is home to the Hands On Children's Museum, which features interactive exhibits for children to learn through play."
+        "Olympia is home to the Hands On Children's Museum, which features interactive exhibits for children to learn through play.",
     ]
 
     vector_db.add_documents(documents)

@@ -17,10 +17,26 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 def calculate_checksum(file_content):
+    """Calculate SHA-256 hash of file content.
+
+    Args:
+        file_content (str): Content of the file to hash.
+
+    Returns:
+        str: Hexadecimal representation of the SHA-256 hash.
+    """
     return hashlib.sha256(file_content.encode()).hexdigest()
 
 
 def load_embeddings_cache(cache_file):
+    """Load cached embeddings from a JSON file.
+
+    Args:
+        cache_file (str): Path to the cache file.
+
+    Returns:
+        dict: Cached embeddings or empty dict if file not found.
+    """
     try:
         with open(cache_file, "r") as file:
             return json.load(file)
@@ -29,11 +45,22 @@ def load_embeddings_cache(cache_file):
 
 
 def update_embeddings_cache(cache_file, cache_data):
+    """Update the embeddings cache file with new data.
+
+    Args:
+        cache_file (str): Path to the cache file.
+        cache_data (dict): Updated cache data to save.
+    """
     with open(cache_file, "w") as file:
         json.dump(cache_data, file)
 
 
 def parse_arguments():
+    """Parse command line arguments for the script.
+
+    Returns:
+        argparse.Namespace: Parsed command line arguments.
+    """
     parser = argparse.ArgumentParser(description="Markdown File Grouping")
     parser.add_argument(
         "--debug",
@@ -57,6 +84,16 @@ def parse_arguments():
 
 
 def read_markdown_files(folder_path):
+    """Read all markdown files from the specified folder.
+
+    Args:
+        folder_path (str): Path to the folder containing markdown files.
+
+    Returns:
+        tuple: A tuple containing:
+            - dict: Mapping of filenames to their contents
+            - dict: Mapping of filenames to their checksums
+    """
     markdown_files = {}
     checksums = {}
     for filename in os.listdir(folder_path):
@@ -70,6 +107,14 @@ def read_markdown_files(folder_path):
 
 
 def preprocess_text(text):
+    """Preprocess markdown text by removing attachments and cleaning formatting.
+
+    Args:
+        text (str): Raw markdown text to process.
+
+    Returns:
+        str: Cleaned and preprocessed text.
+    """
     # Complex logic
     # Remove attachments subheader and everything below
     text = re.split(r"\n## Attachments:", text, maxsplit=1)[0]
@@ -113,6 +158,16 @@ def count_tokens(text):
 
 
 def compute_similarity(files_dict, checksums, cache):
+    """Compute similarity between files using OpenAI embeddings.
+
+    Args:
+        files_dict (dict): Mapping of filenames to their contents.
+        checksums (dict): Mapping of filenames to their checksums.
+        cache (dict): Cache of previously computed embeddings.
+
+    Returns:
+        numpy.ndarray: Similarity matrix of file comparisons.
+    """
     embeddings = []
     client = OpenAI()
     for filename, content in files_dict.items():
@@ -145,6 +200,16 @@ def compute_similarity(files_dict, checksums, cache):
 
 
 def group_similar_files(similarity_matrix, threshold=0.6):
+    """Group files based on their similarity scores.
+
+    Args:
+        similarity_matrix (numpy.ndarray): Matrix of similarity scores.
+        threshold (float, optional): Minimum similarity score to consider files similar.
+            Defaults to 0.6.
+
+    Returns:
+        dict: Mapping of file indices to lists of similar file indices.
+    """
     groups = {}
     for i, row in enumerate(similarity_matrix):
         # similar_files = [j for j, sim in enumerate(row) if sim > threshold and i != j]
@@ -157,6 +222,13 @@ def group_similar_files(similarity_matrix, threshold=0.6):
 
 
 def print_file_groupings(files_dict, groups, output_file=None):
+    """Print or save the groupings of similar files.
+
+    Args:
+        files_dict (dict): Mapping of filenames to their contents.
+        groups (dict): Mapping of file indices to lists of similar file indices.
+        output_file (str, optional): Path to save the output. If None, prints to stdout.
+    """
     filenames = list(files_dict.keys())
     output = []
 
@@ -179,6 +251,13 @@ def print_file_groupings(files_dict, groups, output_file=None):
 
 
 def main(folder_path, debug, output_file):
+    """Main function to process and group similar markdown files.
+
+    Args:
+        folder_path (str): Path to the folder containing markdown files.
+        debug (bool): Whether to print debug information.
+        output_file (str): Path to save the output file.
+    """
     cache_file = "embeddings_cache.json"
     embeddings_cache = load_embeddings_cache(cache_file)
 
