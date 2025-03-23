@@ -1,0 +1,14 @@
+**/*.txt
+**/*.json
+**/*.html
+**/*.md
+**/__pycache__/
+/.pytest_cache/
+/.ruff_cache/
+/markdown/
+/.venv/
+/html/
+.DS_Store
+.env
+poetry.lock
+!README.md
