@@ -53,12 +53,11 @@ The system is built around these core components:
 git clone https://github.com/seanbrar/ContextRAG.git
 cd ContextRAG
 
-# Create a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Install Poetry if you haven't already
+curl -sSL https://install.python-poetry.org | python3 -
 
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies using Poetry
+poetry install
 
 # Set up environment variables
 cp .env.example .env
@@ -162,7 +161,7 @@ pytest tests/
 
 - Python 3.8+
 - ChromaDB
-- OpenAI API access (for embeddings)
+- OpenAI API access
 - BeautifulSoup4
 - NLTK
 - Scikit-learn
