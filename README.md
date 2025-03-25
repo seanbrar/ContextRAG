@@ -124,7 +124,7 @@ ContextRAG addresses the challenge of varying document lengths through a three-t
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│                   Context Length Classification             │
+│                   Context Length Classification            │
 ├────────────────┬────────────────────────┬──────────────────┤
 │  Short         │  Medium                │  Long            │
 │  (≤3500 tokens)│  (3500-15000 tokens)   │  (>15000 tokens) │
