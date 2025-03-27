@@ -1,22 +1,36 @@
 # ContextRAG
 
+[![GitHub License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+
 A scalable vector database system for semantic search and document retrieval with context-aware processing.
 
-## Overview
+## Table of Contents
 
-ContextRAG is a modular system designed to process, analyze, and retrieve information from large document collections using vector embeddings and semantic search. The system handles documents of varying lengths and complexities while maintaining efficient search capabilities.
+- [Background](#background)
+- [Key Features](#key-features)
+- [System Architecture](#system-architecture)
+- [Install](#install)
+- [Usage](#usage)
+- [Context Length Management](#context-length-management)
+- [Evaluation](#evaluation)
+- [Testing](#testing)
+- [Future Enhancements](#future-enhancements)
+- [Related Work](#related-work)
+- [Maintainers](#maintainers)
+- [Contributing](#contributing)
+- [License](#license)
 
-```
-+---------------------+     +----------------------+     +------------------+
-| Document Collection |---->| Processing Pipeline  |---->| Vector Database  |
-+---------------------+     +----------------------+     +------------------+
-         |                          |                           |
-         |                          v                           v
-         |                  +----------------+         +----------------+
-         +----------------->| Length-Based   |         | Semantic       |
-                            | Classification |         | Search Engine  |
-                            +----------------+         +----------------+
-```
+## Background
+
+ContextRAG addresses a critical challenge in large language model applications: efficiently processing and retrieving information from documents of varying lengths and complexities. Traditional RAG (Retrieval-Augmented Generation) systems often struggle with:
+
+1. Context length limitations of embedding models
+2. Loss of semantic relationships in excessively chunked documents
+3. Inefficient processing of extremely long documents
+
+This project implements a novel approach that dynamically adapts to document characteristics, preserving semantic meaning while optimizing for computational efficiency.
 
 ## Key Features
 
@@ -30,6 +44,18 @@ ContextRAG is a modular system designed to process, analyze, and retrieve inform
 ## System Architecture
 
 The system is built around these core components:
+
+```
++---------------------+     +----------------------+     +------------------+
+| Document Collection |---->| Processing Pipeline  |---->| Vector Database  |
++---------------------+     +----------------------+     +------------------+
+         |                          |                           |
+         |                          v                           v
+         |                  +----------------+         +----------------+
+         +----------------->| Length-Based   |         | Semantic       |
+                            | Classification |         | Search Engine  |
+                            +----------------+         +----------------+
+```
 
 1. **Data Processing**
    - HTML to Markdown conversion
@@ -46,7 +72,7 @@ The system is built around these core components:
    - Embedding generation
    - Similarity search
 
-## Installation
+## Install
 
 ```bash
 # Clone repository
@@ -141,6 +167,21 @@ This approach ensures:
 - Optimal token usage for embedding models
 - Accurate semantic search across varying document lengths
 
+## Evaluation
+
+Evaluation of ContextRAG is currently in progress. We are assessing performance across these dimensions:
+
+| Metric | Description | Status |
+|--------|-------------|--------|
+| Precision@k | Relevance of top-k retrieved documents | In progress |
+| Recall@k | Proportion of relevant documents retrieved | In progress |
+| Processing Efficiency | Time and resource usage across document sizes | Initial testing |
+| Accuracy vs. Context Length | Performance correlation with document length | Planned |
+
+Preliminary observations suggest significant improvements in retrieval quality for longer documents compared to fixed-chunking approaches, but comprehensive benchmarks are still being developed.
+
+If you're interested in contributing to the evaluation effort or have suggestions for benchmark datasets, please open an issue to discuss.
+
 ## Testing
 
 Run the test suite to verify system functionality:
@@ -157,14 +198,28 @@ pytest tests/
 - Create a web interface for document exploration
 - Add document versioning and change tracking
 
-## Requirements
+## Related Work
 
-- Python 3.8+
-- ChromaDB
-- OpenAI API access
-- BeautifulSoup4
-- NLTK
-- Scikit-learn
+This project builds upon and extends research in the following areas:
+
+- Vector search systems like Facebook AI Similarity Search (FAISS)
+- Hierarchical document embedding approaches (Cohere et al., 2023)
+- Adaptive chunking strategies for long documents (OpenAI, 2023)
+
+## Maintainers
+
+[Sean Brar](https://github.com/seanbrar) - Project creator and primary maintainer
+
+## Contributing
+
+Contributions to ContextRAG are welcome! Here's how you can help:
+
+- Report bugs by opening an issue
+- Suggest enhancements or new features
+- Submit pull requests with improvements
+- Help with documentation
+
+Please ensure that your contributions adhere to our coding standards and include appropriate tests.
 
 ## License
 
