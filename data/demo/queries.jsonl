@@ -1,0 +1,6 @@
+{"query": "What does RFC 822 specify about message format and headers?", "relevant_ids": ["rfc822"]}
+{"query": "Define HTTP semantics and status codes.", "relevant_ids": ["rfc9110"]}
+{"query": "What commands are used in the FTP protocol?", "relevant_ids": ["rfc9595"]}
+{"query": "How are email headers structured in early Internet mail standards?", "relevant_ids": ["rfc822"]}
+{"query": "Explain HTTP request methods and their semantics.", "relevant_ids": ["rfc9110"]}
+{"query": "Describe the FTP control connection and data transfer process.", "relevant_ids": ["rfc9595"]}

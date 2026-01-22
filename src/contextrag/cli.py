@@ -325,12 +325,21 @@ def query(collection: str, persist_path: str, query_text: str, top_k: int) -> No
 @click.option("--k", "top_k", type=int, default=5)
 @click.option("--output", "output_path", required=True, type=click.Path(path_type=Path))
 @click.option("--persist", "persist_path", default=None)
+@click.option("--embedding-model", "embedding_model", default=None)
+@click.option(
+    "--embed-provider",
+    "embed_provider",
+    type=click.Choice(["auto", "openai", "openrouter", "local"]),
+    default=None,
+)
 def eval(
     dataset_path: Path,
     baseline: str,
     top_k: int,
     output_path: Path,
     persist_path: str | None,
+    embedding_model: str | None,
+    embed_provider: str | None,
 ) -> None:
     """Run retrieval evaluation."""
     results = run_eval(
@@ -338,6 +347,8 @@ def eval(
         baseline=baseline,
         k=top_k,
         persist_path=persist_path,
+        embed_provider=embed_provider,
+        embedding_model=embedding_model,
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(results, indent=2), encoding="utf-8")

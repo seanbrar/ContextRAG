@@ -6,6 +6,7 @@ from pathlib import Path
 
 import tiktoken
 
+from contextrag.config import load_config, resolve_embed_provider
 from contextrag.eval.metrics import precision_at_k, recall_at_k
 from contextrag.index.vector_store import VectorDB
 
@@ -88,6 +89,8 @@ def run_eval(
     baseline: str,
     k: int,
     persist_path: str | None = None,
+    embed_provider: str | None = None,
+    embedding_model: str | None = None,
 ) -> dict:
     documents_dir = dataset_path / "documents"
     queries_path = dataset_path / "queries.jsonl"
@@ -102,6 +105,8 @@ def run_eval(
     vector_db = VectorDB(
         collection_name=f"eval-{int(time.time())}",
         persist_path=persist_path,
+        embed_provider=embed_provider,
+        embedding_model=embedding_model,
     )
     vector_db.add_documents(documents=documents, ids=ids)
 
@@ -131,7 +136,19 @@ def run_eval(
             }
         )
 
+    config = load_config()
+    resolved_provider = resolve_embed_provider(config, embed_provider)
+    if resolved_provider == "openai":
+        resolved_model = embedding_model or config.openai_embeddings_model
+    elif resolved_provider == "openrouter":
+        resolved_model = embedding_model or config.openrouter_embeddings_model
+    elif resolved_provider == "local":
+        resolved_model = embedding_model or config.local_embeddings_model
+    else:
+        resolved_model = embedding_model or "default"
+
     summary = {
+        "timestamp": int(time.time()),
         "baseline": baseline,
         "k": k,
         "total_queries": len(queries),
@@ -142,5 +159,12 @@ def run_eval(
         "recall_at_k": sum(recall_scores) / len(recall_scores)
         if recall_scores
         else 0.0,
+        "embedding_provider": resolved_provider,
+        "embedding_model": resolved_model,
+        "chunking": {
+            "uniform_chunk_tokens": UNIFORM_CHUNK_TOKENS,
+            "medium_chunk_tokens": MEDIUM_CHUNK_TOKENS,
+            "long_chunk_tokens": LONG_CHUNK_TOKENS,
+        },
     }
     return {"summary": summary, "per_query": per_query}
