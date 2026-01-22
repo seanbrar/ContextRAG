@@ -18,6 +18,7 @@ A scalable vector database system for semantic search and document retrieval wit
 - [Evaluation](#evaluation)
 - [Testing](#testing)
 - [Docs](#docs)
+- [Results Summary](#results-summary)
 - [Future Enhancements](#future-enhancements)
 - [Related Work](#related-work)
 - [Maintainers](#maintainers)
@@ -234,6 +235,17 @@ pytest tests/
 - `docs/architecture.md`
 - `docs/paper.md`
 - `docs/results.md`
+
+## Results Summary
+
+RFC demo (precision@5 / recall@5, `qwen/qwen3-embedding-8b`):
+
+| Baseline | Precision@5 | Recall@5 | Notes |
+| -------- | ----------- | -------- | ----- |
+| uniform  | 0.133       | 0.667    | `runs/eval_uniform/summary.json` |
+| router   | 0.133       | 0.667    | `runs/eval_router/summary.json` |
+
+These results are on a small demo dataset and are intended for reproducibility.
 
 ## Future Enhancements
 
