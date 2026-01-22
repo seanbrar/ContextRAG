@@ -208,6 +208,12 @@ To create a small RFC-based dataset:
 python scripts/datasets/download_rfc_dataset.py --rfcs 822,9110,9595 --output data/demo/documents
 ```
 
+You can also run evals from a YAML config:
+
+```bash
+poetry run contextrag eval --config experiments/eval_rfc.yaml
+```
+
 ## Testing
 
 Run the test suite to verify system functionality:

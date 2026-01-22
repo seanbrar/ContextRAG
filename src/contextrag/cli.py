@@ -11,6 +11,7 @@ from openai import OpenAI
 from contextrag.config import load_config, resolve_embed_provider
 from contextrag.core.tokenizer import count_tokens
 from contextrag.eval.runner import run_eval
+from contextrag.experiments.eval_config import EvalConfig, load_eval_config
 from contextrag.ingest.html_to_markdown import HTMLToMarkdownConverter
 from contextrag.ingest.markdown_processing import modify_markdown
 from contextrag.index.vector_store import VectorDB
@@ -316,14 +317,14 @@ def query(collection: str, persist_path: str, query_text: str, top_k: int) -> No
 
 
 @main.command()
-@click.option("--dataset", "dataset_path", required=True, type=click.Path(path_type=Path))
+@click.option("--dataset", "dataset_path", required=False, type=click.Path(path_type=Path))
 @click.option(
     "--baseline",
     type=click.Choice(["uniform", "router"]),
-    default="router",
+    default=None,
 )
-@click.option("--k", "top_k", type=int, default=5)
-@click.option("--output", "output_path", required=True, type=click.Path(path_type=Path))
+@click.option("--k", "top_k", type=int, default=None)
+@click.option("--output", "output_path", required=False, type=click.Path(path_type=Path))
 @click.option("--persist", "persist_path", default=None)
 @click.option("--embedding-model", "embedding_model", default=None)
 @click.option(
@@ -332,6 +333,7 @@ def query(collection: str, persist_path: str, query_text: str, top_k: int) -> No
     type=click.Choice(["auto", "openai", "openrouter", "local"]),
     default=None,
 )
+@click.option("--config", "config_path", type=click.Path(path_type=Path))
 def eval(
     dataset_path: Path,
     baseline: str,
@@ -340,8 +342,31 @@ def eval(
     persist_path: str | None,
     embedding_model: str | None,
     embed_provider: str | None,
+    config_path: Path | None,
 ) -> None:
     """Run retrieval evaluation."""
+    eval_config = None
+    if config_path:
+        eval_config = load_eval_config(config_path)
+
+    if eval_config:
+        dataset_path = dataset_path or Path(eval_config.dataset)
+        baseline = baseline or eval_config.baseline
+        top_k = top_k or eval_config.k
+        embed_provider = embed_provider or eval_config.embed_provider
+        embedding_model = embedding_model or eval_config.embedding_model
+        persist_path = persist_path or eval_config.persist
+        output_path = output_path or Path(eval_config.output)
+
+    if not dataset_path:
+        raise click.ClickException("--dataset is required (or provide --config).")
+    if not baseline:
+        baseline = "router"
+    if not top_k:
+        top_k = 5
+    if not output_path:
+        raise click.ClickException("--output is required (or provide --config).")
+
     results = run_eval(
         dataset_path=dataset_path,
         baseline=baseline,
@@ -350,6 +375,8 @@ def eval(
         embed_provider=embed_provider,
         embedding_model=embedding_model,
     )
+    if config_path:
+        results["summary"]["config_path"] = str(config_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
     summary = results["summary"]

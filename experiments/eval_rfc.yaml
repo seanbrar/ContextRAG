@@ -1,0 +1,7 @@
+dataset: data/demo
+baseline: router
+k: 5
+embed_provider: openrouter
+embedding_model: qwen/qwen3-embedding-8b
+output: runs/eval_rfc.json
+persist: runs/chroma-demo
