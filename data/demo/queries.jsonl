@@ -1,6 +1,14 @@
 {"query": "What does RFC 822 specify about message format and headers?", "relevant_ids": ["rfc822"]}
-{"query": "Define HTTP semantics and status codes.", "relevant_ids": ["rfc9110"]}
-{"query": "What commands are used in the FTP protocol?", "relevant_ids": ["rfc9595"]}
 {"query": "How are email headers structured in early Internet mail standards?", "relevant_ids": ["rfc822"]}
 {"query": "Explain HTTP request methods and their semantics.", "relevant_ids": ["rfc9110"]}
+{"query": "Define HTTP semantics and status codes.", "relevant_ids": ["rfc9110"]}
+{"query": "Describe HTTP/1.1 connection management and persistent connections.", "relevant_ids": ["rfc9112"]}
+{"query": "What are HTTP/1.1 message framing rules and transfer-coding?", "relevant_ids": ["rfc9112"]}
+{"query": "Summarize HTTP/2 stream states and flow control mechanisms.", "relevant_ids": ["rfc9113"]}
+{"query": "What is the structure of HTTP/2 frames and the meaning of stream identifiers?", "relevant_ids": ["rfc9113"]}
+{"query": "What commands are used in the FTP protocol?", "relevant_ids": ["rfc9595"]}
 {"query": "Describe the FTP control connection and data transfer process.", "relevant_ids": ["rfc9595"]}
+{"query": "What does RFC 5322 define about email message syntax?", "relevant_ids": ["rfc5322"]}
+{"query": "Explain the structure of an RFC 5322 message, including header and body.", "relevant_ids": ["rfc5322"]}
+{"query": "What does TLS 1.3 change about the handshake process?", "relevant_ids": ["rfc8446"]}
+{"query": "Describe key schedule and traffic secrets in TLS 1.3.", "relevant_ids": ["rfc8446"]}

@@ -242,8 +242,8 @@ RFC demo (precision@5 / recall@5, `qwen/qwen3-embedding-8b`):
 
 | Baseline | Precision@5 | Recall@5 | Notes |
 | -------- | ----------- | -------- | ----- |
-| uniform  | 0.133       | 0.667    | `runs/eval_uniform/summary.json` |
-| router   | 0.133       | 0.667    | `runs/eval_router/summary.json` |
+| uniform  | 0.171       | 0.857    | `runs/eval_uniform/summary.json` |
+| router   | 0.171       | 0.857    | `runs/eval_router/summary.json` |
 
 These results are on a small demo dataset and are intended for reproducibility.
 
