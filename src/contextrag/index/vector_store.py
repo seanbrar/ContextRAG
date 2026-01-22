@@ -1,13 +1,6 @@
-import os
 import chromadb
 from chromadb.utils import embedding_functions
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Initialize the Chroma client
-client = chromadb.Client()
+from contextrag.config import load_config
 
 
 class VectorDB:
@@ -22,15 +15,27 @@ class VectorDB:
         collection: ChromaDB collection instance.
     """
 
-    def __init__(self, collection_name):
+    def __init__(
+        self,
+        collection_name: str,
+        persist_path: str | None = None,
+        embedding_model: str | None = None,
+    ):
         """Initialize VectorDB with a collection name.
 
         Args:
             collection_name (str): Name of the collection to create or load.
         """
         self.collection_name = collection_name
+        self.client = (
+            chromadb.PersistentClient(path=persist_path)
+            if persist_path
+            else chromadb.Client()
+        )
+        config = load_config()
         self.openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-            api_key=os.getenv("OPENAI_API_KEY"), model_name="text-embedding-3-small"
+            api_key=config.openai_api_key,
+            model_name=embedding_model or config.openai_embeddings_model,
         )
         self.collection = self.get_or_create_collection()
 
@@ -41,10 +46,10 @@ class VectorDB:
             Collection: ChromaDB collection instance.
         """
         try:
-            collection = client.get_collection(self.collection_name)
+            collection = self.client.get_collection(self.collection_name)
             print(f"Loaded existing collection: {self.collection_name}")
         except ValueError:
-            collection = client.create_collection(
+            collection = self.client.create_collection(
                 name=self.collection_name,
                 embedding_function=self.openai_ef,
                 metadata={"hnsw:space": "cosine"},
