@@ -1,5 +1,12 @@
+import os
 import pytest
 from contextrag.index.vector_store import VectorDB
+
+
+pytestmark = pytest.mark.skipif(
+    not os.getenv("OPENAI_API_KEY"),
+    reason="OPENAI_API_KEY not set for OpenAI embeddings.",
+)
 
 
 class TestVectorDB:

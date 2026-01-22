@@ -12,6 +12,7 @@ A scalable vector database system for semantic search and document retrieval wit
 - [Key Features](#key-features)
 - [System Architecture](#system-architecture)
 - [Install](#install)
+- [Environment](#environment)
 - [Usage](#usage)
 - [Context Length Management](#context-length-management)
 - [Evaluation](#evaluation)
@@ -85,65 +86,60 @@ curl -sSL https://install.python-poetry.org | python3 -
 # Install dependencies using Poetry
 poetry install
 
-# Set up environment variables
-cp .env.example .env
-# Edit .env to add your API keys
+# Optional: set up environment variables
+# cp .env.example .env
 ```
+
+## Environment
+
+Required for embeddings and indexing:
+
+- `OPENAI_API_KEY`
+
+Optional (for OpenRouter chat routing or smoke tests):
+
+- `OPENROUTER_API_KEY`
+- `OPENROUTER_BASE_URL` (default: `https://openrouter.ai/api/v1`)
+- `OPENROUTER_CHAT_MODEL` (default: `mistralai/devstral-2512:free`)
+
+Model defaults can be overridden:
+
+- `OPENAI_EMBEDDINGS_MODEL` (default: `text-embedding-3-large`)
+- `OPENAI_CHAT_MODEL_SHORT` (default: `gpt-3.5-turbo-1106`)
+- `OPENAI_CHAT_MODEL_MEDIUM` (default: `gpt-3.5-turbo-16k`)
 
 ## Usage
 
-### Processing Documents
+### CLI Quickstart
+
+```bash
+# 1) Ingest raw documents into cleaned Markdown
+poetry run contextrag ingest --input data/raw --output data/processed --format auto
+
+# 2) Route by length buckets
+poetry run contextrag route --input data/processed --output data/routed
+
+# 3) Build a vector index (Chroma)
+poetry run contextrag index --input data/processed --collection contextrag --persist ./runs/chroma
+
+# 4) Query the index
+poetry run contextrag query --collection contextrag --persist ./runs/chroma --query "token limits"
+```
+
+### Doctor
+
+```bash
+poetry run contextrag doctor
+```
+
+### Python API (selected)
 
 ```python
-from src.data_processing.html_to_markdown import HTMLToMarkdownConverter
+from contextrag.ingest.html_to_markdown import HTMLToMarkdownConverter
 
-# Convert HTML files to Markdown
 converter = HTMLToMarkdownConverter("./my_documents")
 converter.convert_all_files(use_target_folder=True)
 ```
-
-### Finding Similar Documents
-
-```python
-from src.markdown_grouping.file_grouping import read_markdown_files, compute_similarity, group_similar_files
-
-# Read markdown files
-files, checksums = read_markdown_files("./processed_documents")
-
-# Compute similarity matrix
-similarity_matrix = compute_similarity(files, checksums, {})
-
-# Group similar files
-groups = group_similar_files(similarity_matrix, threshold=0.7)
-
-# Print results
-for file_index, similar_files in groups.items():
-    print(f"File: {list(files.keys())[file_index]} is similar to:")
-    for similar_file_index in similar_files:
-        print(f" - {list(files.keys())[similar_file_index]}")
-```
-
-### Querying the Vector Database
-
-```python
-from src.vector_db.main import VectorDB
-
-# Initialize vector database
-vector_db = VectorDB(collection_name="documentation")
-
-# Add documents to the vector database
-documents = ["Document 1 content", "Document 2 content", "Document 3 content"]
-vector_db.add_documents(documents)
-
-# Query the vector database
-results = vector_db.query(query_texts=["How to configure settings?"], n_results=3)
-
-# Process results
-for i, doc in enumerate(results["documents"][0]):
-    print(f"Result {i+1}: {doc}")
-    print(f"Distance: {results['distances'][0][i]}")
-```
-
 ## Context Length Management
 
 ContextRAG addresses the challenge of varying document lengths through a three-tier approach:
@@ -169,7 +165,7 @@ This approach ensures:
 
 ## Evaluation
 
-Evaluation of ContextRAG is currently in progress. We are assessing performance across these dimensions:
+Evaluation of ContextRAG is currently in progress. The evaluation harness supports:
 
 | Metric | Description | Status |
 |--------|-------------|--------|
@@ -178,9 +174,17 @@ Evaluation of ContextRAG is currently in progress. We are assessing performance 
 | Processing Efficiency | Time and resource usage across document sizes | Initial testing |
 | Accuracy vs. Context Length | Performance correlation with document length | Planned |
 
-Preliminary observations suggest significant improvements in retrieval quality for longer documents compared to fixed-chunking approaches, but comprehensive benchmarks are still being developed.
+The eval command expects a dataset directory with `documents/` and `queries.jsonl`:
 
-If you're interested in contributing to the evaluation effort or have suggestions for benchmark datasets, please open an issue to discuss.
+```bash
+poetry run contextrag eval --dataset data/demo --baseline router --k 5 --output runs/eval.json
+```
+
+To create a small RFC-based dataset:
+
+```bash
+python scripts/datasets/download_rfc_dataset.py --rfcs 822,9110,9595 --output data/demo/documents
+```
 
 ## Testing
 
