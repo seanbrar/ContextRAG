@@ -10,6 +10,7 @@ from openai import OpenAI
 
 from contextrag.config import load_config
 from contextrag.core.tokenizer import count_tokens
+from contextrag.eval.runner import run_eval
 from contextrag.ingest.html_to_markdown import HTMLToMarkdownConverter
 from contextrag.ingest.markdown_processing import modify_markdown
 from contextrag.index.vector_store import VectorDB
@@ -248,6 +249,42 @@ def query(collection: str, persist_path: str, query_text: str, top_k: int) -> No
         distance = results["distances"][0][i - 1]
         click.echo(f"{i}. {doc}")
         click.echo(f"   distance: {distance}")
+
+
+@main.command()
+@click.option("--dataset", "dataset_path", required=True, type=click.Path(path_type=Path))
+@click.option(
+    "--baseline",
+    type=click.Choice(["uniform", "router"]),
+    default="router",
+)
+@click.option("--k", "top_k", type=int, default=5)
+@click.option("--output", "output_path", required=True, type=click.Path(path_type=Path))
+@click.option("--persist", "persist_path", default=None)
+def eval(
+    dataset_path: Path,
+    baseline: str,
+    top_k: int,
+    output_path: Path,
+    persist_path: str | None,
+) -> None:
+    """Run retrieval evaluation."""
+    results = run_eval(
+        dataset_path=dataset_path,
+        baseline=baseline,
+        k=top_k,
+        persist_path=persist_path,
+    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
+    summary = results["summary"]
+    click.echo(
+        "precision@k={precision:.3f} recall@k={recall:.3f} (k={k})".format(
+            precision=summary["precision_at_k"],
+            recall=summary["recall_at_k"],
+            k=summary["k"],
+        )
+    )
 
 
 @main.command()

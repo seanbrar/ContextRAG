@@ -83,7 +83,7 @@ class VectorDB:
         results = self.collection.query(
             query_texts=query_texts,
             n_results=n_results,
-            include=["documents", "distances"],
+            include=["documents", "distances", "ids"],
         )
         return results
 
