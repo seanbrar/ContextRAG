@@ -17,6 +17,7 @@ A scalable vector database system for semantic search and document retrieval wit
 - [Context Length Management](#context-length-management)
 - [Evaluation](#evaluation)
 - [Testing](#testing)
+- [Docs](#docs)
 - [Future Enhancements](#future-enhancements)
 - [Related Work](#related-work)
 - [Maintainers](#maintainers)
@@ -227,6 +228,12 @@ Run the test suite to verify system functionality:
 ```bash
 pytest tests/
 ```
+
+## Docs
+
+- `docs/architecture.md`
+- `docs/paper.md`
+- `docs/results.md`
 
 ## Future Enhancements
 

@@ -2,6 +2,7 @@
 **/*.json
 **/*.html
 **/*.md
+!docs/**/*.md
 **/__pycache__/
 /.pytest_cache/
 /.ruff_cache/
