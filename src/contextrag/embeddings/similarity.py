@@ -5,6 +5,7 @@ import os
 import re
 
 import numpy as np
+import tiktoken
 from dotenv import load_dotenv
 from openai import OpenAI
 from sklearn.metrics.pairwise import cosine_similarity
@@ -147,13 +148,18 @@ def preprocess_text(text):
 
 
 def count_tokens(text):
+    """Count tokens in a text string using tiktoken.
+
+    Args:
+        text (str): Text to count tokens for.
+
+    Returns:
+        int: Number of tokens in the text.
+    """
     if not isinstance(text, str):
         raise TypeError(f"Expected a string, but received {type(text).__name__}")
-    encoding = count_tokens.get_encoding("cl100k_base")
-
-    token_count = len(encoding.encode(text))
-
-    return token_count
+    encoding = tiktoken.get_encoding("cl100k_base")
+    return len(encoding.encode(text))
 
 
 def compute_similarity(files_dict, checksums, cache):

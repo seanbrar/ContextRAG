@@ -232,20 +232,28 @@ pytest tests/
 
 ## Docs
 
-- `docs/architecture.md`
-- `docs/paper.md`
-- `docs/results.md`
+- `docs/architecture.md` — Pipeline stages and data flow
+- `docs/design-decisions.md` — Engineering rationale and tradeoffs
+- `docs/paper.md` — Academic writeup of the approach
+- `docs/results.md` — Evaluation methodology and results
 
 ## Results Summary
 
-RFC demo (precision@5 / recall@5, `qwen/qwen3-embedding-8b`):
+RFC demo evaluation (14 queries, 345 indexed chunks, `qwen/qwen3-embedding-8b`):
 
-| Baseline | Precision@5 | Recall@5 | Notes |
-| -------- | ----------- | -------- | ----- |
-| uniform  | 0.171       | 0.857    | `runs/eval_uniform/summary.json` |
-| router   | 0.171       | 0.857    | `runs/eval_router/summary.json` |
+| Baseline | Precision@5 | Recall@5 | Chunk Strategy |
+| -------- | ----------- | -------- | -------------- |
+| uniform  | 0.171       | 0.857    | Fixed 1000-token chunks |
+| router   | 0.171       | 0.857    | Adaptive (short: none, medium: 2k, long: 1k) |
 
-These results are on a small demo dataset and are intended for reproducibility.
+**Interpretation**: On this small, homogeneous RFC dataset, both strategies achieve equivalent retrieval accuracy. This is expected — RFC documents are structurally similar and fall within similar length ranges, minimizing the routing strategy's differentiation.
+
+The router strategy's primary value proposition is **efficiency**, not accuracy:
+- Avoids unnecessary chunking for short documents (preserves semantic coherence)
+- Reduces total chunks indexed for medium-length documents
+- Applies aggressive chunking only where necessary (very long documents)
+
+See `docs/results.md` for full methodology. Evaluation on larger, heterogeneous document collections is in progress.
 
 ## Future Enhancements
 

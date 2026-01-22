@@ -45,21 +45,6 @@ class HTMLToMarkdownConverter:
         """
         return self.html2text_converter.handle(html_content)
 
-    def _get_target_folder(self, content: int) -> Path:
-        """
-        Determine the target folder based on the content length.
-
-        :param content: Markdown content.
-        :return: Path to the target folder.
-        """
-
-        if count_tokens(str(content)) <= 3500:
-            return self.folder_path / "short"
-        elif 3500 < count_tokens(str(content)) < 15000:
-            return self.folder_path / "medium"
-        else:
-            return self.folder_path / "long"
-
     def _write_markdown_file(
         self, file_path: Path, content: str, use_target_folder: bool = False
     ):
