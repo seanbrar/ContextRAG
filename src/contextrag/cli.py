@@ -181,8 +181,10 @@ def embed(
 ) -> None:
     """Generate embeddings for Markdown documents."""
     config = load_config()
-    if not config.openai_api_key:
-        raise click.ClickException("OPENAI_API_KEY is required for embeddings.")
+    if not config.openai_api_key and not config.openrouter_api_key:
+        raise click.ClickException(
+            "OPENAI_API_KEY or OPENROUTER_API_KEY is required for embeddings."
+        )
 
     output_path.mkdir(parents=True, exist_ok=True)
     embeddings_path = output_path / "embeddings.jsonl"
@@ -191,7 +193,14 @@ def embed(
     if cache_path and cache_path.exists():
         cache = json.loads(cache_path.read_text(encoding="utf-8"))
 
-    client = OpenAI(api_key=config.openai_api_key)
+    if config.openai_api_key:
+        client = OpenAI(api_key=config.openai_api_key)
+    else:
+        client = OpenAI(
+            api_key=config.openrouter_api_key,
+            base_url=config.openrouter_base_url,
+        )
+
     used_model = model or config.openai_embeddings_model
 
     rows: list[dict] = []

@@ -94,10 +94,10 @@ poetry install
 
 ## Environment
 
-Required for embeddings and indexing:
+Required for embeddings and indexing (OpenAI or OpenRouter):
 
-- `OPENAI_API_KEY`
-- `CHROMA_OPENAI_API_KEY` (used by Chroma embeddings)
+- `OPENAI_API_KEY` (preferred for OpenAI embeddings)
+- `OPENROUTER_API_KEY` (fallback for embeddings and chat)
 
 Optional (for OpenRouter chat routing or smoke tests):
 
@@ -107,9 +107,11 @@ Optional (for OpenRouter chat routing or smoke tests):
 
 Model defaults can be overridden:
 
-- `OPENAI_EMBEDDINGS_MODEL` (default: `text-embedding-3-large`)
+- `OPENAI_EMBEDDINGS_MODEL` (default: `thenlper/gte-base`)
 - `OPENAI_CHAT_MODEL_SHORT` (default: `gpt-3.5-turbo-1106`)
 - `OPENAI_CHAT_MODEL_MEDIUM` (default: `gpt-3.5-turbo-16k`)
+
+If you use OpenAI embeddings, set `OPENAI_EMBEDDINGS_MODEL=text-embedding-3-large`.
 
 ## Usage
 

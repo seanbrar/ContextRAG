@@ -1,4 +1,3 @@
-import os
 import chromadb
 from chromadb.utils import embedding_functions
 from contextrag.config import load_config
@@ -34,14 +33,29 @@ class VectorDB:
             else chromadb.Client()
         )
         config = load_config()
-        if config.openai_api_key:
-            os.environ.setdefault("CHROMA_OPENAI_API_KEY", config.openai_api_key)
-
-        self.openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-            api_key=config.openai_api_key,
-            model_name=embedding_model or config.openai_embeddings_model,
+        self.openai_ef = self._build_embedding_function(
+            config=config,
+            embedding_model=embedding_model,
         )
         self.collection = self.get_or_create_collection()
+
+    def _build_embedding_function(
+        self,
+        config,
+        embedding_model: str | None,
+    ):
+        model_name = embedding_model or config.openai_embeddings_model
+        if config.openai_api_key:
+            return embedding_functions.OpenAIEmbeddingFunction(
+                model_name=model_name,
+            )
+        if config.openrouter_api_key:
+            return embedding_functions.OpenAIEmbeddingFunction(
+                model_name=model_name,
+                api_base=config.openrouter_base_url,
+                api_key_env_var="OPENROUTER_API_KEY",
+            )
+        return embedding_functions.DefaultEmbeddingFunction()
 
     def get_or_create_collection(self):
         """Get an existing collection or create a new one if it doesn't exist.

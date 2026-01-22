@@ -22,7 +22,7 @@ def load_config() -> AppConfig:
     return AppConfig(
         openai_api_key=os.getenv("OPENAI_API_KEY"),
         openai_embeddings_model=os.getenv(
-            "OPENAI_EMBEDDINGS_MODEL", "text-embedding-3-large"
+            "OPENAI_EMBEDDINGS_MODEL", "thenlper/gte-base"
         ),
         openai_chat_model_short=os.getenv(
             "OPENAI_CHAT_MODEL_SHORT", "gpt-3.5-turbo-1106"
