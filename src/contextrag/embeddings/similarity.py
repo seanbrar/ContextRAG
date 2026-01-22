@@ -139,11 +139,11 @@ def preprocess_text(text):
 
     # Simple logic
     # Remove markdown formatting (basic example)
-    # text = re.sub(r'\#.*', '', text)  # Remove headers
-    text = re.sub(r"\!\[.*\]\(.*\)", "", text)  # Remove images
-    # text = re.sub(r'\[.*\]\(.*\)', '', text)  # Remove links
+    text = re.sub(r"^#+.*$", "", text, flags=re.MULTILINE)  # Remove headers
+    text = re.sub(r"\!\[.*?\]\(.*?\)", "", text)  # Remove images
+    text = re.sub(r"\[.*?\]\(.*?\)", "", text)  # Remove links
 
-    return text.strip()
+    return text
 
 
 def count_tokens(text):

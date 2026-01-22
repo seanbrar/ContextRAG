@@ -8,6 +8,7 @@
 /markdown/
 /.venv/
 /html/
+/runs/
 .DS_Store
 .env
 poetry.lock

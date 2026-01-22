@@ -2,7 +2,7 @@
 
 [![GitHub License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11-3.12](https://img.shields.io/badge/python-3.11--3.12-blue.svg)](https://www.python.org/downloads/)
 
 A scalable vector database system for semantic search and document retrieval with context-aware processing.
 
@@ -75,6 +75,8 @@ The system is built around these core components:
 
 ## Install
 
+Requires Python 3.11 or 3.12.
+
 ```bash
 # Clone repository
 git clone https://github.com/seanbrar/ContextRAG.git
@@ -95,6 +97,7 @@ poetry install
 Required for embeddings and indexing:
 
 - `OPENAI_API_KEY`
+- `CHROMA_OPENAI_API_KEY` (used by Chroma embeddings)
 
 Optional (for OpenRouter chat routing or smoke tests):
 

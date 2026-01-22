@@ -23,6 +23,9 @@ def _iter_files(root: Path, extensions: Iterable[str]) -> list[Path]:
     return sorted(files)
 
 
+TEXT_EXTENSIONS = (".md", ".txt")
+
+
 def _write_jsonl(path: Path, rows: Iterable[dict]) -> None:
     with path.open("w", encoding="utf-8") as handle:
         for row in rows:
@@ -60,7 +63,7 @@ def ingest(
     output_path.mkdir(parents=True, exist_ok=True)
 
     html_files = _iter_files(input_path, [".html"])
-    md_files = _iter_files(input_path, [".md"])
+    md_files = _iter_files(input_path, TEXT_EXTENSIONS)
 
     if format_ == "auto":
         format_ = "html" if html_files else "markdown"
@@ -140,7 +143,7 @@ def route(
         path.mkdir(parents=True, exist_ok=True)
 
     routing_rows: list[dict] = []
-    for md_file in _iter_files(input_path, [".md"]):
+    for md_file in _iter_files(input_path, TEXT_EXTENSIONS):
         content = md_file.read_text(encoding="utf-8")
         token_count = count_tokens(content)
         if token_count <= short_max:
@@ -192,7 +195,7 @@ def embed(
     used_model = model or config.openai_embeddings_model
 
     rows: list[dict] = []
-    for md_file in _iter_files(input_path, [".md"]):
+    for md_file in _iter_files(input_path, TEXT_EXTENSIONS):
         content = md_file.read_text(encoding="utf-8")
         checksum = _checksum(content)
         embedding = cache.get(checksum)
@@ -229,7 +232,7 @@ def index(input_path: Path, collection: str, persist_path: str | None) -> None:
     vector_db = VectorDB(collection_name=collection, persist_path=persist_path)
     documents: list[str] = []
     ids: list[str] = []
-    for md_file in _iter_files(input_path, [".md"]):
+    for md_file in _iter_files(input_path, TEXT_EXTENSIONS):
         documents.append(md_file.read_text(encoding="utf-8"))
         ids.append(md_file.stem)
     vector_db.add_documents(documents=documents, ids=ids)

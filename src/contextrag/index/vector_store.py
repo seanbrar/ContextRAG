@@ -1,3 +1,4 @@
+import os
 import chromadb
 from chromadb.utils import embedding_functions
 from contextrag.config import load_config
@@ -33,6 +34,9 @@ class VectorDB:
             else chromadb.Client()
         )
         config = load_config()
+        if config.openai_api_key:
+            os.environ.setdefault("CHROMA_OPENAI_API_KEY", config.openai_api_key)
+
         self.openai_ef = embedding_functions.OpenAIEmbeddingFunction(
             api_key=config.openai_api_key,
             model_name=embedding_model or config.openai_embeddings_model,

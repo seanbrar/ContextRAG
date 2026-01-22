@@ -20,7 +20,7 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # Free model for testing (supports structured outputs)
-MODEL = "mistralai/devstral-2512:free"
+MODEL = os.getenv("OPENROUTER_CHAT_MODEL", "mistralai/devstral-2512:free")
 
 
 def test_structured_output():

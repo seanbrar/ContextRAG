@@ -8,11 +8,9 @@ def modify_markdown(content):
     :param content: Markdown content as a string.
     :return: Modified Markdown content.
     """
-    content = remove_above_first_header(content)
-    # content = remove_attachments_section(content)
-    # content = remove_inline_attachments(content)
-    content = remove_attachments(content)
-    content = clean_up_lines(content)
+    content = remove_above_first_header_if_level_one(content)
+    content = remove_inline_attachments(content)
+    content = remove_attachments_header_and_first_line(content)
     content = convert_indented_blocks_to_code(content)
     content = reduce_excessive_line_breaks(content)
     return content.strip()
@@ -41,28 +39,66 @@ def remove_above_first_header(content):
         return content
 
 
-# def remove_attachments_section(content):
-#     """
-#     Remove the 'Attachments' subheader and everything that follows.
+def remove_above_first_header_if_level_one(content):
+    """
+    Remove everything above the first Markdown header only if it is a level-one header.
 
-#     :param content: Markdown content as a string.
-#     :return: Markdown content without the 'Attachments' section.
-#     """
-#     # Split on the first occurrence of '\n## Attachments:' and keep the part before it.
-#     return re.split(r'\n## Attachments:', content, maxsplit=1)[0]
+    :param content: Markdown content as a string.
+    :return: Markdown content without the section above the first level-one header.
+    """
+    if not isinstance(content, str):
+        raise ValueError("Content must be a string")
+
+    first_header_pattern = re.compile(r"^(?:\s*)(#+)\s", flags=re.MULTILINE)
+    match = first_header_pattern.search(content)
+    if match and len(match.group(1)) == 1:
+        return content[match.start() :]
+    return content
 
 
-# def remove_inline_attachments(content):
-#     """
-#     Remove inline attachments from the Markdown content.
+def remove_attachments_header_and_first_line(content):
+    """
+    Remove the 'Attachments' header line and the line that immediately follows it.
 
-#     :param content: Markdown content as a string.
-#     :return: Markdown content without inline attachments.
-#     """
-#     # Remove lines with '![...](attachments/...)' patterns.
-#     content = re.sub(r'^.*!\[.*?\]\(attachments/.*?\).*$', '', content, flags=re.MULTILINE)
-#     # Remove lines with '[![...](attachments/...)](attachments/...)' patterns.
-#     return re.sub(r'^.*\[!\[.*?\]\(attachments/.*?\)\]\(attachments/.*?\).*$', '', content, flags=re.MULTILINE)
+    :param content: Markdown content as a string.
+    :return: Markdown content without the 'Attachments' header and first line.
+    """
+    if not isinstance(content, str):
+        raise ValueError("Content must be a string")
+
+    pattern = re.compile(r"(^|\n)## Attachments:\n[^\n]*(?:\n|$)")
+    return re.sub(pattern, r"\1", content)
+
+
+def remove_attachments_section(content):
+    """
+    Remove the 'Attachments' subheader and everything that follows.
+
+    :param content: Markdown content as a string.
+    :return: Markdown content without the 'Attachments' section.
+    """
+    if not isinstance(content, str):
+        raise ValueError("Content must be a string")
+
+    # Split on the first occurrence of '\n## Attachments:' and keep the part before it.
+    return re.split(r"\n## Attachments:", content, maxsplit=1)[0]
+
+
+def remove_inline_attachments(content):
+    """
+    Remove inline attachments from the Markdown content.
+
+    :param content: Markdown content as a string.
+    :return: Markdown content without inline attachments.
+    """
+    if not isinstance(content, str):
+        raise ValueError("Content must be a string")
+
+    nested_pattern = re.compile(r"\[!\[.*?\]\(attachments/.*?\)\]\(attachments/.*?\)")
+    standard_pattern = re.compile(r"!\[.*?\]\(attachments/.*?\)")
+
+    content = re.sub(nested_pattern, "", content)
+    return re.sub(standard_pattern, "", content)
 
 
 def remove_attachments(content):
@@ -136,13 +172,21 @@ def convert_indented_blocks_to_code(content):
     if not isinstance(content, str):
         raise ValueError("Content must be a string")
 
-    # Precompile regex pattern for indented text blocks
-    indented_blocks_pattern = re.compile(
-        r"((?:^ {4}.*\n)+(?:^\s*\n(?:^ {4}.*\n)+)*)", flags=re.MULTILINE
-    )
+    if not content:
+        return content
 
-    # Convert indented blocks to code blocks
-    return re.sub(indented_blocks_pattern, r"```\n\1```\n", content)
+    # If the content starts with an indented line, wrap the whole block.
+    if content.startswith("    "):
+        stripped = content.rstrip("\n")
+        return f"```\n{stripped}\n```\n"
+
+    indented_blocks_pattern = re.compile(r"(?:^ {4}.*(?:\n|$))+", flags=re.MULTILINE)
+
+    def wrap_block(match):
+        block = match.group(0).rstrip("\n")
+        return f"```\n{block}\n```\n"
+
+    return re.sub(indented_blocks_pattern, wrap_block, content)
 
 
 def reduce_excessive_line_breaks(content):
