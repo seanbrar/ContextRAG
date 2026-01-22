@@ -1,0 +1,60 @@
+{"query": "What is the name of the woman Sherlock Holmes refers to as 'the woman'?", "relevant_ids": ["a_scandal_in_bohemia"]}
+{"query": "Which case involves the House of Ormstein in Bohemia?", "relevant_ids": ["a_scandal_in_bohemia"]}
+{"query": "What is the significance of the paper used in the mysterious note received by Holmes?", "relevant_ids": ["a_scandal_in_bohemia"]}
+{"query": "How does Holmes deduce that Dr. Watson has been out in bad weather?", "relevant_ids": ["a_scandal_in_bohemia"]}
+{"query": "What are the titles of the stories included in 'The Adventures of Sherlock Holmes'?", "relevant_ids": ["a_scandal_in_bohemia"]}
+{"query": "When was Lincoln's Gettysburg Address given?", "relevant_ids": ["gettysburg_address"]}
+{"query": "What is the main theme of the Gettysburg Address?", "relevant_ids": ["gettysburg_address"]}
+{"query": "Who retranscribed the Gettysburg Address in this document?", "relevant_ids": ["gettysburg_address"]}
+{"query": "What is the significance of the battlefield at Gettysburg?", "relevant_ids": ["gettysburg_address"]}
+{"query": "What famous phrase does Lincoln use to describe government in the Gettysburg Address?", "relevant_ids": ["gettysburg_address"]}
+{"query": "What is the purpose of RFC 5322?", "relevant_ids": ["rfc5322"]}
+{"query": "How are messages structured according to the Internet Message Format?", "relevant_ids": ["rfc5322"]}
+{"query": "What are the line length limits in RFC 5322?", "relevant_ids": ["rfc5322"]}
+{"query": "What is the difference between RFC 5322 and RFC 2822?", "relevant_ids": ["rfc5322"]}
+{"query": "What are the security considerations for implementing RFC 5322?", "relevant_ids": ["rfc5322"]}
+{"query": "What is the purpose of RFC 822?", "relevant_ids": ["rfc822"]}
+{"query": "Who revised RFC 822?", "relevant_ids": ["rfc822"]}
+{"query": "What does RFC 822 specify?", "relevant_ids": ["rfc822"]}
+{"query": "What is the difference between RFC 822 and RFC 733?", "relevant_ids": ["rfc822"]}
+{"query": "What is the structure of a message according to RFC 822?", "relevant_ids": ["rfc822"]}
+{"query": "What are the primary security properties provided by TLS 1.3?", "relevant_ids": ["rfc8446"]}
+{"query": "How does TLS 1.3 handle client authentication?", "relevant_ids": ["rfc8446"]}
+{"query": "What are the major differences between TLS 1.3 and TLS 1.2?", "relevant_ids": ["rfc8446"]}
+{"query": "What is the purpose of the 0-RTT data feature in TLS 1.3?", "relevant_ids": ["rfc8446"]}
+{"query": "Which RFCs does TLS 1.3 obsolete?", "relevant_ids": ["rfc8446"]}
+{"query": "What is the purpose of HTTP as described in RFC 9110?", "relevant_ids": ["rfc9110"]}
+{"query": "What are the HTTP methods defined in RFC 9110?", "relevant_ids": ["rfc9110"]}
+{"query": "How does RFC 9110 handle content negotiation?", "relevant_ids": ["rfc9110"]}
+{"query": "What are the security considerations for HTTP outlined in RFC 9110?", "relevant_ids": ["rfc9110"]}
+{"query": "What status codes are defined in RFC 9110 for client errors?", "relevant_ids": ["rfc9110"]}
+{"query": "What is the purpose of the HTTP/1.1 protocol as described in RFC 9112?", "relevant_ids": ["rfc9112"]}
+{"query": "How does HTTP/1.1 handle message parsing and what are the key steps involved?", "relevant_ids": ["rfc9112"]}
+{"query": "What are the differences between HTTP/1.1 and HTTP/1.0 in terms of connection management?", "relevant_ids": ["rfc9112"]}
+{"query": "What security considerations are discussed in RFC 9112 regarding HTTP/1.1?", "relevant_ids": ["rfc9112"]}
+{"query": "How does HTTP/1.1 define the syntax for the start-line in requests and responses?", "relevant_ids": ["rfc9112"]}
+{"query": "What is the purpose of HTTP/2 and how does it improve performance?", "relevant_ids": ["rfc9113"]}
+{"query": "How does HTTP/2 handle multiplexing and flow control?", "relevant_ids": ["rfc9113"]}
+{"query": "What are the differences between HTTP/2 and HTTP/1.1 in terms of request handling?", "relevant_ids": ["rfc9113"]}
+{"query": "What is the role of the 'h2' and 'h2c' identifiers in HTTP/2?", "relevant_ids": ["rfc9113"]}
+{"query": "How does HTTP/2 use field compression to reduce network traffic?", "relevant_ids": ["rfc9113"]}
+{"query": "What is the purpose of YANG Schema Item Identifiers (YANG SIDs)?", "relevant_ids": ["rfc9595"]}
+{"query": "How are YANG SIDs structured and what is their bit length?", "relevant_ids": ["rfc9595"]}
+{"query": "What items in YANG are identified using SIDs?", "relevant_ids": ["rfc9595"]}
+{"query": "What is the role of IANA in the allocation of YANG SIDs?", "relevant_ids": ["rfc9595"]}
+{"query": "How does the YANG SID system support module evolution and versioning?", "relevant_ids": ["rfc9595"]}
+{"query": "What is the motto of the Montresor family in 'The Cask of Amontillado'?", "relevant_ids": ["the_cask_of_amontillado"]}
+{"query": "How does the narrator lure Fortunato into the catacombs?", "relevant_ids": ["the_cask_of_amontillado"]}
+{"query": "What is the significance of the Amontillado in the story?", "relevant_ids": ["the_cask_of_amontillado"]}
+{"query": "Describe the final fate of Fortunato in 'The Cask of Amontillado'.", "relevant_ids": ["the_cask_of_amontillado"]}
+{"query": "What themes of revenge are explored in 'The Cask of Amontillado' by Edgar Allan Poe?", "relevant_ids": ["the_cask_of_amontillado"]}
+{"query": "What is the name of the main female character in 'The Gift of the Magi'?", "relevant_ids": ["the_gift_of_the_magi"]}
+{"query": "How much money did Della have to buy Jim a Christmas present?", "relevant_ids": ["the_gift_of_the_magi"]}
+{"query": "What did Della sell to buy Jim's gift?", "relevant_ids": ["the_gift_of_the_magi"]}
+{"query": "What was the gift Jim bought for Della?", "relevant_ids": ["the_gift_of_the_magi"]}
+{"query": "What is the moral lesson of 'The Gift of the Magi'?", "relevant_ids": ["the_gift_of_the_magi"]}
+{"query": "What is the name of the main character's husband in 'The Yellow Wallpaper'?", "relevant_ids": ["the_yellow_wallpaper"]}
+{"query": "What is the setting of 'The Yellow Wallpaper'?", "relevant_ids": ["the_yellow_wallpaper"]}
+{"query": "What is the main character's opinion of the wallpaper in her room?", "relevant_ids": ["the_yellow_wallpaper"]}
+{"query": "What is the main character's brother's profession in 'The Yellow Wallpaper'?", "relevant_ids": ["the_yellow_wallpaper"]}
+{"query": "What is the theme of oppression in 'The Yellow Wallpaper'?", "relevant_ids": ["the_yellow_wallpaper"]}

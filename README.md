@@ -27,13 +27,17 @@ A scalable vector database system for semantic search and document retrieval wit
 
 ## Background
 
-ContextRAG addresses a critical challenge in large language model applications: efficiently processing and retrieving information from documents of varying lengths and complexities. Traditional RAG (Retrieval-Augmented Generation) systems often struggle with:
+ContextRAG began in 2022–2023 as an exploration of **cost-aware model routing** for RAG systems. The original motivation was practical: GPT-3.5 (4K context) was significantly cheaper than GPT-3.5-16K, so routing documents to the appropriate model based on length could reduce costs without sacrificing capability.
 
-1. Context length limitations of embedding models
-2. Loss of semantic relationships in excessively chunked documents
-3. Inefficient processing of extremely long documents
+As context windows expanded dramatically (128K–2M tokens by 2024–2025), the cost arbitrage diminished. The project evolved to explore whether **adaptive chunking strategies** could improve retrieval quality by:
 
-This project implements a novel approach that dynamically adapts to document characteristics, preserving semantic meaning while optimizing for computational efficiency.
+1. Preserving semantic coherence in short documents (no chunking)
+2. Using larger chunks for medium documents (fewer boundary artifacts)
+3. Applying fine-grained chunking only to very long documents
+
+**Key finding**: Rigorous evaluation shows that adaptive chunking does not improve retrieval accuracy over uniform chunking. Both strategies achieve identical precision and recall across heterogeneous document collections. See [Results Summary](#results-summary) for details.
+
+The project's value lies in its **infrastructure**: a provider-agnostic embedding layer, reproducible evaluation framework with efficiency metrics, and well-documented methodology for testing RAG strategies.
 
 ## Key Features
 
@@ -189,14 +193,14 @@ This approach ensures:
 
 ## Evaluation
 
-Evaluation of ContextRAG is currently in progress. The evaluation harness supports:
+The evaluation framework compares chunking strategies with comprehensive metrics:
 
-| Metric | Description | Status |
-|--------|-------------|--------|
-| Precision@k | Relevance of top-k retrieved documents | In progress |
-| Recall@k | Proportion of relevant documents retrieved | In progress |
-| Processing Efficiency | Time and resource usage across document sizes | Initial testing |
-| Accuracy vs. Context Length | Performance correlation with document length | Planned |
+| Metric | Description |
+|--------|-------------|
+| Precision@k | Fraction of top-k retrieved documents that are relevant |
+| Recall@k | Fraction of relevant documents appearing in top-k |
+| Efficiency | Chunk count, token usage, indexing time, query latency |
+| Variance | Multiple runs to verify determinism |
 
 The eval command expects a dataset directory with `documents/` and `queries.jsonl`:
 
@@ -239,31 +243,43 @@ pytest tests/
 
 ## Results Summary
 
-RFC demo evaluation (7 documents, 341k tokens, 14 queries):
+### Mixed Corpus (Primary Evaluation)
 
-| Baseline | Precision@5 | Recall@5 | Chunks | Avg Query Latency |
-| -------- | ----------- | -------- | ------ | ----------------- |
-| uniform  | 0.171       | 0.857    | 345    | 1,625ms |
-| router   | 0.171       | 0.857    | 345    | 2,153ms |
+12 documents (3 short, 1 medium, 8 long), 493k tokens, 60 queries, 3 runs:
 
-**Document classification (router)**: All 7 RFCs exceed 15k tokens → all classified as "long" → identical chunking applied.
+| Baseline | Precision@5 | Recall@5 | Chunks | Variance |
+| -------- | ----------- | -------- | ------ | -------- |
+| Uniform  | 0.197       | 0.983    | 499    | 0 (deterministic) |
+| Router   | 0.197       | 0.983    | 490    | 0 (deterministic) |
 
-**Key insight**: Identical results are expected when all documents fall into the same length category. The router strategy's differentiation emerges with **heterogeneous document collections** containing short, medium, and long documents.
+### Key Finding
 
-The router strategy's value proposition:
-- **Short documents** (≤3.5k tokens): No chunking → preserves semantic coherence
-- **Medium documents** (3.5k–15k tokens): 2k-token chunks → fewer chunks than uniform
-- **Long documents** (>15k tokens): 1k-token chunks → same as uniform
+**Adaptive chunking does not improve retrieval accuracy.** Both strategies achieve identical precision and recall. The router produces 1.8% fewer chunks, but this marginal efficiency gain does not translate to accuracy improvement.
 
-See `docs/results.md` for full efficiency metrics and analysis.
+### Interpretation
 
-## Future Enhancements
+This negative result is reproducible and informative:
 
-- Add support for additional document formats (PDF, DOCX)
-- Implement more advanced embedding models
-- Develop a query optimization layer
-- Create a web interface for document exploration
-- Add document versioning and change tracking
+1. **Modern embeddings are robust** — text-embedding-3-small handles chunk boundaries well
+2. **Simplicity wins** — uniform chunking is equally effective with less complexity
+3. **Original motivation obsolete** — cost-based model routing (GPT-3.5 vs GPT-3.5-16K) is less relevant with modern pricing
+
+### What This Project Demonstrates
+
+- **Rigorous evaluation methodology** with efficiency metrics and variance analysis
+- **Provider-agnostic infrastructure** (OpenAI, OpenRouter, local embeddings)
+- **Honest reporting** of negative results with clear interpretation
+
+See `docs/results.md` for complete methodology, efficiency breakdowns, and artifact paths.
+
+## Future Directions
+
+Given the negative result on adaptive chunking, potential directions include:
+
+- **Cost-aware routing**: Route to different embedding providers based on cost/quality tradeoffs
+- **Hybrid search**: Combine dense embeddings with sparse retrieval (BM25)
+- **Alternative chunking strategies**: Semantic chunking, overlapping windows, hierarchical embeddings
+- **Benchmark expansion**: Evaluate on standard IR benchmarks (NQ, TriviaQA) for broader validation
 
 ## Related Work
 

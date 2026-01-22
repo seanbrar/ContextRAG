@@ -103,7 +103,7 @@ class VectorDB:
             )
         if provider == "local":
             model_name = embedding_model or config.local_embeddings_model
-            return embedding_functions.HuggingFaceEmbeddingFunction(
+            return embedding_functions.SentenceTransformerEmbeddingFunction(
                 model_name=model_name,
             )
         return embedding_functions.DefaultEmbeddingFunction()
@@ -129,18 +129,26 @@ class VectorDB:
             print(f"Created new collection: {self.collection_name}")
         return collection
 
-    def add_documents(self, documents, ids=None):
-        """Add documents to the collection.
+    def add_documents(self, documents, ids=None, batch_size: int = 100):
+        """Add documents to the collection with batching.
 
         Args:
             documents (list): List of document strings to add.
             ids (list, optional): List of unique IDs for the documents.
                 If not provided, sequential IDs will be generated.
+            batch_size (int): Number of documents per batch to avoid API limits.
+                Defaults to 100.
         """
         if ids is None:
             ids = [f"doc{i+1}" for i in range(len(documents))]
-        self.collection.add(documents=documents, ids=ids)
-        print(f"Added {len(documents)} documents to the collection")
+
+        total = len(documents)
+        for i in range(0, total, batch_size):
+            batch_docs = documents[i : i + batch_size]
+            batch_ids = ids[i : i + batch_size]
+            self.collection.add(documents=batch_docs, ids=batch_ids)
+
+        print(f"Added {total} documents to the collection")
 
     def query(self, query_texts, n_results=3):
         """Query the collection for similar documents.
