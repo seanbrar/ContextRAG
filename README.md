@@ -239,21 +239,23 @@ pytest tests/
 
 ## Results Summary
 
-RFC demo evaluation (14 queries, 345 indexed chunks, `qwen/qwen3-embedding-8b`):
+RFC demo evaluation (7 documents, 341k tokens, 14 queries):
 
-| Baseline | Precision@5 | Recall@5 | Chunk Strategy |
-| -------- | ----------- | -------- | -------------- |
-| uniform  | 0.171       | 0.857    | Fixed 1000-token chunks |
-| router   | 0.171       | 0.857    | Adaptive (short: none, medium: 2k, long: 1k) |
+| Baseline | Precision@5 | Recall@5 | Chunks | Avg Query Latency |
+| -------- | ----------- | -------- | ------ | ----------------- |
+| uniform  | 0.171       | 0.857    | 345    | 1,625ms |
+| router   | 0.171       | 0.857    | 345    | 2,153ms |
 
-**Interpretation**: On this small, homogeneous RFC dataset, both strategies achieve equivalent retrieval accuracy. This is expected — RFC documents are structurally similar and fall within similar length ranges, minimizing the routing strategy's differentiation.
+**Document classification (router)**: All 7 RFCs exceed 15k tokens → all classified as "long" → identical chunking applied.
 
-The router strategy's primary value proposition is **efficiency**, not accuracy:
-- Avoids unnecessary chunking for short documents (preserves semantic coherence)
-- Reduces total chunks indexed for medium-length documents
-- Applies aggressive chunking only where necessary (very long documents)
+**Key insight**: Identical results are expected when all documents fall into the same length category. The router strategy's differentiation emerges with **heterogeneous document collections** containing short, medium, and long documents.
 
-See `docs/results.md` for full methodology. Evaluation on larger, heterogeneous document collections is in progress.
+The router strategy's value proposition:
+- **Short documents** (≤3.5k tokens): No chunking → preserves semantic coherence
+- **Medium documents** (3.5k–15k tokens): 2k-token chunks → fewer chunks than uniform
+- **Long documents** (>15k tokens): 1k-token chunks → same as uniform
+
+See `docs/results.md` for full efficiency metrics and analysis.
 
 ## Future Enhancements
 

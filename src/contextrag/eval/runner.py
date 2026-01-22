@@ -41,16 +41,32 @@ def _chunk_text(text: str, chunk_tokens: int) -> list[str]:
 
 def _build_index_inputs(
     documents_dir: Path, baseline: str
-) -> tuple[list[str], list[str], dict[str, str]]:
+) -> tuple[list[str], list[str], dict[str, str], dict]:
+    """Build index inputs with efficiency tracking.
+
+    Returns:
+        Tuple of (documents, ids, chunk_to_doc, efficiency_stats)
+    """
     documents: list[str] = []
     ids: list[str] = []
     chunk_to_doc: dict[str, str] = {}
+
+    # Efficiency tracking
+    encoding = tiktoken.get_encoding(TOKENIZER_NAME)
+    source_doc_count = 0
+    total_source_tokens = 0
+    total_indexed_tokens = 0
+    docs_by_category = {"short": 0, "medium": 0, "long": 0}
 
     for doc_path in sorted(documents_dir.glob("*")):
         if not doc_path.is_file():
             continue
         content = doc_path.read_text(encoding="utf-8")
         doc_id = doc_path.stem
+        source_doc_count += 1
+        doc_tokens = len(encoding.encode(content))
+        total_source_tokens += doc_tokens
+
         if baseline == "uniform":
             chunks = _chunk_text(content, UNIFORM_CHUNK_TOKENS)
             if not chunks:
@@ -60,28 +76,47 @@ def _build_index_inputs(
                 documents.append(chunk)
                 ids.append(chunk_id)
                 chunk_to_doc[chunk_id] = doc_id
+                total_indexed_tokens += len(encoding.encode(chunk))
         else:
-            token_count = len(tiktoken.get_encoding(TOKENIZER_NAME).encode(content))
-            if token_count <= SHORT_MAX:
+            if doc_tokens <= SHORT_MAX:
+                docs_by_category["short"] += 1
                 documents.append(content)
                 ids.append(doc_id)
                 chunk_to_doc[doc_id] = doc_id
-            elif token_count <= MEDIUM_MAX:
+                total_indexed_tokens += doc_tokens
+            elif doc_tokens <= MEDIUM_MAX:
+                docs_by_category["medium"] += 1
                 chunks = _chunk_text(content, MEDIUM_CHUNK_TOKENS)
                 for idx, chunk in enumerate(chunks):
                     chunk_id = f"{doc_id}::chunk{idx}"
                     documents.append(chunk)
                     ids.append(chunk_id)
                     chunk_to_doc[chunk_id] = doc_id
+                    total_indexed_tokens += len(encoding.encode(chunk))
             else:
+                docs_by_category["long"] += 1
                 chunks = _chunk_text(content, LONG_CHUNK_TOKENS)
                 for idx, chunk in enumerate(chunks):
                     chunk_id = f"{doc_id}::chunk{idx}"
                     documents.append(chunk)
                     ids.append(chunk_id)
                     chunk_to_doc[chunk_id] = doc_id
+                    total_indexed_tokens += len(encoding.encode(chunk))
 
-    return documents, ids, chunk_to_doc
+    efficiency_stats = {
+        "source_documents": source_doc_count,
+        "total_chunks": len(documents),
+        "total_source_tokens": total_source_tokens,
+        "total_indexed_tokens": total_indexed_tokens,
+        "avg_chunk_size_tokens": total_indexed_tokens / len(documents) if documents else 0,
+        "chunking_overhead": (total_indexed_tokens / total_source_tokens - 1) * 100
+            if total_source_tokens > 0 else 0,
+    }
+
+    if baseline == "router":
+        efficiency_stats["documents_by_category"] = docs_by_category
+
+    return documents, ids, chunk_to_doc, efficiency_stats
 
 
 def run_eval(
@@ -100,8 +135,15 @@ def run_eval(
     if not queries_path.exists():
         raise FileNotFoundError(f"Missing queries file: {queries_path}")
 
-    documents, ids, chunk_to_doc = _build_index_inputs(documents_dir, baseline)
+    # Build index with efficiency tracking
+    build_start = time.time()
+    documents, ids, chunk_to_doc, efficiency_stats = _build_index_inputs(
+        documents_dir, baseline
+    )
+    build_duration = time.time() - build_start
 
+    # Create and populate vector index
+    index_start = time.time()
     vector_db = VectorDB(
         collection_name=f"eval-{int(time.time())}",
         persist_path=persist_path,
@@ -109,16 +151,23 @@ def run_eval(
         embedding_model=embedding_model,
     )
     vector_db.add_documents(documents=documents, ids=ids)
+    index_duration = time.time() - index_start
 
     queries = _load_queries(queries_path)
     precision_scores: list[float] = []
     recall_scores: list[float] = []
+    query_latencies: list[float] = []
     per_query: list[dict] = []
 
     for entry in queries:
         query_text = entry["query"]
         relevant_ids = entry.get("relevant_ids", [])
+
+        query_start = time.time()
         results = vector_db.query(query_texts=[query_text], n_results=k)
+        query_latency = time.time() - query_start
+        query_latencies.append(query_latency)
+
         retrieved_chunk_ids = results.get("ids", [[]])[0]
         retrieved_ids = [chunk_to_doc.get(item, item) for item in retrieved_chunk_ids]
         precision = precision_at_k(retrieved_ids, relevant_ids, k)
@@ -133,6 +182,7 @@ def run_eval(
                 "retrieved_chunk_ids": retrieved_chunk_ids,
                 "precision_at_k": precision,
                 "recall_at_k": recall,
+                "latency_ms": round(query_latency * 1000, 2),
             }
         )
 
@@ -147,12 +197,16 @@ def run_eval(
     else:
         resolved_model = embedding_model or "default"
 
+    avg_query_latency = (
+        sum(query_latencies) / len(query_latencies) if query_latencies else 0.0
+    )
+
     summary = {
         "timestamp": int(time.time()),
         "baseline": baseline,
         "k": k,
         "total_queries": len(queries),
-        "indexed_documents": len(documents),
+        "indexed_chunks": len(documents),
         "precision_at_k": sum(precision_scores) / len(precision_scores)
         if precision_scores
         else 0.0,
@@ -165,6 +219,25 @@ def run_eval(
             "uniform_chunk_tokens": UNIFORM_CHUNK_TOKENS,
             "medium_chunk_tokens": MEDIUM_CHUNK_TOKENS,
             "long_chunk_tokens": LONG_CHUNK_TOKENS,
+        },
+        "efficiency": {
+            "source_documents": efficiency_stats["source_documents"],
+            "total_chunks": efficiency_stats["total_chunks"],
+            "total_source_tokens": efficiency_stats["total_source_tokens"],
+            "total_indexed_tokens": efficiency_stats["total_indexed_tokens"],
+            "avg_chunk_size_tokens": round(efficiency_stats["avg_chunk_size_tokens"], 1),
+            "chunking_overhead_pct": round(efficiency_stats["chunking_overhead"], 2),
+            **(
+                {"documents_by_category": efficiency_stats["documents_by_category"]}
+                if "documents_by_category" in efficiency_stats
+                else {}
+            ),
+        },
+        "timing": {
+            "build_duration_sec": round(build_duration, 3),
+            "index_duration_sec": round(index_duration, 3),
+            "avg_query_latency_ms": round(avg_query_latency * 1000, 2),
+            "total_query_duration_sec": round(sum(query_latencies), 3),
         },
     }
     return {"summary": summary, "per_query": per_query}
