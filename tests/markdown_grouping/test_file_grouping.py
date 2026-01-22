@@ -1,5 +1,5 @@
 import pytest
-from markdown_grouping.file_grouping import preprocess_text
+from contextrag.embeddings.similarity import preprocess_text
 
 
 def test_preprocess_text():

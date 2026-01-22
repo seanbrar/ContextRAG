@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 from bs4 import BeautifulSoup
 import html2text
-from utils.tokenizer import count_tokens
+from contextrag.core.tokenizer import count_tokens
 
 
 class HTMLToMarkdownConverter:

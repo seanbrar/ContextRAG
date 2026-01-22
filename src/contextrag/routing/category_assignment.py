@@ -3,9 +3,9 @@ import os
 import re
 
 from dotenv import load_dotenv
-from utils.chat import ChatManager, ChatModels
-from utils.tokenizer import count_tokens
-from markdown_grouping.file_grouping import preprocess_text
+from contextrag.providers.openai_chat import ChatManager, ChatModels
+from contextrag.core.tokenizer import count_tokens
+from contextrag.embeddings.similarity import preprocess_text
 
 load_dotenv()
 

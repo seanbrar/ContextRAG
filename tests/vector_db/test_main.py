@@ -1,5 +1,5 @@
 import pytest
-from src.vector_db.main import VectorDB
+from contextrag.index.vector_store import VectorDB
 
 
 class TestVectorDB:

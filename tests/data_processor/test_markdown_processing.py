@@ -1,5 +1,5 @@
 import pytest
-from data_processing.markdown_processing import (
+from contextrag.ingest.markdown_processing import (
     modify_markdown,
     remove_above_first_header,
     remove_attachments_section,

@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import normalize
-from utils.tokenizer import count_tokens
 
 load_dotenv()
 
