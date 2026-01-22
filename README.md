@@ -214,6 +214,12 @@ You can also run evals from a YAML config:
 poetry run contextrag eval --config experiments/eval_rfc.yaml
 ```
 
+To capture run artifacts (summary/per-query/metadata), add a run directory:
+
+```bash
+poetry run contextrag eval --config experiments/eval_rfc.yaml --run-dir runs/eval_rfc
+```
+
 ## Testing
 
 Run the test suite to verify system functionality:

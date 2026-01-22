@@ -12,6 +12,7 @@ from contextrag.config import load_config, resolve_embed_provider
 from contextrag.core.tokenizer import count_tokens
 from contextrag.eval.runner import run_eval
 from contextrag.experiments.eval_config import EvalConfig, load_eval_config
+from contextrag.experiments.run_logger import write_run_artifacts
 from contextrag.ingest.html_to_markdown import HTMLToMarkdownConverter
 from contextrag.ingest.markdown_processing import modify_markdown
 from contextrag.index.vector_store import VectorDB
@@ -333,6 +334,7 @@ def query(collection: str, persist_path: str, query_text: str, top_k: int) -> No
     type=click.Choice(["auto", "openai", "openrouter", "local"]),
     default=None,
 )
+@click.option("--run-dir", "run_dir", type=click.Path(path_type=Path))
 @click.option("--config", "config_path", type=click.Path(path_type=Path))
 def eval(
     dataset_path: Path,
@@ -342,6 +344,7 @@ def eval(
     persist_path: str | None,
     embedding_model: str | None,
     embed_provider: str | None,
+    run_dir: Path | None,
     config_path: Path | None,
 ) -> None:
     """Run retrieval evaluation."""
@@ -357,6 +360,9 @@ def eval(
         embedding_model = embedding_model or eval_config.embedding_model
         persist_path = persist_path or eval_config.persist
         output_path = output_path or Path(eval_config.output)
+        run_dir = run_dir or (
+            Path(eval_config.run_dir) if eval_config.run_dir else None
+        )
 
     if not dataset_path:
         raise click.ClickException("--dataset is required (or provide --config).")
@@ -379,6 +385,20 @@ def eval(
         results["summary"]["config_path"] = str(config_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
+    if run_dir:
+        write_run_artifacts(
+            run_dir=run_dir,
+            results=results,
+            metadata={
+                "dataset": str(dataset_path),
+                "baseline": baseline,
+                "k": top_k,
+                "embed_provider": embed_provider,
+                "embedding_model": embedding_model,
+                "output": str(output_path),
+                "persist": persist_path,
+            },
+        )
     summary = results["summary"]
     click.echo(
         "precision@k={precision:.3f} recall@k={recall:.3f} (k={k})".format(

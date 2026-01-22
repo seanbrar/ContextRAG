@@ -14,6 +14,7 @@ class EvalConfig:
     embedding_model: str | None = None
     output: str = "runs/eval.json"
     persist: str | None = None
+    run_dir: str | None = None
 
 
 def _validate_baseline(value: str) -> str:
@@ -41,4 +42,5 @@ def load_eval_config(path: Path) -> EvalConfig:
         embedding_model=payload.get("embedding_model"),
         output=payload.get("output", "runs/eval.json"),
         persist=payload.get("persist"),
+        run_dir=payload.get("run_dir"),
     )
