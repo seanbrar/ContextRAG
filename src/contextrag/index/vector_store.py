@@ -1,6 +1,10 @@
 import chromadb
+from chromadb.errors import NotFoundError
+import json
+
 from chromadb.utils import embedding_functions
-from contextrag.config import load_config
+from contextrag.config import load_config, resolve_embed_provider
+from contextrag.embeddings.openrouter_embedding import OpenRouterEmbeddingFunction
 
 
 class VectorDB:
@@ -20,6 +24,7 @@ class VectorDB:
         collection_name: str,
         persist_path: str | None = None,
         embedding_model: str | None = None,
+        embed_provider: str | None = None,
     ):
         """Initialize VectorDB with a collection name.
 
@@ -36,6 +41,7 @@ class VectorDB:
         self.openai_ef = self._build_embedding_function(
             config=config,
             embedding_model=embedding_model,
+            embed_provider=embed_provider,
         )
         self.collection = self.get_or_create_collection()
 
@@ -43,17 +49,62 @@ class VectorDB:
         self,
         config,
         embedding_model: str | None,
+        embed_provider: str | None,
     ):
-        model_name = embedding_model or config.openai_embeddings_model
-        if config.openai_api_key:
+        provider = resolve_embed_provider(config, embed_provider)
+
+        if provider == "openai":
+            model_name = embedding_model or config.openai_embeddings_model
+            if not config.openai_api_key:
+                raise ValueError("OPENAI_API_KEY is required for OpenAI embeddings.")
             return embedding_functions.OpenAIEmbeddingFunction(
                 model_name=model_name,
             )
-        if config.openrouter_api_key:
-            return embedding_functions.OpenAIEmbeddingFunction(
+        if provider == "openrouter":
+            model_name = embedding_model or config.openrouter_embeddings_model
+            if not config.openrouter_api_key:
+                raise ValueError(
+                    "OPENROUTER_API_KEY is required for OpenRouter embeddings."
+                )
+            provider_config = None
+            if config.openrouter_embed_provider_json:
+                try:
+                    provider_config = json.loads(config.openrouter_embed_provider_json)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(
+                        "OPENROUTER_EMBED_PROVIDER_JSON must be valid JSON."
+                    ) from exc
+            else:
+                order = None
+                if config.openrouter_embed_provider_order:
+                    order = [
+                        item.strip()
+                        for item in config.openrouter_embed_provider_order.split(",")
+                        if item.strip()
+                    ]
+                allow_fallbacks = None
+                if config.openrouter_embed_allow_fallbacks is not None:
+                    allow_fallbacks = (
+                        config.openrouter_embed_allow_fallbacks.lower() == "true"
+                    )
+                if order or allow_fallbacks is not None:
+                    provider_config = {}
+                    if order:
+                        provider_config["order"] = order
+                    if allow_fallbacks is not None:
+                        provider_config["allow_fallbacks"] = allow_fallbacks
+            return OpenRouterEmbeddingFunction(
+                api_key=config.openrouter_api_key,
+                model=model_name,
+                base_url=config.openrouter_base_url,
+                referer=config.openrouter_referer,
+                title=config.openrouter_title,
+                provider=provider_config,
+            )
+        if provider == "local":
+            model_name = embedding_model or config.local_embeddings_model
+            return embedding_functions.HuggingFaceEmbeddingFunction(
                 model_name=model_name,
-                api_base=config.openrouter_base_url,
-                api_key_env_var="OPENROUTER_API_KEY",
             )
         return embedding_functions.DefaultEmbeddingFunction()
 
@@ -64,9 +115,12 @@ class VectorDB:
             Collection: ChromaDB collection instance.
         """
         try:
-            collection = self.client.get_collection(self.collection_name)
+            collection = self.client.get_collection(
+                self.collection_name,
+                embedding_function=self.openai_ef,
+            )
             print(f"Loaded existing collection: {self.collection_name}")
-        except ValueError:
+        except (ValueError, NotFoundError):
             collection = self.client.create_collection(
                 name=self.collection_name,
                 embedding_function=self.openai_ef,

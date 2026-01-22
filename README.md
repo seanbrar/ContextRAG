@@ -104,6 +104,14 @@ Optional (for OpenRouter chat routing or smoke tests):
 - `OPENROUTER_API_KEY`
 - `OPENROUTER_BASE_URL` (default: `https://openrouter.ai/api/v1`)
 - `OPENROUTER_CHAT_MODEL` (default: `mistralai/devstral-2512:free`)
+- `OPENROUTER_EMBEDDINGS_MODEL` (default: `qwen/qwen3-embedding-8b`)
+- `CONTEXTRAG_EMBED_PROVIDER` (default: `auto`; options: `openai`, `openrouter`, `local`)
+- `LOCAL_EMBEDDINGS_MODEL` (default: `sentence-transformers/all-MiniLM-L6-v2`)
+- `OPENROUTER_REFERER` (optional header for OpenRouter rankings)
+- `OPENROUTER_TITLE` (optional header for OpenRouter rankings)
+- `OPENROUTER_EMBED_PROVIDER_JSON` (optional JSON for OpenRouter provider routing)
+- `OPENROUTER_EMBED_PROVIDER_ORDER` (optional comma list for routing order)
+- `OPENROUTER_EMBED_ALLOW_FALLBACKS` (optional `true`/`false`)
 
 Model defaults can be overridden:
 
@@ -112,6 +120,15 @@ Model defaults can be overridden:
 - `OPENAI_CHAT_MODEL_MEDIUM` (default: `gpt-3.5-turbo-16k`)
 
 If you use OpenAI embeddings, set `OPENAI_EMBEDDINGS_MODEL=text-embedding-3-large`.
+If you use OpenRouter embeddings, set `OPENROUTER_EMBEDDINGS_MODEL` to a model that supports embeddings
+(for example `qwen/qwen3-embedding-8b`).
+If you use local embeddings, the model will be downloaded automatically.
+
+For OpenRouter embeddings with short context limits, use chunking:
+
+```bash
+poetry run contextrag index --input data/processed --collection contextrag --persist ./runs/chroma --chunk-words 400
+```
 
 ## Usage
 

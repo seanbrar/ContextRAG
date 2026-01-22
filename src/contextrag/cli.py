@@ -8,7 +8,7 @@ from typing import Iterable
 import click
 from openai import OpenAI
 
-from contextrag.config import load_config
+from contextrag.config import load_config, resolve_embed_provider
 from contextrag.core.tokenizer import count_tokens
 from contextrag.eval.runner import run_eval
 from contextrag.ingest.html_to_markdown import HTMLToMarkdownConverter
@@ -34,6 +34,24 @@ def _write_jsonl(path: Path, rows: Iterable[dict]) -> None:
 
 def _checksum(content: str) -> str:
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+
+def _chunk_words(text: str, chunk_words: int, overlap: int) -> list[str]:
+    words = text.split()
+    if not words:
+        return []
+    if chunk_words <= 0:
+        return [" ".join(words)]
+    chunks = []
+    step = max(chunk_words - overlap, 1)
+    for start in range(0, len(words), step):
+        chunk = words[start : start + chunk_words]
+        if not chunk:
+            continue
+        chunks.append(" ".join(chunk))
+        if start + chunk_words >= len(words):
+            break
+    return chunks
 
 
 @click.group()
@@ -195,13 +213,13 @@ def embed(
 
     if config.openai_api_key:
         client = OpenAI(api_key=config.openai_api_key)
+        used_model = model or config.openai_embeddings_model
     else:
         client = OpenAI(
             api_key=config.openrouter_api_key,
             base_url=config.openrouter_base_url,
         )
-
-    used_model = model or config.openai_embeddings_model
+        used_model = model or config.openrouter_embeddings_model
 
     rows: list[dict] = []
     for md_file in _iter_files(input_path, TEXT_EXTENSIONS):
@@ -236,14 +254,48 @@ def embed(
 @click.option("--input", "input_path", required=True, type=click.Path(path_type=Path))
 @click.option("--collection", default="contextrag")
 @click.option("--persist", "persist_path", default=None)
-def index(input_path: Path, collection: str, persist_path: str | None) -> None:
+@click.option("--embedding-model", "embedding_model", default=None)
+@click.option(
+    "--embed-provider",
+    "embed_provider",
+    type=click.Choice(["auto", "openai", "openrouter", "local"]),
+    default=None,
+)
+@click.option("--chunk-words", type=int, default=None)
+@click.option("--chunk-overlap", type=int, default=50)
+def index(
+    input_path: Path,
+    collection: str,
+    persist_path: str | None,
+    embedding_model: str | None,
+    embed_provider: str | None,
+    chunk_words: int | None,
+    chunk_overlap: int,
+) -> None:
     """Build a vector index from Markdown documents."""
-    vector_db = VectorDB(collection_name=collection, persist_path=persist_path)
+    config = load_config()
+    resolved_provider = resolve_embed_provider(config, embed_provider)
+    vector_db = VectorDB(
+        collection_name=collection,
+        persist_path=persist_path,
+        embedding_model=embedding_model,
+        embed_provider=embed_provider,
+    )
+    if resolved_provider == "openrouter" and chunk_words is None:
+        chunk_words = 400
+
     documents: list[str] = []
     ids: list[str] = []
     for md_file in _iter_files(input_path, TEXT_EXTENSIONS):
-        documents.append(md_file.read_text(encoding="utf-8"))
-        ids.append(md_file.stem)
+        content = md_file.read_text(encoding="utf-8")
+        if chunk_words:
+            chunks = _chunk_words(content, chunk_words, chunk_overlap)
+            for idx, chunk in enumerate(chunks):
+                documents.append(chunk)
+                ids.append(f"{md_file.stem}::chunk{idx}")
+        else:
+            documents.append(content)
+            ids.append(md_file.stem)
     vector_db.add_documents(documents=documents, ids=ids)
     click.echo(f"Indexed {len(documents)} documents into {collection}")
 
@@ -310,6 +362,9 @@ def doctor() -> None:
     for name, ok in checks:
         status = "ok" if ok else "missing"
         click.echo(f"{name}: {status}")
+    click.echo(
+        "embeddings_provider: {}".format(resolve_embed_provider(config, None))
+    )
 
     try:
         import tiktoken  # noqa: F401
