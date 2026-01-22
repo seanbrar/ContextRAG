@@ -1,7 +1,9 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
+from contextrag.config import load_config
+from contextrag.providers.base import ChatProvider
 
 class ChatManager:
     """A class to manage chat interactions with OpenAI models.
@@ -61,3 +63,27 @@ class ChatModels:
 
     GPT_3_5_TURBO_1106 = "gpt-3.5-turbo-1106"
     GPT_3_5_TURBO_16K = "gpt-3.5-turbo-16k"
+
+
+class OpenAIChatProvider(ChatProvider):
+    def __init__(
+        self,
+        model: str | None = None,
+        client: OpenAI | None = None,
+    ) -> None:
+        config = load_config()
+        self.model = model or config.openai_chat_model_short
+        self.client = client or OpenAI(api_key=config.openai_api_key)
+
+    def complete(
+        self,
+        messages: list[dict[str, Any]],
+        model: str | None = None,
+        temperature: float = 0,
+    ) -> str:
+        response = self.client.chat.completions.create(
+            model=model or self.model,
+            messages=messages,
+            temperature=temperature,
+        )
+        return response.choices[0].message.content
