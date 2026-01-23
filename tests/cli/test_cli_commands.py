@@ -3,6 +3,7 @@ import json
 from click.testing import CliRunner
 
 from contextrag import cli
+from contextrag.core import io
 from contextrag.cli import main
 from contextrag.config import AppConfig
 
@@ -179,21 +180,21 @@ def test_embed_command_writes_cache(monkeypatch, tmp_path):
     monkeypatch.setattr("contextrag.cli.load_config", lambda: config)
     monkeypatch.setattr("contextrag.cli.count_tokens", lambda text: 1)
 
-    class FakeClient:
-        def __init__(self, api_key=None, base_url=None):
-            self.api_key = api_key
-            self.base_url = base_url
-            self.embeddings = self
+    captured = {}
 
-        def create(self, model, input, encoding_format):
-            assert model == "model"
+    def fake_build_embedding_function(config, embedding_model, embed_provider):
+        captured["model"] = embedding_model
+        captured["provider"] = embed_provider
 
-            class Response:
-                data = [type("Item", (), {"embedding": [0.1, 0.2, 0.3]})()]
+        def embed(texts):
+            assert texts == ["hello"]
+            return [[0.1, 0.2, 0.3]]
 
-            return Response()
+        return embed
 
-    monkeypatch.setattr("contextrag.cli.OpenAI", FakeClient)
+    monkeypatch.setattr(
+        "contextrag.cli.build_embedding_function", fake_build_embedding_function
+    )
 
     runner = CliRunner()
     result = runner.invoke(
@@ -210,6 +211,8 @@ def test_embed_command_writes_cache(monkeypatch, tmp_path):
     )
     assert result.exit_code == 0
     assert cache_path.exists()
+    assert captured["provider"] == "openai"
+    assert captured["model"] is None
 
     rows = [
         json.loads(line)
@@ -271,7 +274,7 @@ def test_embed_command_uses_openrouter_cache(monkeypatch, tmp_path):
         openrouter_embeddings_model="qwen/qwen3-embedding-8b",
         local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
         contextrag_chat_provider="openai",
-        contextrag_embed_provider="openai",
+        contextrag_embed_provider="auto",
         openrouter_referer=None,
         openrouter_title=None,
         openrouter_embed_provider_json=None,
@@ -281,17 +284,22 @@ def test_embed_command_uses_openrouter_cache(monkeypatch, tmp_path):
     monkeypatch.setattr("contextrag.cli.load_config", lambda: config)
     monkeypatch.setattr("contextrag.cli.count_tokens", lambda text: 1)
 
-    checksum = cli._checksum("hello")
+    checksum = io.checksum("hello")
     cache_path.write_text(json.dumps({checksum: [0.9]}), encoding="utf-8")
 
-    class FakeClient:
-        def __init__(self, api_key=None, base_url=None):
-            self.embeddings = self
+    captured = {}
 
-        def create(self, model, input, encoding_format):
+    def fake_build_embedding_function(config, embedding_model, embed_provider):
+        captured["provider"] = embed_provider
+
+        def embed(texts):
             raise AssertionError("should use cache")
 
-    monkeypatch.setattr("contextrag.cli.OpenAI", FakeClient)
+        return embed
+
+    monkeypatch.setattr(
+        "contextrag.cli.build_embedding_function", fake_build_embedding_function
+    )
 
     runner = CliRunner()
     result = runner.invoke(
@@ -307,6 +315,133 @@ def test_embed_command_uses_openrouter_cache(monkeypatch, tmp_path):
         ],
     )
     assert result.exit_code == 0
+    assert captured["provider"] == "openrouter"
+
+
+def test_embed_command_allows_local_provider_without_keys(monkeypatch, tmp_path):
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "output"
+    input_dir.mkdir()
+    (input_dir / "doc.md").write_text("hello", encoding="utf-8")
+
+    config = AppConfig(
+        openai_api_key=None,
+        openai_embeddings_model="model",
+        openai_chat_model_short="gpt-3.5-turbo-1106",
+        openai_chat_model_medium="gpt-3.5-turbo-16k",
+        openrouter_api_key=None,
+        openrouter_base_url="https://openrouter.ai/api/v1",
+        openrouter_chat_model="mistralai/devstral-2512:free",
+        openrouter_embeddings_model="qwen/qwen3-embedding-8b",
+        local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
+        contextrag_chat_provider="openai",
+        contextrag_embed_provider="auto",
+        openrouter_referer=None,
+        openrouter_title=None,
+        openrouter_embed_provider_json=None,
+        openrouter_embed_provider_order=None,
+        openrouter_embed_allow_fallbacks=None,
+    )
+    monkeypatch.setattr("contextrag.cli.load_config", lambda: config)
+    monkeypatch.setattr("contextrag.cli.count_tokens", lambda text: 1)
+
+    captured = {}
+
+    def fake_build_embedding_function(config, embedding_model, embed_provider):
+        captured["provider"] = embed_provider
+
+        def embed(texts):
+            return [[0.5]]
+
+        return embed
+
+    monkeypatch.setattr(
+        "contextrag.cli.build_embedding_function", fake_build_embedding_function
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "embed",
+            "--input",
+            str(input_dir),
+            "--output",
+            str(output_dir),
+            "--embed-provider",
+            "local",
+        ],
+    )
+    assert result.exit_code == 0
+    assert captured["provider"] == "local"
+    rows = [
+        json.loads(line)
+        for line in (output_dir / "embeddings.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert rows[0]["embedding"] == [0.5]
+
+
+def test_embed_command_uses_configured_local_provider(monkeypatch, tmp_path):
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "output"
+    input_dir.mkdir()
+    (input_dir / "doc.md").write_text("hello", encoding="utf-8")
+
+    config = AppConfig(
+        openai_api_key=None,
+        openai_embeddings_model="model",
+        openai_chat_model_short="gpt-3.5-turbo-1106",
+        openai_chat_model_medium="gpt-3.5-turbo-16k",
+        openrouter_api_key=None,
+        openrouter_base_url="https://openrouter.ai/api/v1",
+        openrouter_chat_model="mistralai/devstral-2512:free",
+        openrouter_embeddings_model="qwen/qwen3-embedding-8b",
+        local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
+        contextrag_chat_provider="openai",
+        contextrag_embed_provider="local",
+        openrouter_referer=None,
+        openrouter_title=None,
+        openrouter_embed_provider_json=None,
+        openrouter_embed_provider_order=None,
+        openrouter_embed_allow_fallbacks=None,
+    )
+    monkeypatch.setattr("contextrag.cli.load_config", lambda: config)
+    monkeypatch.setattr("contextrag.cli.count_tokens", lambda text: 1)
+
+    captured = {}
+
+    def fake_build_embedding_function(config, embedding_model, embed_provider):
+        captured["provider"] = embed_provider
+
+        def embed(texts):
+            return [[0.7]]
+
+        return embed
+
+    monkeypatch.setattr(
+        "contextrag.cli.build_embedding_function", fake_build_embedding_function
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "embed",
+            "--input",
+            str(input_dir),
+            "--output",
+            str(output_dir),
+        ],
+    )
+    assert result.exit_code == 0
+    assert captured["provider"] == "local"
+    rows = [
+        json.loads(line)
+        for line in (output_dir / "embeddings.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+    assert rows[0]["embedding"] == [0.7]
 
 
 def test_index_command_chunks(monkeypatch, tmp_path):

@@ -1,4 +1,9 @@
+import logging
 import re
+
+from contextrag.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def extract_categories_from_file(file_path):
@@ -38,8 +43,9 @@ def extract_categories_from_file(file_path):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     file_path = "output_2024-01-11T05-16-42.txt"
     categories, total_number = extract_categories_from_file(file_path)
 
-    print("Categories:", categories)
-    print("Total Number of Categories:", total_number)
+    logger.info("Categories: %s", categories)
+    logger.info("Total Number of Categories: %s", total_number)

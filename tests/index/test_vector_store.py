@@ -3,6 +3,7 @@ import json
 import pytest
 
 from contextrag.config import AppConfig
+from contextrag.embeddings import provider
 from contextrag.index import vector_store
 
 
@@ -40,7 +41,7 @@ def test_build_embedding_function_openrouter_json(monkeypatch):
     )
 
     monkeypatch.setattr(
-        vector_store, "OpenRouterEmbeddingFunction", lambda **kwargs: DummyEmbedding()
+        provider, "OpenRouterEmbeddingFunction", lambda **kwargs: DummyEmbedding()
     )
     db = vector_store.VectorDB.__new__(vector_store.VectorDB)
     ef = vector_store.VectorDB._build_embedding_function(
@@ -73,7 +74,7 @@ def test_build_embedding_function_openrouter_provider_order(monkeypatch):
         captured.update(kwargs)
         return DummyEmbedding()
 
-    monkeypatch.setattr(vector_store, "OpenRouterEmbeddingFunction", fake_openrouter)
+    monkeypatch.setattr(provider, "OpenRouterEmbeddingFunction", fake_openrouter)
     db = vector_store.VectorDB.__new__(vector_store.VectorDB)
     vector_store.VectorDB._build_embedding_function(db, config, None, "openrouter")
     assert captured["provider"] == {"order": ["alpha", "beta"], "allow_fallbacks": True}
@@ -83,7 +84,7 @@ def test_build_embedding_function_local(monkeypatch):
     config = _config(openai_api_key=None, openrouter_api_key=None)
 
     monkeypatch.setattr(
-        vector_store.embedding_functions,
+        provider.embedding_functions,
         "SentenceTransformerEmbeddingFunction",
         lambda model_name: DummyEmbedding(),
     )
@@ -95,7 +96,7 @@ def test_build_embedding_function_local(monkeypatch):
 def test_build_embedding_function_default(monkeypatch):
     config = _config()
     monkeypatch.setattr(
-        vector_store.embedding_functions,
+        provider.embedding_functions,
         "DefaultEmbeddingFunction",
         lambda: DummyEmbedding(),
     )

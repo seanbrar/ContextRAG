@@ -171,6 +171,13 @@ from contextrag.ingest.html_to_markdown import HTMLToMarkdownConverter
 converter = HTMLToMarkdownConverter("./my_documents")
 converter.convert_all_files(use_target_folder=True)
 ```
+
+### Example Scripts
+
+Example scripts live in `scripts/`:
+
+- `scripts/html_to_markdown_example.py` — convert HTML to Markdown with routing
+- `scripts/vector_store_example.py` — index/query a small in-memory collection
 ## Context Length Management
 
 ContextRAG implements a three-tier routing strategy based on document length:

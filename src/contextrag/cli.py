@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
-from typing import Iterable
 
 import click
-from openai import OpenAI
 
 from contextrag.config import load_config, resolve_embed_provider
+from contextrag.core.chunking import chunk_text_by_words
+from contextrag.core.constants import MEDIUM_MAX_TOKENS, SHORT_MAX_TOKENS
+from contextrag.core.io import checksum as checksum_text, iter_files, write_jsonl
+from contextrag.core.routing import route_bucket
 from contextrag.core.tokenizer import count_tokens
+from contextrag.embeddings.provider import build_embedding_function
 from contextrag.eval.runner import run_eval
 from contextrag.experiments.eval_config import EvalConfig, load_eval_config
 from contextrag.experiments.run_logger import write_run_artifacts
@@ -18,42 +20,11 @@ from contextrag.ingest.markdown_processing import modify_markdown
 from contextrag.index.vector_store import VectorDB
 
 
-def _iter_files(root: Path, extensions: Iterable[str]) -> list[Path]:
-    files: list[Path] = []
-    for ext in extensions:
-        files.extend(root.rglob(f"*{ext}"))
-    return sorted(files)
-
-
 TEXT_EXTENSIONS = (".md", ".txt")
 
 
-def _write_jsonl(path: Path, rows: Iterable[dict]) -> None:
-    with path.open("w", encoding="utf-8") as handle:
-        for row in rows:
-            handle.write(json.dumps(row) + "\n")
-
-
-def _checksum(content: str) -> str:
-    return hashlib.sha256(content.encode("utf-8")).hexdigest()
-
-
 def _chunk_words(text: str, chunk_words: int, overlap: int) -> list[str]:
-    words = text.split()
-    if not words:
-        return []
-    if chunk_words <= 0:
-        return [" ".join(words)]
-    chunks = []
-    step = max(chunk_words - overlap, 1)
-    for start in range(0, len(words), step):
-        chunk = words[start : start + chunk_words]
-        if not chunk:
-            continue
-        chunks.append(" ".join(chunk))
-        if start + chunk_words >= len(words):
-            break
-    return chunks
+    return chunk_text_by_words(text, chunk_words, overlap)
 
 
 @click.group()
@@ -82,8 +53,8 @@ def ingest(
     """Convert raw documents into cleaned Markdown."""
     output_path.mkdir(parents=True, exist_ok=True)
 
-    html_files = _iter_files(input_path, [".html"])
-    md_files = _iter_files(input_path, TEXT_EXTENSIONS)
+    html_files = iter_files(input_path, [".html"])
+    md_files = iter_files(input_path, TEXT_EXTENSIONS)
 
     if format_ == "auto":
         format_ = "html" if html_files else "markdown"
@@ -131,15 +102,15 @@ def ingest(
                 }
             )
 
-    _write_jsonl(output_path / "manifest.jsonl", manifest_rows)
+    write_jsonl(output_path / "manifest.jsonl", manifest_rows)
     click.echo(f"Ingested {len(manifest_rows)} files into {output_path}")
 
 
 @main.command()
 @click.option("--input", "input_path", required=True, type=click.Path(path_type=Path))
 @click.option("--output", "output_path", required=True, type=click.Path(path_type=Path))
-@click.option("--short-max", type=int, default=3500)
-@click.option("--medium-max", type=int, default=15000)
+@click.option("--short-max", type=int, default=SHORT_MAX_TOKENS)
+@click.option("--medium-max", type=int, default=MEDIUM_MAX_TOKENS)
 @click.option(
     "--chat-provider",
     type=click.Choice(["openai", "openrouter"]),
@@ -163,15 +134,14 @@ def route(
         path.mkdir(parents=True, exist_ok=True)
 
     routing_rows: list[dict] = []
-    for md_file in _iter_files(input_path, TEXT_EXTENSIONS):
+    for md_file in iter_files(input_path, TEXT_EXTENSIONS):
         content = md_file.read_text(encoding="utf-8")
         token_count = count_tokens(content)
-        if token_count <= short_max:
-            bucket = "short"
-        elif token_count <= medium_max:
-            bucket = "medium"
-        else:
-            bucket = "long"
+        bucket = route_bucket(
+            token_count,
+            short_max=short_max,
+            medium_max=medium_max,
+        )
         output_file = buckets[bucket] / md_file.name
         output_file.write_text(content, encoding="utf-8")
         routing_rows.append(
@@ -184,7 +154,7 @@ def route(
             }
         )
 
-    _write_jsonl(output_path / "routing.jsonl", routing_rows)
+    write_jsonl(output_path / "routing.jsonl", routing_rows)
     click.echo(f"Routed {len(routing_rows)} files into {output_path}")
 
 
@@ -193,15 +163,28 @@ def route(
 @click.option("--output", "output_path", required=True, type=click.Path(path_type=Path))
 @click.option("--model", default=None)
 @click.option("--cache", "cache_path", default=None, type=click.Path(path_type=Path))
+@click.option(
+    "--embed-provider",
+    "embed_provider",
+    type=click.Choice(["auto", "openai", "openrouter", "local"]),
+    default=None,
+)
 def embed(
     input_path: Path,
     output_path: Path,
     model: str | None,
     cache_path: Path | None,
+    embed_provider: str | None,
 ) -> None:
     """Generate embeddings for Markdown documents."""
     config = load_config()
-    if not config.openai_api_key and not config.openrouter_api_key:
+    explicit_provider = embed_provider
+    resolved_provider = resolve_embed_provider(config, explicit_provider=explicit_provider)
+    if resolved_provider == "openai" and not config.openai_api_key:
+        raise click.ClickException(
+            "OPENAI_API_KEY or OPENROUTER_API_KEY is required for embeddings."
+        )
+    if resolved_provider == "openrouter" and not config.openrouter_api_key:
         raise click.ClickException(
             "OPENAI_API_KEY or OPENROUTER_API_KEY is required for embeddings."
         )
@@ -213,29 +196,20 @@ def embed(
     if cache_path and cache_path.exists():
         cache = json.loads(cache_path.read_text(encoding="utf-8"))
 
-    if config.openai_api_key:
-        client = OpenAI(api_key=config.openai_api_key)
-        used_model = model or config.openai_embeddings_model
-    else:
-        client = OpenAI(
-            api_key=config.openrouter_api_key,
-            base_url=config.openrouter_base_url,
-        )
-        used_model = model or config.openrouter_embeddings_model
+    embedding_function = build_embedding_function(
+        config=config,
+        embedding_model=model,
+        embed_provider=resolved_provider,
+    )
 
     rows: list[dict] = []
-    for md_file in _iter_files(input_path, TEXT_EXTENSIONS):
+    for md_file in iter_files(input_path, TEXT_EXTENSIONS):
         content = md_file.read_text(encoding="utf-8")
-        checksum = _checksum(content)
-        embedding = cache.get(checksum)
+        content_checksum = checksum_text(content)
+        embedding = cache.get(content_checksum)
         if embedding is None:
-            response = client.embeddings.create(
-                model=used_model,
-                input=content,
-                encoding_format="float",
-            )
-            embedding = response.data[0].embedding
-            cache[checksum] = embedding
+            embedding = embedding_function([content])[0]
+            cache[content_checksum] = embedding
         rows.append(
             {
                 "id": md_file.stem,
@@ -245,7 +219,7 @@ def embed(
             }
         )
 
-    _write_jsonl(embeddings_path, rows)
+    write_jsonl(embeddings_path, rows)
     if cache_path:
         cache_path.write_text(json.dumps(cache), encoding="utf-8")
 
@@ -288,7 +262,7 @@ def index(
 
     documents: list[str] = []
     ids: list[str] = []
-    for md_file in _iter_files(input_path, TEXT_EXTENSIONS):
+    for md_file in iter_files(input_path, TEXT_EXTENSIONS):
         content = md_file.read_text(encoding="utf-8")
         if chunk_words:
             chunks = _chunk_words(content, chunk_words, chunk_overlap)

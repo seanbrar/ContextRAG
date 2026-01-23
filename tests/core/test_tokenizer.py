@@ -1,6 +1,7 @@
 import pytest
 
 from contextrag.core import tokenizer
+from contextrag.core.constants import TOKENIZER_NAME
 
 
 class DummyEncoding:
@@ -15,7 +16,7 @@ def test_count_tokens_uses_tiktoken(monkeypatch):
     dummy = DummyEncoding(tokens=[1, 2, 3, 4])
 
     def fake_get_encoding(name):
-        assert name == "cl100k_base"
+        assert name == TOKENIZER_NAME
         return dummy
 
     monkeypatch.setattr(tokenizer.tiktoken, "get_encoding", fake_get_encoding)

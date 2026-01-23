@@ -8,7 +8,8 @@ def test_read_markdown_files_filters_md(tmp_path):
     assert list(files.keys()) == ["a.md"]
 
 
-def test_main_processes_and_skips(monkeypatch, tmp_path, capsys):
+def test_main_processes_and_skips(monkeypatch, tmp_path, caplog):
+    caplog.set_level("INFO")
     monkeypatch.chdir(tmp_path)
 
     files = {
@@ -51,7 +52,9 @@ def test_main_processes_and_skips(monkeypatch, tmp_path, capsys):
 
     monkeypatch.setattr(category_assignment, "read_markdown_files", lambda: files)
     monkeypatch.setattr(category_assignment, "count_tokens", fake_count_tokens)
-    monkeypatch.setattr(category_assignment, "preprocess_text", lambda text: text)
+    monkeypatch.setattr(
+        category_assignment, "preprocess_similarity_text", lambda text: text
+    )
     monkeypatch.setattr(category_assignment, "ChatManager", FakeChatManager)
     monkeypatch.setattr(category_assignment, "datetime", FakeDateTime)
 
@@ -63,4 +66,4 @@ def test_main_processes_and_skips(monkeypatch, tmp_path, capsys):
     assert "Categories: Alpha, Beta" in output
     assert "medium.md" in output
     assert "No categories found" in output
-    assert "Skipped long.md due to excessive token count" in capsys.readouterr().out
+    assert "Skipped long.md due to excessive token count" in caplog.text

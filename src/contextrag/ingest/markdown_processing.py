@@ -1,13 +1,20 @@
 import re
 
 
-def modify_markdown(content):
+def _ensure_str(content):
+    if not isinstance(content, str):
+        raise ValueError("Content must be a string")
+    return content
+
+
+def modify_markdown(content: str) -> str:
     """
     Modify Markdown content by applying a series of transformations.
 
     :param content: Markdown content as a string.
     :return: Modified Markdown content.
     """
+    content = _ensure_str(content)
     content = remove_above_first_header_if_level_one(content)
     content = remove_inline_attachments(content)
     content = remove_attachments_header_and_first_line(content)
@@ -16,38 +23,14 @@ def modify_markdown(content):
     return content.strip()
 
 
-def remove_above_first_header(content):
-    """
-    Remove everything above the first Markdown header in the content. A Markdown
-    header is defined as a line starting with '#', optionally preceded by whitespace.
-
-    :param content: Markdown content as a string.
-    :return: Markdown content without the section above the first header.
-    """
-    # Validate input
-    if not isinstance(content, str):
-        raise ValueError("Content must be a string")
-
-    # Precompile regex pattern for the first header
-    first_header_pattern = re.compile(r"^(?:\s*)#", flags=re.MULTILINE)
-
-    # Search for the first header and remove content above it if found
-    match = first_header_pattern.search(content)
-    if match:
-        return content[match.start() :]
-    else:
-        return content
-
-
-def remove_above_first_header_if_level_one(content):
+def remove_above_first_header_if_level_one(content: str) -> str:
     """
     Remove everything above the first Markdown header only if it is a level-one header.
 
     :param content: Markdown content as a string.
     :return: Markdown content without the section above the first level-one header.
     """
-    if not isinstance(content, str):
-        raise ValueError("Content must be a string")
+    content = _ensure_str(content)
 
     first_header_pattern = re.compile(r"^(?:\s*)(#+)\s", flags=re.MULTILINE)
     match = first_header_pattern.search(content)
@@ -56,43 +39,40 @@ def remove_above_first_header_if_level_one(content):
     return content
 
 
-def remove_attachments_header_and_first_line(content):
+def remove_attachments_header_and_first_line(content: str) -> str:
     """
     Remove the 'Attachments' header line and the line that immediately follows it.
 
     :param content: Markdown content as a string.
     :return: Markdown content without the 'Attachments' header and first line.
     """
-    if not isinstance(content, str):
-        raise ValueError("Content must be a string")
+    content = _ensure_str(content)
 
     pattern = re.compile(r"(^|\n)## Attachments:\n[^\n]*(?:\n|$)")
     return re.sub(pattern, r"\1", content)
 
 
-def remove_attachments_section(content):
+def remove_attachments_section(content: str) -> str:
     """
     Remove the 'Attachments' subheader and everything that follows.
 
     :param content: Markdown content as a string.
     :return: Markdown content without the 'Attachments' section.
     """
-    if not isinstance(content, str):
-        raise ValueError("Content must be a string")
+    content = _ensure_str(content)
 
     # Split on the first occurrence of '\n## Attachments:' and keep the part before it.
     return re.split(r"\n## Attachments:", content, maxsplit=1)[0]
 
 
-def remove_inline_attachments(content):
+def remove_inline_attachments(content: str) -> str:
     """
     Remove inline attachments from the Markdown content.
 
     :param content: Markdown content as a string.
     :return: Markdown content without inline attachments.
     """
-    if not isinstance(content, str):
-        raise ValueError("Content must be a string")
+    content = _ensure_str(content)
 
     nested_pattern = re.compile(r"\[!\[.*?\]\(attachments/.*?\)\]\(attachments/.*?\)")
     standard_pattern = re.compile(r"!\[.*?\]\(attachments/.*?\)")
@@ -101,41 +81,7 @@ def remove_inline_attachments(content):
     return re.sub(standard_pattern, "", content)
 
 
-def remove_attachments(content):
-    """
-    Remove the 'Attachments' section and inline attachments from the Markdown content.
-
-    This function performs two main tasks:
-    1. Removes the section starting with '## Attachments:' and everything that follows.
-    2. Removes lines containing inline attachments, both in the standard and nested formats.
-
-    :param content: Markdown content as a string.
-    :return: Markdown content without the 'Attachments' section and inline attachments.
-    """
-    # Validate input
-    if not isinstance(content, str):
-        raise ValueError("Content must be a string")
-
-    # Precompile regex patterns for efficiency
-    attachments_section_pattern = re.compile(r"\n## Attachments:.*", flags=re.DOTALL)
-    standard_inline_attachment_pattern = re.compile(
-        r"^.*!\[.*?\]\(attachments/.*?\).*$", flags=re.MULTILINE
-    )
-    nested_inline_attachment_pattern = re.compile(
-        r"^.*\[!\[.*?\]\(attachments/.*?\)\]\(attachments/.*?\).*$", flags=re.MULTILINE
-    )
-
-    # Remove 'Attachments' section
-    content = re.sub(attachments_section_pattern, "", content)
-
-    # Remove standard and nested inline attachments
-    content = re.sub(standard_inline_attachment_pattern, "", content)
-    content = re.sub(nested_inline_attachment_pattern, "", content)
-
-    return content
-
-
-def clean_up_lines(content):
+def clean_up_lines(content: str) -> str:
     """
     Clean up lines in the Markdown content by performing two actions:
     1. Removing trailing spaces or tabs from every line.
@@ -145,8 +91,7 @@ def clean_up_lines(content):
     :return: Markdown content with cleaned-up lines.
     """
     # Validate input
-    if not isinstance(content, str):
-        raise ValueError("Content must be a string")
+    content = _ensure_str(content)
 
     # Precompile regex patterns for efficiency
     trailing_spaces_pattern = re.compile(r"[ \t]+$", flags=re.MULTILINE)
@@ -160,7 +105,7 @@ def clean_up_lines(content):
     return content
 
 
-def convert_indented_blocks_to_code(content):
+def convert_indented_blocks_to_code(content: str) -> str:
     """
     Convert blocks of text indented by four spaces into Markdown code blocks.
     This transformation enhances readability and formatting in Markdown-rendered content.
@@ -169,8 +114,7 @@ def convert_indented_blocks_to_code(content):
     :return: Markdown content with indented text blocks converted to code blocks.
     """
     # Validate input
-    if not isinstance(content, str):
-        raise ValueError("Content must be a string")
+    content = _ensure_str(content)
 
     if not content:
         return content
@@ -189,7 +133,7 @@ def convert_indented_blocks_to_code(content):
     return re.sub(indented_blocks_pattern, wrap_block, content)
 
 
-def reduce_excessive_line_breaks(content):
+def reduce_excessive_line_breaks(content: str) -> str:
     """
     Reduce instances of more than two consecutive line breaks in the Markdown content.
     This function ensures that the spacing in the rendered Markdown does not have
@@ -199,11 +143,40 @@ def reduce_excessive_line_breaks(content):
     :return: Markdown content with reduced excessive line breaks.
     """
     # Validate input
-    if not isinstance(content, str):
-        raise ValueError("Content must be a string")
+    content = _ensure_str(content)
 
     # Precompile regex pattern for excessive line breaks
     excessive_line_breaks_pattern = re.compile(r"(\n[ \t]*){3,}", flags=re.MULTILINE)
 
     # Reduce excessive line breaks to two
     return re.sub(excessive_line_breaks_pattern, "\n\n", content)
+
+
+def strip_basic_markdown_formatting(content: str) -> str:
+    """
+    Remove basic Markdown formatting to leave plain text.
+
+    This is intentionally conservative and mirrors the minimal formatting removal
+    used by embedding preprocessing.
+    """
+    content = _ensure_str(content)
+
+    content = re.sub(r"^#+.*$", "", content, flags=re.MULTILINE)
+    content = re.sub(r"\!\[.*?\]\(.*?\)", "", content)
+    content = re.sub(r"\[.*?\]\(.*?\)", "", content)
+    return content
+
+
+def preprocess_similarity_text(content: str) -> str:
+    """
+    Preprocess Markdown for embedding similarity comparisons.
+
+    This mirrors the historical behavior in embeddings/similarity.py so tests and
+    comparisons remain stable.
+    """
+    content = remove_attachments_section(content)
+    content = remove_inline_attachments(content)
+    content = clean_up_lines(content)
+    content = reduce_excessive_line_breaks(content)
+    content = strip_basic_markdown_formatting(content)
+    return content

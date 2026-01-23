@@ -7,15 +7,17 @@ from pathlib import Path
 import tiktoken
 
 from contextrag.config import load_config, resolve_embed_provider
+from contextrag.core.chunking import chunk_text_by_tokens
+from contextrag.core.constants import (
+    LONG_CHUNK_TOKENS,
+    MEDIUM_CHUNK_TOKENS,
+    MEDIUM_MAX_TOKENS,
+    SHORT_MAX_TOKENS,
+    TOKENIZER_NAME,
+    UNIFORM_CHUNK_TOKENS,
+)
 from contextrag.eval.metrics import precision_at_k, recall_at_k
 from contextrag.index.vector_store import VectorDB
-
-SHORT_MAX = 3500
-MEDIUM_MAX = 15000
-UNIFORM_CHUNK_TOKENS = 1000
-MEDIUM_CHUNK_TOKENS = 2000
-LONG_CHUNK_TOKENS = 1000
-TOKENIZER_NAME = "cl100k_base"
 
 # Embedding costs in USD per million tokens (as of Jan 2025)
 EMBEDDING_COSTS_PER_MILLION: dict[str, float] = {
@@ -51,15 +53,7 @@ def _load_queries(path: Path) -> list[dict]:
 
 
 def _chunk_text(text: str, chunk_tokens: int) -> list[str]:
-    encoding = tiktoken.get_encoding(TOKENIZER_NAME)
-    tokens = encoding.encode(text)
-    if not tokens:
-        return []
-    chunks = []
-    for idx in range(0, len(tokens), chunk_tokens):
-        chunk_tokens_slice = tokens[idx : idx + chunk_tokens]
-        chunks.append(encoding.decode(chunk_tokens_slice))
-    return chunks
+    return chunk_text_by_tokens(text, chunk_tokens, TOKENIZER_NAME)
 
 
 def _build_index_inputs(
@@ -101,13 +95,13 @@ def _build_index_inputs(
                 chunk_to_doc[chunk_id] = doc_id
                 total_indexed_tokens += len(encoding.encode(chunk))
         else:
-            if doc_tokens <= SHORT_MAX:
+            if doc_tokens <= SHORT_MAX_TOKENS:
                 docs_by_category["short"] += 1
                 documents.append(content)
                 ids.append(doc_id)
                 chunk_to_doc[doc_id] = doc_id
                 total_indexed_tokens += doc_tokens
-            elif doc_tokens <= MEDIUM_MAX:
+            elif doc_tokens <= MEDIUM_MAX_TOKENS:
                 docs_by_category["medium"] += 1
                 chunks = _chunk_text(content, MEDIUM_CHUNK_TOKENS)
                 for idx, chunk in enumerate(chunks):

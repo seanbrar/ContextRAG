@@ -87,3 +87,10 @@ def test_finalize_entries_adds_urls(monkeypatch):
     content = "[EW-9] Fixed\nNo key here"
     result = rp.finalize_entries(content)
     assert "https://example.atlassian.net/browse/EW-9" in result
+
+
+def test_transform_entries_flushes_buffer(monkeypatch):
+    monkeypatch.setattr(rp, "COMPANY_NAME", "example")
+    content = "Intro line\n[EW-1] Fixed"
+    result = rp.transform_entries(content)
+    assert "https://example.atlassian.net/browse/EW-1" in result

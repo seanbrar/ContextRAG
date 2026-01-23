@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import pytest
 
+from contextrag.core import cache, io
 from contextrag.embeddings import similarity
 
 
@@ -26,8 +27,8 @@ def test_preprocess_text_strips_attachments_and_formatting():
 def test_compute_similarity_uses_cache_and_openai(monkeypatch):
     files = {"a.md": "alpha", "b.md": "beta"}
     checksums = {
-        "a.md": similarity.calculate_checksum("alpha"),
-        "b.md": similarity.calculate_checksum("beta"),
+        "a.md": io.checksum("alpha"),
+        "b.md": io.checksum("beta"),
     }
     cache = {checksums["a.md"]: [1.0, 0.0]}
     calls = {"count": 0}
@@ -54,15 +55,15 @@ def test_compute_similarity_uses_cache_and_openai(monkeypatch):
 
 
 def test_load_embeddings_cache_missing(tmp_path):
-    cache = similarity.load_embeddings_cache(tmp_path / "missing.json")
-    assert cache == {}
+    loaded = cache.load_json_cache(tmp_path / "missing.json")
+    assert loaded == {}
 
 
 def test_update_embeddings_cache_roundtrip(tmp_path):
     cache_path = tmp_path / "cache.json"
     data = {"a": [1.0, 2.0]}
-    similarity.update_embeddings_cache(cache_path, data)
-    loaded = similarity.load_embeddings_cache(cache_path)
+    cache.save_json_cache(cache_path, data)
+    loaded = cache.load_json_cache(cache_path)
     assert loaded == data
 
 
@@ -71,7 +72,7 @@ def test_read_markdown_files_and_checksums(tmp_path):
     (tmp_path / "b.txt").write_text("beta", encoding="utf-8")
     files, checksums = similarity.read_markdown_files(tmp_path)
     assert list(files.keys()) == ["a.md"]
-    assert checksums["a.md"] == similarity.calculate_checksum("alpha")
+    assert checksums["a.md"] == io.checksum("alpha")
 
 
 def test_group_similar_files_threshold():
@@ -116,8 +117,8 @@ def test_count_tokens_rejects_non_string():
 def test_compute_similarity_skips_large_documents(monkeypatch, capsys):
     files = {"a.md": "alpha", "b.md": "beta"}
     checksums = {
-        "a.md": similarity.calculate_checksum("alpha"),
-        "b.md": similarity.calculate_checksum("beta"),
+        "a.md": io.checksum("alpha"),
+        "b.md": io.checksum("beta"),
     }
     cache = {checksums["a.md"]: [1.0, 0.0]}
 
@@ -153,8 +154,8 @@ def test_main_flow_uses_cache(monkeypatch, tmp_path):
     docs_dir.mkdir()
     (docs_dir / "a.md").write_text("alpha", encoding="utf-8")
 
-    monkeypatch.setattr(similarity, "load_embeddings_cache", lambda _: {})
-    monkeypatch.setattr(similarity, "update_embeddings_cache", lambda *_: None)
+    monkeypatch.setattr(similarity, "load_json_cache", lambda _: {})
+    monkeypatch.setattr(similarity, "save_json_cache", lambda *_: None)
     monkeypatch.setattr(similarity, "compute_similarity", lambda *_: np.eye(1))
 
     similarity.main(str(docs_dir), debug=False, output_file=str(tmp_path / "out.txt"))

@@ -1,58 +1,17 @@
 import argparse
-import hashlib
-import json
 import os
-import re
-
 import numpy as np
-import tiktoken
 from dotenv import load_dotenv
 from openai import OpenAI
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import normalize
 
+from contextrag.core.cache import load_json_cache, save_json_cache
+from contextrag.core.io import checksum as checksum_text
+from contextrag.core import tokenizer
+from contextrag.ingest.markdown_processing import preprocess_similarity_text
+
 load_dotenv()
-
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-
-def calculate_checksum(file_content):
-    """Calculate SHA-256 hash of file content.
-
-    Args:
-        file_content (str): Content of the file to hash.
-
-    Returns:
-        str: Hexadecimal representation of the SHA-256 hash.
-    """
-    return hashlib.sha256(file_content.encode()).hexdigest()
-
-
-def load_embeddings_cache(cache_file):
-    """Load cached embeddings from a JSON file.
-
-    Args:
-        cache_file (str): Path to the cache file.
-
-    Returns:
-        dict: Cached embeddings or empty dict if file not found.
-    """
-    try:
-        with open(cache_file, "r") as file:
-            return json.load(file)
-    except FileNotFoundError:
-        return {}
-
-
-def update_embeddings_cache(cache_file, cache_data):
-    """Update the embeddings cache file with new data.
-
-    Args:
-        cache_file (str): Path to the cache file.
-        cache_data (dict): Updated cache data to save.
-    """
-    with open(cache_file, "w") as file:
-        json.dump(cache_data, file)
 
 
 def parse_arguments():
@@ -100,9 +59,9 @@ def read_markdown_files(folder_path):
         if filename.endswith(".md"):
             with open(os.path.join(folder_path, filename), "r") as file:
                 content = file.read()
-                checksum = calculate_checksum(content)
-                markdown_files[filename] = content
-                checksums[filename] = checksum
+            checksum = checksum_text(content)
+            markdown_files[filename] = content
+            checksums[filename] = checksum
     return markdown_files, checksums
 
 
@@ -115,40 +74,11 @@ def preprocess_text(text):
     Returns:
         str: Cleaned and preprocessed text.
     """
-    # Complex logic
-    # Remove attachments subheader and everything below
-    text = re.split(r"\n## Attachments:", text, maxsplit=1)[0]
-
-    # Remove inline attachments
-    text = re.sub(r"^.*!\[.*?\]\(attachments/.*?\).*$", "", text, flags=re.MULTILINE)
-    text = re.sub(
-        r"^.*\[!\[.*?\]\(attachments/.*?\)\]\(attachments/.*?\).*$",
-        "",
-        text,
-        flags=re.MULTILINE,
-    )
-
-    # Remove trailing spaces from every line
-    text = re.sub(r"[ \t]+$", "", text, flags=re.MULTILINE)
-
-    # Remove lines that only consist of spaces or tab characters
-    text = re.sub(r"^[\t ]+$", "", text, flags=re.MULTILINE)
-
-    # Reduce excessive line breaks to two
-    # Account for lines with spaces but no other content
-    text = re.sub(r"(\n[ \t]*){3,}", "\n\n", text)
-
-    # Simple logic
-    # Remove markdown formatting (basic example)
-    text = re.sub(r"^#+.*$", "", text, flags=re.MULTILINE)  # Remove headers
-    text = re.sub(r"\!\[.*?\]\(.*?\)", "", text)  # Remove images
-    text = re.sub(r"\[.*?\]\(.*?\)", "", text)  # Remove links
-
-    return text
+    return preprocess_similarity_text(text)
 
 
 def count_tokens(text):
-    """Count tokens in a text string using tiktoken.
+    """Count tokens in a text string using the shared tokenizer.
 
     Args:
         text (str): Text to count tokens for.
@@ -156,10 +86,7 @@ def count_tokens(text):
     Returns:
         int: Number of tokens in the text.
     """
-    if not isinstance(text, str):
-        raise TypeError(f"Expected a string, but received {type(text).__name__}")
-    encoding = tiktoken.get_encoding("cl100k_base")
-    return len(encoding.encode(text))
+    return tokenizer.count_tokens(text)
 
 
 def compute_similarity(files_dict, checksums, cache):
@@ -264,14 +191,14 @@ def main(folder_path, debug, output_file):
         output_file (str): Path to save the output file.
     """
     cache_file = "embeddings_cache.json"
-    embeddings_cache = load_embeddings_cache(cache_file)
+    embeddings_cache = load_json_cache(cache_file)
 
     # Step 1: Read markdown files from the specified folder
     markdown_files, checksums = read_markdown_files(folder_path)
 
     # Step 2 and 3 are combined: Compute similarity between files
     similarity_matrix = compute_similarity(markdown_files, checksums, embeddings_cache)
-    update_embeddings_cache(cache_file, embeddings_cache)
+    save_json_cache(cache_file, embeddings_cache)
 
     # Step 4: Group similar files based on the similarity matrix
     # You can adjust the threshold as needed

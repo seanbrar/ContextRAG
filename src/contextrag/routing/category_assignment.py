@@ -1,13 +1,18 @@
 from datetime import datetime
+import logging
 import os
 import re
 
 from dotenv import load_dotenv
 from contextrag.providers.openai_chat import ChatManager, ChatModels
+from contextrag.core.routing import route_bucket
 from contextrag.core.tokenizer import count_tokens
-from contextrag.embeddings.similarity import preprocess_text
+from contextrag.ingest.markdown_processing import preprocess_similarity_text
+from contextrag.core.logging import get_logger
 
 load_dotenv()
+
+logger = get_logger(__name__)
 
 
 def read_markdown_files(folder_path: str = "markdown_grouping/markdown"):
@@ -47,17 +52,20 @@ def main():
 
     with open(output_filename, "w") as output_file:
         for filename, content in markdown_files.items():
-            content = preprocess_text(content)
+            content = preprocess_similarity_text(content)
             token_count: int = count_tokens(content)
 
             # Determine the model based on the token count
-            if token_count <= 3500:
+            bucket = route_bucket(token_count)
+            if bucket == "short":
                 model = ChatModels.GPT_3_5_TURBO_1106
-            elif 3500 < token_count < 15000:
+            elif bucket == "medium":
                 model = ChatModels.GPT_3_5_TURBO_16K
             else:
-                print(
-                    f"Skipped {filename} due to excessive token count ({token_count} tokens)."
+                logger.warning(
+                    "Skipped %s due to excessive token count (%s tokens).",
+                    filename,
+                    token_count,
                 )
                 continue
 
@@ -88,8 +96,9 @@ def main():
                 output_file.write(f"Filename: {filename} | No categories found.\n")
 
             chat_manager.reset()
-            print(f"Processed: {filename}")
+            logger.info("Processed: %s", filename)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()
