@@ -12,6 +12,22 @@ This negative result is reproducible and deterministic across multiple runs.
 
 ---
 
+## Methods (Summary)
+
+**Evaluation task**: For each query, retrieve top-k chunks and compute precision@k and recall@k against annotated `relevant_ids`.
+
+**Chunking baselines**:
+- Uniform: fixed 1,000-token chunks
+- Router: length-based chunking (short/medium/long)
+
+**Embedding providers**:
+- Mixed corpus: OpenAI (`text-embedding-3-small`)
+- RFC-only corpus: OpenRouter (`qwen/qwen3-embedding-8b`)
+
+**Determinism**: Results are deterministic given a fixed embedding model and index build. API providers may introduce nondeterminism depending on service updates.
+
+**Artifacts**: Each run writes `summary.json`, `per_query.jsonl`, and `metadata.json` under `runs/{run_name}/`.
+
 ## Mixed Corpus Evaluation (Primary)
 
 **Dataset composition**: 12 documents (3 short stories, 1 novella excerpt, 8 RFCs)

@@ -9,12 +9,14 @@ A RAG evaluation framework exploring adaptive chunking strategies, with provider
 
 ## Table of Contents
 
+- [Quickstart (Offline Demo)](#quickstart-offline-demo)
 - [Background](#background)
 - [Key Features](#key-features)
 - [System Architecture](#system-architecture)
 - [Install](#install)
-- [Environment](#environment)
+- [Production Setup](#production-setup)
 - [Usage](#usage)
+- [Artifacts](#artifacts)
 - [Context Length Management](#context-length-management)
 - [Evaluation](#evaluation)
 - [Testing](#testing)
@@ -25,6 +27,17 @@ A RAG evaluation framework exploring adaptive chunking strategies, with provider
 - [Maintainers](#maintainers)
 - [Contributing](#contributing)
 - [License](#license)
+
+## Quickstart (Offline Demo)
+
+Run a fully offline, deterministic demo using local embeddings:
+
+```bash
+poetry run contextrag demo
+```
+
+This writes `runs/demo_eval.json` plus `runs/demo_eval/summary.json`,
+`runs/demo_eval/per_query.jsonl`, and `runs/demo_eval/manifest.json`.
 
 ## Background
 
@@ -101,7 +114,7 @@ poetry install
 # cp .env.example .env
 ```
 
-## Environment
+## Production Setup
 
 Required for embeddings and indexing (OpenAI or OpenRouter):
 
@@ -181,6 +194,57 @@ Example scripts live in `scripts/`:
 - `scripts/vector_store_example.py` — index/query a small in-memory collection
 
 Legacy scripts are preserved in `scripts/legacy/`.
+
+## Demo (No API Keys)
+
+This repo includes a small, public RFC-based dataset under `data/demo` that runs fully offline
+using local embeddings (SentenceTransformers). The first run downloads the model.
+
+Run a deterministic evaluation and capture artifacts with explicit options:
+
+```bash
+poetry run contextrag eval \
+  --dataset data/demo \
+  --baseline uniform \
+  --k 5 \
+  --embed-provider local \
+  --output runs/demo_eval.json \
+  --run-dir runs/demo_eval
+```
+
+This writes `runs/demo_eval.json` plus `runs/demo_eval/summary.json` and
+`runs/demo_eval/per_query.jsonl` for inspection.
+
+Example output (local embeddings, `data/demo`):
+
+```
+precision@k=0.157 recall@k=0.786 (k=5)
+```
+
+Optionally, build an index and query it directly:
+
+```bash
+CONTEXTRAG_EMBED_PROVIDER=local poetry run contextrag index \
+  --input data/demo/documents \
+  --collection demo \
+  --persist runs/demo_chroma
+
+CONTEXTRAG_EMBED_PROVIDER=local poetry run contextrag query \
+  --collection demo \
+  --persist runs/demo_chroma \
+  --query "HTTP caching semantics"
+```
+
+## Artifacts
+
+Quick map of evaluation outputs:
+
+- `runs/demo_eval.json` — single-file summary (demo run)
+- `runs/*/summary.json` — aggregate metrics, timing, and configuration
+- `runs/*/per_query.jsonl` — per-query precision/recall and hits
+- `runs/*/metadata.json` — dataset and run parameters
+- `runs/*/manifest.json` — config hash, dataset fingerprint, versions, system info
+
 ## Context Length Management
 
 ContextRAG implements a three-tier routing strategy based on document length:
@@ -225,13 +289,14 @@ The framework tracks embedding costs to inform provider selection:
 
 The 6.5× cost difference yields only marginal accuracy improvement (0.3% precision, 1.7% recall).
 
-The eval command expects a dataset directory with `documents/` and `queries.jsonl`:
+The eval command expects a dataset directory with `documents/` and `queries.jsonl`.
+The `data/demo` dataset in this repo is ready to use:
 
 ```bash
 poetry run contextrag eval --dataset data/demo --baseline router --k 5 --output runs/eval.json
 ```
 
-To create a small RFC-based dataset:
+To create a custom RFC-based dataset:
 
 ```bash
 python scripts/datasets/download_rfc_dataset.py --rfcs 822,9110,9595 --output data/demo/documents
@@ -249,6 +314,10 @@ To capture run artifacts (summary/per-query/metadata), add a run directory:
 poetry run contextrag eval --config experiments/eval_rfc.yaml --run-dir runs/eval_rfc
 ```
 
+For evaluation protocol details and determinism notes, see:
+- `docs/reproducibility.md`
+- `docs/evaluation-protocol.md`
+
 ## Testing
 
 Run the test suite to verify system functionality:
@@ -263,6 +332,8 @@ pytest tests/
 - `docs/design-decisions.md` — Engineering rationale and tradeoffs
 - `docs/paper.md` — Academic writeup of the approach
 - `docs/results.md` — Evaluation methodology and results
+- `docs/reproducibility.md` — Datasets, commands, and artifact structure
+- `docs/evaluation-protocol.md` — Step-by-step eval procedure and assumptions
 
 ## Results Summary
 

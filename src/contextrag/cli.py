@@ -31,6 +31,59 @@ def _chunk_words(text: str, chunk_words: int, overlap: int) -> list[str]:
     return chunk_text_by_words(text, chunk_words, overlap)
 
 
+def _write_eval_outputs(
+    *,
+    dataset_path: Path,
+    baseline: str,
+    top_k: int,
+    output_path: Path,
+    persist_path: str | None,
+    embed_provider: str | None,
+    embedding_model: str | None,
+    run_dir: Path | None,
+    summary_updates: dict[str, str] | None = None,
+    metadata_updates: dict[str, str] | None = None,
+) -> None:
+    results = run_eval(
+        dataset_path=dataset_path,
+        baseline=baseline,
+        k=top_k,
+        persist_path=persist_path,
+        embed_provider=embed_provider,
+        embedding_model=embedding_model,
+    )
+    if summary_updates:
+        results["summary"].update(summary_updates)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
+    if run_dir:
+        metadata = {
+            "dataset": str(dataset_path),
+            "baseline": baseline,
+            "k": top_k,
+            "embed_provider": embed_provider,
+            "embedding_model": embedding_model,
+            "output": str(output_path),
+            "persist": persist_path,
+        }
+        if metadata_updates:
+            metadata.update(metadata_updates)
+        write_run_artifacts(
+            run_dir=run_dir,
+            results=results,
+            metadata=metadata,
+            dataset_path=dataset_path,
+        )
+    summary = results["summary"]
+    click.echo(
+        "precision@k={precision:.3f} recall@k={recall:.3f} (k={k})".format(
+            precision=summary["precision_at_k"],
+            recall=summary["recall_at_k"],
+            k=summary["k"],
+        )
+    )
+
+
 @click.group()
 def main() -> None:
     """ContextRAG command line interface."""
@@ -363,46 +416,87 @@ def eval(
         explicit_provider=embed_provider,
         error_cls=click.ClickException,
     )
-
-    results = run_eval(
+    summary_updates = {}
+    metadata_updates = {}
+    if config_path:
+        summary_updates["config_path"] = str(config_path)
+        metadata_updates["config_path"] = str(config_path)
+    _write_eval_outputs(
         dataset_path=dataset_path,
         baseline=baseline,
-        k=top_k,
+        top_k=top_k,
+        output_path=output_path,
         persist_path=persist_path,
         embed_provider=embed_provider,
         embedding_model=embedding_model,
+        run_dir=run_dir,
+        summary_updates=summary_updates or None,
+        metadata_updates=metadata_updates or None,
     )
-    if config_path:
-        results["summary"]["config_path"] = str(config_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
-    if run_dir:
-        write_run_artifacts(
-            run_dir=run_dir,
-            results=results,
-            metadata={
-                "dataset": str(dataset_path),
-                "baseline": baseline,
-                "k": top_k,
-                "embed_provider": embed_provider,
-                "embedding_model": embedding_model,
-                "output": str(output_path),
-                "persist": persist_path,
-            },
-        )
-    summary = results["summary"]
-    click.echo(
-        "precision@k={precision:.3f} recall@k={recall:.3f} (k={k})".format(
-            precision=summary["precision_at_k"],
-            recall=summary["recall_at_k"],
-            k=summary["k"],
-        )
+
+
+@main.command()
+@click.option(
+    "--dataset",
+    "dataset_path",
+    default=Path("data/demo"),
+    type=click.Path(path_type=Path),
+)
+@click.option(
+    "--baseline",
+    type=click.Choice(["uniform", "router"]),
+    default="uniform",
+)
+@click.option("--k", "top_k", type=int, default=5)
+@click.option(
+    "--output",
+    "output_path",
+    default=Path("runs/demo_eval.json"),
+    type=click.Path(path_type=Path),
+)
+@click.option(
+    "--run-dir",
+    "run_dir",
+    default=Path("runs/demo_eval"),
+    type=click.Path(path_type=Path),
+)
+@click.option("--persist", "persist_path", default=None)
+@click.option("--embedding-model", "embedding_model", default=None)
+def demo(
+    dataset_path: Path,
+    baseline: str,
+    top_k: int,
+    output_path: Path,
+    run_dir: Path,
+    persist_path: str | None,
+    embedding_model: str | None,
+) -> None:
+    """Run the offline demo evaluation with local embeddings."""
+    config = load_config()
+    resolved_provider = resolve_embed_provider(config, explicit_provider="local")
+    require_embedding_provider(
+        config,
+        resolved_provider=resolved_provider,
+        explicit_provider="local",
+        error_cls=click.ClickException,
+    )
+    _write_eval_outputs(
+        dataset_path=dataset_path,
+        baseline=baseline,
+        top_k=top_k,
+        output_path=output_path,
+        persist_path=persist_path,
+        embed_provider="local",
+        embedding_model=embedding_model,
+        run_dir=run_dir,
     )
 
 
 @main.command()
 def doctor() -> None:
     """Check configuration and environment health."""
+    from importlib.util import find_spec
+
     config = load_config()
     checks = [
         ("OPENAI_API_KEY", bool(config.openai_api_key)),
@@ -411,9 +505,11 @@ def doctor() -> None:
     for name, ok in checks:
         status = "ok" if ok else "missing"
         click.echo(f"{name}: {status}")
-    click.echo(
-        "embeddings_provider: {}".format(resolve_embed_provider(config, None))
-    )
+    resolved_provider = resolve_embed_provider(config, None)
+    click.echo(f"embeddings_provider: {resolved_provider}")
+    click.echo(f"local_embeddings_model: {config.local_embeddings_model}")
+    if not config.openai_api_key and not config.openrouter_api_key:
+        click.echo("note: set OPENAI_API_KEY or OPENROUTER_API_KEY for hosted embeddings")
 
     try:
         import tiktoken  # noqa: F401
@@ -421,6 +517,15 @@ def doctor() -> None:
         click.echo("tiktoken: ok")
     except ImportError:
         click.echo("tiktoken: missing")
+
+    click.echo(
+        "chromadb: {}".format("ok" if find_spec("chromadb") else "missing")
+    )
+    click.echo(
+        "sentence-transformers: {}".format(
+            "ok" if find_spec("sentence_transformers") else "missing"
+        )
+    )
 
 
 if __name__ == "__main__":
