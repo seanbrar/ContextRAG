@@ -33,6 +33,7 @@ packages = [{ include = "contextrag", from = "src" }]
 [tool.poetry.group.dev.dependencies]
 isort = "^7.0.0"
 ruff = "^0.14.13"
+pytest-cov = "^7.0.0"
 
 [build-system]
 requires = ["poetry-core"]

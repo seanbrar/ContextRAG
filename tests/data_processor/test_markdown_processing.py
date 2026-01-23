@@ -2,6 +2,9 @@ import pytest
 from contextrag.ingest.markdown_processing import (
     modify_markdown,
     remove_above_first_header,
+    remove_above_first_header_if_level_one,
+    remove_attachments_header_and_first_line,
+    remove_attachments,
     remove_attachments_section,
     remove_inline_attachments,
     clean_up_lines,
@@ -170,6 +173,33 @@ def test_reduce_excessive_line_breaks(input_content, expected_output):
     result = reduce_excessive_line_breaks(input_content)
     assert result == expected_output
     assert isinstance(result, str)  # Check return type
+
+
+def test_remove_above_first_header_if_level_one_only():
+    content = "Intro\n## Subheader\nDetails"
+    assert remove_above_first_header_if_level_one(content) == content
+    content = "Intro\n# Header\nDetails"
+    assert remove_above_first_header_if_level_one(content).startswith("# Header")
+
+
+def test_remove_attachments_header_and_first_line():
+    content = "Line\n## Attachments:\nRemove this\nKeep this\n"
+    result = remove_attachments_header_and_first_line(content)
+    assert "Attachments" not in result
+    assert "Remove this" not in result
+    assert "Keep this" in result
+
+
+def test_remove_attachments_removes_section_and_inline():
+    content = (
+        "Line\n"
+        "![Image](attachments/a.png)\n"
+        "## Attachments:\n"
+        "More\n"
+    )
+    result = remove_attachments(content)
+    assert "Attachments" not in result
+    assert "attachments/a.png" not in result
 
 
 # 2. Integration Test
