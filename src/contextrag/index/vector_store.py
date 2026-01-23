@@ -25,6 +25,7 @@ class VectorDB:
         persist_path: str | None = None,
         embedding_model: str | None = None,
         embed_provider: str | None = None,
+        embedding_function=None,
     ):
         """Initialize VectorDB with a collection name.
 
@@ -37,12 +38,15 @@ class VectorDB:
             if persist_path
             else chromadb.Client()
         )
-        config = load_config()
-        self.openai_ef = self._build_embedding_function(
-            config=config,
-            embedding_model=embedding_model,
-            embed_provider=embed_provider,
-        )
+        if embedding_function is not None:
+            self.openai_ef = embedding_function
+        else:
+            config = load_config()
+            self.openai_ef = self._build_embedding_function(
+                config=config,
+                embedding_model=embedding_model,
+                embed_provider=embed_provider,
+            )
         self.collection = self.get_or_create_collection()
 
     def _build_embedding_function(

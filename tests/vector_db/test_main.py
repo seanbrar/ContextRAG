@@ -1,18 +1,55 @@
-import os
+from __future__ import annotations
+
 import pytest
+
+from contextrag.config import AppConfig
 from contextrag.index.vector_store import VectorDB
 
 
-pytestmark = pytest.mark.skipif(
-    not os.getenv("OPENAI_API_KEY"),
-    reason="OPENAI_API_KEY not set for OpenAI embeddings.",
-)
+class FakeEmbeddingFunction:
+    def __call__(self, input):
+        inputs = list(input)
+        embeddings = []
+        for text in inputs:
+            length = float(len(text))
+            checksum = float(sum(ord(ch) for ch in text) % 997)
+            embeddings.append([length, checksum])
+        return embeddings
+
+    @staticmethod
+    def name() -> str:
+        return "default"
+
+    @staticmethod
+    def is_legacy() -> bool:
+        return False
+
+    def embed_query(self, input):
+        return self.__call__(input)
+
+    @staticmethod
+    def supported_spaces() -> list[str]:
+        return ["cosine"]
+
+    @staticmethod
+    def default_space() -> str:
+        return "cosine"
+
+    def get_config(self):
+        return {"type": "fake"}
+
+    @staticmethod
+    def build_from_config(config):
+        return FakeEmbeddingFunction()
 
 
 class TestVectorDB:
     @pytest.fixture
     def vector_db(self):
-        return VectorDB(collection_name="test_collection")
+        return VectorDB(
+            collection_name="test_collection",
+            embedding_function=FakeEmbeddingFunction(),
+        )
 
     def test_get_or_create_collection(self, vector_db):
         collection = vector_db.get_or_create_collection()
@@ -21,16 +58,42 @@ class TestVectorDB:
     def test_add_documents(self, vector_db):
         documents = ["document 1", "document 2", "document 3"]
         vector_db.add_documents(documents)
-        # Assert that the documents were added successfully
-        assert len(vector_db.collection.documents) == len(documents)
+        stored = vector_db.collection.get()
+        assert stored["ids"] is not None
+        assert len(stored["ids"]) == len(documents)
 
     def test_query(self, vector_db):
+        documents = ["document 1", "document 2", "document 3"]
+        vector_db.add_documents(documents)
         query_texts = ["query 1", "query 2", "query 3"]
         results = vector_db.query(query_texts)
-        # Assert that the number of results matches the expected number
-        assert len(results) == len(query_texts)
+        assert len(results["documents"]) == len(query_texts)
+        assert len(results["distances"]) == len(query_texts)
+        for docs, distances in zip(results["documents"], results["distances"]):
+            assert len(docs) == len(distances)
 
-        # Assert that each result contains the required fields
-        for result in results:
-            assert "documents" in result
-            assert "distances" in result
+    def test_openai_provider_requires_key(self, vector_db):
+        config = AppConfig(
+            openai_api_key=None,
+            openai_embeddings_model="text-embedding-3-small",
+            openai_chat_model_short="gpt-3.5-turbo-1106",
+            openai_chat_model_medium="gpt-3.5-turbo-16k",
+            openrouter_api_key=None,
+            openrouter_base_url="https://openrouter.ai/api/v1",
+            openrouter_chat_model="mistralai/devstral-2512:free",
+            openrouter_embeddings_model="qwen/qwen3-embedding-8b",
+            local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
+            contextrag_chat_provider="openai",
+            contextrag_embed_provider="openai",
+            openrouter_referer=None,
+            openrouter_title=None,
+            openrouter_embed_provider_json=None,
+            openrouter_embed_provider_order=None,
+            openrouter_embed_allow_fallbacks=None,
+        )
+        with pytest.raises(ValueError, match="OPENAI_API_KEY is required"):
+            vector_db._build_embedding_function(
+                config=config,
+                embedding_model=None,
+                embed_provider="openai",
+            )
