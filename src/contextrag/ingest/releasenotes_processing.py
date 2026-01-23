@@ -214,7 +214,11 @@ def add_url_to_key(entry: str) -> str:
     key_match = key_regex.search(entry)
     if key_match:
         key_value = key_match.group().strip("[]")
-        url_pattern = f"\[{key_value}\]\(https://{COMPANY_NAME}.atlassian.net/browse/{key_value}\)"
+        url_pattern = (
+            rf"\[{re.escape(key_value)}\]"
+            rf"\(https://{re.escape(COMPANY_NAME)}\.atlassian\.net/browse/"
+            rf"{re.escape(key_value)}\)"
+        )
         if not re.search(url_pattern, entry):
             key_pattern = r"\[" + re.escape(key_value) + r"\]"
             new_url_pattern = f"[{key_value}](https://{COMPANY_NAME}.atlassian.net/browse/{key_value})"
