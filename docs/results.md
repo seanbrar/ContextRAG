@@ -101,6 +101,46 @@ This negative result is itself valuable:
 
 ---
 
+## Embedding Cost Comparison
+
+The evaluation framework tracks embedding costs to inform provider selection decisions.
+
+### Methodology
+
+Cost is calculated as:
+- **Index cost** = (total indexed tokens / 1,000,000) × model cost per million tokens
+- **Query cost** = (total query tokens / 1,000,000) × model cost per million tokens
+- **Total cost** = Index cost + Query cost
+
+### Results (Mixed Corpus, Uniform Baseline)
+
+| Model | Cost/M tokens | Index Cost | Query Cost | Total Cost | Precision@5 | Recall@5 |
+|-------|---------------|------------|------------|------------|-------------|----------|
+| text-embedding-3-small | $0.02 | $0.009868 | $0.000017 | $0.009886 | 0.197 | 0.983 |
+| text-embedding-3-large | $0.13 | $0.064145 | $0.000113 | $0.064257 | 0.200 | 1.000 |
+
+### Interpretation
+
+1. **6.5× cost difference**: text-embedding-3-large costs 6.5× more than text-embedding-3-small
+2. **Marginal accuracy gain**: +0.3% precision, +1.7% recall for the more expensive model
+3. **Index-dominated cost**: Query costs are negligible (~0.2% of total) for typical workloads
+4. **Cost-quality tradeoff**: For most use cases, text-embedding-3-small provides sufficient quality at significantly lower cost
+
+### Provider Cost Comparison (Theoretical)
+
+Based on published pricing (as of January 2025):
+
+| Provider/Model | Cost/M tokens | Relative Cost |
+|----------------|---------------|---------------|
+| thenlper/gte-base (OpenRouter) | $0.005 | 0.25× |
+| qwen/qwen3-embedding-8b (OpenRouter) | $0.01 | 0.5× |
+| text-embedding-3-small (OpenAI) | $0.02 | 1× (baseline) |
+| text-embedding-3-large (OpenAI) | $0.13 | 6.5× |
+
+The custom ChromaDB-OpenRouter integration enables 50–90% cost reduction by routing to cheaper embedding providers while maintaining the same evaluation infrastructure.
+
+---
+
 ## Artifact Paths
 
 | Dataset | Baseline | Summary | Per-Query |

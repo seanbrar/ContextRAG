@@ -17,6 +17,29 @@ MEDIUM_CHUNK_TOKENS = 2000
 LONG_CHUNK_TOKENS = 1000
 TOKENIZER_NAME = "cl100k_base"
 
+# Embedding costs in USD per million tokens (as of Jan 2025)
+EMBEDDING_COSTS_PER_MILLION: dict[str, float] = {
+    # OpenRouter models
+    "qwen/qwen3-embedding-8b": 0.01,
+    "thenlper/gte-base": 0.005,
+    # OpenAI models (direct or via OpenRouter)
+    "text-embedding-3-small": 0.02,
+    "text-embedding-3-large": 0.13,
+    "text-embedding-ada-002": 0.10,
+}
+
+
+def _get_embedding_cost_per_million(model: str) -> float | None:
+    """Get cost per million tokens for a model, or None if unknown."""
+    # Try exact match first
+    if model in EMBEDDING_COSTS_PER_MILLION:
+        return EMBEDDING_COSTS_PER_MILLION[model]
+    # Try matching by model name suffix (e.g., "openai/text-embedding-3-small")
+    for known_model, cost in EMBEDDING_COSTS_PER_MILLION.items():
+        if model.endswith(known_model) or known_model.endswith(model):
+            return cost
+    return None
+
 
 def _load_queries(path: Path) -> list[dict]:
     queries: list[dict] = []
@@ -159,9 +182,14 @@ def run_eval(
     query_latencies: list[float] = []
     per_query: list[dict] = []
 
+    # Track query tokens for cost calculation
+    encoding = tiktoken.get_encoding(TOKENIZER_NAME)
+    total_query_tokens = 0
+
     for entry in queries:
         query_text = entry["query"]
         relevant_ids = entry.get("relevant_ids", [])
+        total_query_tokens += len(encoding.encode(query_text))
 
         query_start = time.time()
         results = vector_db.query(query_texts=[query_text], n_results=k)
@@ -201,6 +229,32 @@ def run_eval(
         sum(query_latencies) / len(query_latencies) if query_latencies else 0.0
     )
 
+    # Calculate embedding costs
+    cost_per_million = _get_embedding_cost_per_million(resolved_model)
+    total_embedding_tokens = efficiency_stats["total_indexed_tokens"] + total_query_tokens
+    if cost_per_million is not None:
+        index_cost_usd = (efficiency_stats["total_indexed_tokens"] / 1_000_000) * cost_per_million
+        query_cost_usd = (total_query_tokens / 1_000_000) * cost_per_million
+        total_cost_usd = index_cost_usd + query_cost_usd
+        cost_metrics = {
+            "model_cost_per_million_tokens": cost_per_million,
+            "total_query_tokens": total_query_tokens,
+            "total_embedding_tokens": total_embedding_tokens,
+            "index_cost_usd": round(index_cost_usd, 6),
+            "query_cost_usd": round(query_cost_usd, 6),
+            "total_cost_usd": round(total_cost_usd, 6),
+        }
+    else:
+        cost_metrics = {
+            "model_cost_per_million_tokens": None,
+            "total_query_tokens": total_query_tokens,
+            "total_embedding_tokens": total_embedding_tokens,
+            "index_cost_usd": None,
+            "query_cost_usd": None,
+            "total_cost_usd": None,
+            "note": f"Unknown pricing for model '{resolved_model}'",
+        }
+
     summary = {
         "timestamp": int(time.time()),
         "baseline": baseline,
@@ -239,5 +293,6 @@ def run_eval(
             "avg_query_latency_ms": round(avg_query_latency * 1000, 2),
             "total_query_duration_sec": round(sum(query_latencies), 3),
         },
+        "cost": cost_metrics,
     }
     return {"summary": summary, "per_query": per_query}

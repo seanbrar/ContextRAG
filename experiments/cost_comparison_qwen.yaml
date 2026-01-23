@@ -1,0 +1,8 @@
+dataset: data/eval-mixed
+baseline: uniform
+k: 5
+embed_provider: openrouter
+embedding_model: qwen/qwen3-embedding-8b
+output: runs/cost_comparison/qwen.json
+persist: runs/cost_comparison/chroma-qwen
+run_dir: runs/cost_comparison/qwen
