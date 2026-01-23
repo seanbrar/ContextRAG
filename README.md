@@ -108,9 +108,10 @@ Required for embeddings and indexing (OpenAI or OpenRouter):
 - `OPENAI_API_KEY` (preferred for OpenAI embeddings)
 - `OPENROUTER_API_KEY` (fallback for embeddings and chat)
 
+Note: `--embed-provider openrouter` requires `OPENROUTER_API_KEY`. With `auto`, OpenAI is used when `OPENAI_API_KEY` is set.
+
 Optional (for OpenRouter chat routing or smoke tests):
 
-- `OPENROUTER_API_KEY`
 - `OPENROUTER_BASE_URL` (default: `https://openrouter.ai/api/v1`)
 - `OPENROUTER_CHAT_MODEL` (default: `mistralai/devstral-2512:free`)
 - `OPENROUTER_EMBEDDINGS_MODEL` (default: `qwen/qwen3-embedding-8b`)
@@ -124,7 +125,7 @@ Optional (for OpenRouter chat routing or smoke tests):
 
 Model defaults can be overridden:
 
-- `OPENAI_EMBEDDINGS_MODEL` (default: `thenlper/gte-base`)
+- `OPENAI_EMBEDDINGS_MODEL` (default: `text-embedding-3-small`)
 - `OPENAI_CHAT_MODEL_SHORT` (default: `gpt-3.5-turbo-1106`)
 - `OPENAI_CHAT_MODEL_MEDIUM` (default: `gpt-3.5-turbo-16k`)
 
@@ -178,6 +179,8 @@ Example scripts live in `scripts/`:
 
 - `scripts/html_to_markdown_example.py` — convert HTML to Markdown with routing
 - `scripts/vector_store_example.py` — index/query a small in-memory collection
+
+Legacy scripts are preserved in `scripts/legacy/`.
 ## Context Length Management
 
 ContextRAG implements a three-tier routing strategy based on document length:

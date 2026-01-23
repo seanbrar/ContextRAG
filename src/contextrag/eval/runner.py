@@ -4,8 +4,6 @@ import json
 import time
 from pathlib import Path
 
-import tiktoken
-
 from contextrag.config import load_config, resolve_embed_provider
 from contextrag.core.chunking import chunk_text_by_tokens
 from contextrag.core.constants import (
@@ -16,31 +14,13 @@ from contextrag.core.constants import (
     TOKENIZER_NAME,
     UNIFORM_CHUNK_TOKENS,
 )
+from contextrag.core.costs import get_embedding_cost_per_million
+from contextrag.core.tokenizer import get_encoding
 from contextrag.eval.metrics import precision_at_k, recall_at_k
 from contextrag.index.vector_store import VectorDB
 
-# Embedding costs in USD per million tokens (as of Jan 2025)
-EMBEDDING_COSTS_PER_MILLION: dict[str, float] = {
-    # OpenRouter models
-    "qwen/qwen3-embedding-8b": 0.01,
-    "thenlper/gte-base": 0.005,
-    # OpenAI models (direct or via OpenRouter)
-    "text-embedding-3-small": 0.02,
-    "text-embedding-3-large": 0.13,
-    "text-embedding-ada-002": 0.10,
-}
-
-
 def _get_embedding_cost_per_million(model: str) -> float | None:
-    """Get cost per million tokens for a model, or None if unknown."""
-    # Try exact match first
-    if model in EMBEDDING_COSTS_PER_MILLION:
-        return EMBEDDING_COSTS_PER_MILLION[model]
-    # Try matching by model name suffix (e.g., "openai/text-embedding-3-small")
-    for known_model, cost in EMBEDDING_COSTS_PER_MILLION.items():
-        if model.endswith(known_model) or known_model.endswith(model):
-            return cost
-    return None
+    return get_embedding_cost_per_million(model)
 
 
 def _load_queries(path: Path) -> list[dict]:
@@ -69,7 +49,7 @@ def _build_index_inputs(
     chunk_to_doc: dict[str, str] = {}
 
     # Efficiency tracking
-    encoding = tiktoken.get_encoding(TOKENIZER_NAME)
+    encoding = get_encoding(TOKENIZER_NAME)
     source_doc_count = 0
     total_source_tokens = 0
     total_indexed_tokens = 0
@@ -177,7 +157,7 @@ def run_eval(
     per_query: list[dict] = []
 
     # Track query tokens for cost calculation
-    encoding = tiktoken.get_encoding(TOKENIZER_NAME)
+    encoding = get_encoding(TOKENIZER_NAME)
     total_query_tokens = 0
 
     for entry in queries:
@@ -210,14 +190,10 @@ def run_eval(
 
     config = load_config()
     resolved_provider = resolve_embed_provider(config, embed_provider)
-    if resolved_provider == "openai":
-        resolved_model = embedding_model or config.openai_embeddings_model
-    elif resolved_provider == "openrouter":
-        resolved_model = embedding_model or config.openrouter_embeddings_model
-    elif resolved_provider == "local":
-        resolved_model = embedding_model or config.local_embeddings_model
-    else:
-        resolved_model = embedding_model or "default"
+    resolved_model = config.resolve_embedding_model(
+        provider=resolved_provider,
+        explicit_model=embedding_model,
+    )
 
     avg_query_latency = (
         sum(query_latencies) / len(query_latencies) if query_latencies else 0.0

@@ -126,7 +126,7 @@ def test_openrouter_embedding_http_error_hint(monkeypatch):
         embedding_fn(["a"])
 
 
-def test_openrouter_embedding_build_from_config():
+def test_openrouter_embedding_build_from_config(monkeypatch):
     config = {
         "api_key_env_var": "OPENROUTER_API_KEY",
         "model": "thenlper/gte-base",
@@ -136,6 +136,7 @@ def test_openrouter_embedding_build_from_config():
         "provider": {"order": ["x"]},
         "timeout_s": 1,
     }
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
     embedding_fn = OpenRouterEmbeddingFunction.build_from_config(config)
     assert embedding_fn.model == "thenlper/gte-base"
     assert embedding_fn.base_url == "https://openrouter.ai/api/v1"

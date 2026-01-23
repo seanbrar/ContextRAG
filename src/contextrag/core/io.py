@@ -12,6 +12,7 @@ def iter_files(root: Path, extensions: Iterable[str]) -> list[Path]:
 
 
 def write_jsonl(path: Path, rows: Iterable[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:
         for row in rows:
             handle.write(f"{json.dumps(row)}\n")

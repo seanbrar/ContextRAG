@@ -2,14 +2,8 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Iterable
 
-
-def write_jsonl(path: Path, rows: Iterable[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as handle:
-        for row in rows:
-            handle.write(json.dumps(row) + "\n")
+from contextrag.core.io import write_jsonl
 
 
 def write_run_artifacts(run_dir: Path, results: dict, metadata: dict) -> None:

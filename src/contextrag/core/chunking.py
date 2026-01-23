@@ -1,6 +1,5 @@
-import tiktoken
-
 from contextrag.core.constants import TOKENIZER_NAME
+from contextrag.core.tokenizer import get_encoding
 
 
 def chunk_text_by_words(text: str, chunk_words: int, overlap: int) -> list[str]:
@@ -26,7 +25,7 @@ def chunk_text_by_tokens(
     chunk_tokens: int,
     tokenizer_name: str = TOKENIZER_NAME,
 ) -> list[str]:
-    encoding = tiktoken.get_encoding(tokenizer_name)
+    encoding = get_encoding(tokenizer_name)
     tokens = encoding.encode(text)
     if not tokens:
         return []

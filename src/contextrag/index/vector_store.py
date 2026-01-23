@@ -13,7 +13,7 @@ class VectorDB:
 
     Attributes:
         collection_name (str): Name of the ChromaDB collection.
-        openai_ef: OpenAI embedding function instance.
+        embedding_function: Embedding function instance.
         collection: ChromaDB collection instance.
     """
 
@@ -24,6 +24,7 @@ class VectorDB:
         embedding_model: str | None = None,
         embed_provider: str | None = None,
         embedding_function=None,
+        client=None,
     ):
         """Initialize VectorDB with a collection name.
 
@@ -32,16 +33,16 @@ class VectorDB:
         """
         self.collection_name = collection_name
         self._logger = get_logger(__name__)
-        self.client = (
+        self.client = client or (
             chromadb.PersistentClient(path=persist_path)
             if persist_path
             else chromadb.Client()
         )
         if embedding_function is not None:
-            self.openai_ef = embedding_function
+            self.embedding_function = embedding_function
         else:
             config = load_config()
-            self.openai_ef = self._build_embedding_function(
+            self.embedding_function = self._build_embedding_function(
                 config=config,
                 embedding_model=embedding_model,
                 embed_provider=embed_provider,
@@ -70,13 +71,13 @@ class VectorDB:
         try:
             collection = self.client.get_collection(
                 self.collection_name,
-                embedding_function=self.openai_ef,
+                embedding_function=self.embedding_function,
             )
             logger.info("Loaded existing collection: %s", self.collection_name)
         except (ValueError, NotFoundError):
             collection = self.client.create_collection(
                 name=self.collection_name,
-                embedding_function=self.openai_ef,
+                embedding_function=self.embedding_function,
                 metadata={"hnsw:space": "cosine"},
             )
             logger.info("Created new collection: %s", self.collection_name)

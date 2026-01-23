@@ -464,7 +464,7 @@ def test_index_command_chunks(monkeypatch, tmp_path):
     monkeypatch.setattr("contextrag.cli.VectorDB", FakeVectorDB)
     monkeypatch.setattr("contextrag.cli.resolve_embed_provider", lambda config, provider: "openai")
     monkeypatch.setattr("contextrag.cli.load_config", lambda: AppConfig(
-        openai_api_key=None,
+        openai_api_key="key",
         openai_embeddings_model="text-embedding-3-small",
         openai_chat_model_short="gpt-3.5-turbo-1106",
         openai_chat_model_medium="gpt-3.5-turbo-16k",

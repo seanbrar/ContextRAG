@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from contextrag.config import AppConfig
+from contextrag.core import chunking
 from contextrag.eval import runner
 
 
@@ -22,7 +23,7 @@ def test_get_embedding_cost_per_million():
 
 
 def test_chunk_text(monkeypatch):
-    monkeypatch.setattr(runner.tiktoken, "get_encoding", lambda name: DummyEncoding())
+    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
     chunks = runner._chunk_text("one two three four", chunk_tokens=2)
     assert chunks == ["one two", "three four"]
 
@@ -32,7 +33,7 @@ def test_chunk_text_empty_returns_empty(monkeypatch):
         def encode(self, text):
             return []
 
-    monkeypatch.setattr(runner.tiktoken, "get_encoding", lambda name: EmptyEncoding())
+    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: EmptyEncoding())
     assert runner._chunk_text("", chunk_tokens=2) == []
 
 
@@ -43,7 +44,8 @@ def test_load_queries_skips_blank_lines(tmp_path):
 
 
 def test_build_index_inputs_uniform(monkeypatch, tmp_path):
-    monkeypatch.setattr(runner.tiktoken, "get_encoding", lambda name: DummyEncoding())
+    monkeypatch.setattr(runner, "get_encoding", lambda name=None: DummyEncoding())
+    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
     doc_path = tmp_path / "doc.md"
     doc_path.write_text("one two three four five", encoding="utf-8")
 
@@ -68,7 +70,8 @@ def test_build_index_inputs_router_categories(monkeypatch, tmp_path):
         def decode(self, tokens):
             return "chunk"
 
-    monkeypatch.setattr(runner.tiktoken, "get_encoding", lambda name: FakeEncoding())
+    monkeypatch.setattr(runner, "get_encoding", lambda name=None: FakeEncoding())
+    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: FakeEncoding())
     (tmp_path / "short.md").write_text("short", encoding="utf-8")
     (tmp_path / "medium.md").write_text("medium", encoding="utf-8")
     (tmp_path / "long.md").write_text("long", encoding="utf-8")
@@ -129,7 +132,9 @@ def test_run_eval_with_fake_vector_db(monkeypatch, tmp_path):
     )
 
     monkeypatch.setattr(runner, "VectorDB", FakeVectorDB)
-    monkeypatch.setattr(runner.tiktoken, "get_encoding", lambda name: DummyEncoding())
+    monkeypatch.setattr(runner, "get_encoding", lambda name=None: DummyEncoding())
+    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
+    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
     monkeypatch.setattr(runner, "load_config", lambda: config)
 
     results = runner.run_eval(
@@ -197,7 +202,8 @@ def test_run_eval_costs_with_openai_provider(monkeypatch, tmp_path):
 
     monkeypatch.setattr(runner, "VectorDB", FakeVectorDB)
     monkeypatch.setattr(runner, "load_config", lambda: config)
-    monkeypatch.setattr(runner.tiktoken, "get_encoding", lambda name: DummyEncoding())
+    monkeypatch.setattr(runner, "get_encoding", lambda name=None: DummyEncoding())
+    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
     monkeypatch.setattr(runner, "resolve_embed_provider", lambda *_: "openai")
 
     results = runner.run_eval(

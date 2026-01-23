@@ -22,10 +22,11 @@ class OpenRouterEmbeddingFunction(EmbeddingFunction[Documents]):
         provider: dict | None = None,
         timeout_s: int = 60,
         api_key_env_var: str = "OPENROUTER_API_KEY",
+        require_api_key: bool = True,
     ) -> None:
         self.api_key_env_var = api_key_env_var
         self.api_key = api_key or os.getenv(self.api_key_env_var)
-        if not self.api_key:
+        if require_api_key and not self.api_key:
             raise ValueError(
                 f"The {self.api_key_env_var} environment variable is not set."
             )
@@ -123,6 +124,7 @@ class OpenRouterEmbeddingFunction(EmbeddingFunction[Documents]):
             title=title,
             provider=provider,
             timeout_s=timeout_s,
+            require_api_key=True,
         )
 
     def get_config(self) -> Dict[str, Any]:

@@ -134,7 +134,7 @@ def test_get_or_create_collection_creates_when_missing():
     db = vector_store.VectorDB.__new__(vector_store.VectorDB)
     db.collection_name = "test"
     db.client = FakeClient()
-    db.openai_ef = DummyEmbedding()
+    db.embedding_function = DummyEmbedding()
     collection = vector_store.VectorDB.get_or_create_collection(db)
     assert collection == "collection"
     assert created["name"] == "test"
@@ -149,7 +149,7 @@ def test_get_or_create_collection_loads_existing():
     db = vector_store.VectorDB.__new__(vector_store.VectorDB)
     db.collection_name = "test"
     db.client = FakeClient()
-    db.openai_ef = DummyEmbedding()
+    db.embedding_function = DummyEmbedding()
     collection = vector_store.VectorDB.get_or_create_collection(db)
     assert collection == "existing"
 
@@ -210,4 +210,4 @@ def test_init_builds_embedding_function(monkeypatch):
     )
 
     db = vector_store.VectorDB(collection_name="test")
-    assert isinstance(db.openai_ef, DummyEmbedding)
+    assert isinstance(db.embedding_function, DummyEmbedding)
