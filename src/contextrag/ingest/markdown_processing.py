@@ -1,7 +1,25 @@
 import re
 
+_FIRST_HEADER_PATTERN = re.compile(r"^(?:\s*)(#+)\s", flags=re.MULTILINE)
+_ATTACHMENTS_HEADER_LINE_PATTERN = re.compile(
+    r"(^|\n)## Attachments:\n[^\n]*(?:\n|$)"
+)
+_INLINE_ATTACHMENTS_NESTED_PATTERN = re.compile(
+    r"\[!\[.*?\]\(attachments/.*?\)\]\(attachments/.*?\)"
+)
+_INLINE_ATTACHMENTS_PATTERN = re.compile(r"!\[.*?\]\(attachments/.*?\)")
+_TRAILING_SPACES_PATTERN = re.compile(r"[ \t]+$", flags=re.MULTILINE)
+_ONLY_SPACES_LINES_PATTERN = re.compile(r"^[\t ]+$", flags=re.MULTILINE)
+_INDENTED_BLOCKS_PATTERN = re.compile(r"(?:^ {4}.*(?:\n|$))+", flags=re.MULTILINE)
+_EXCESSIVE_LINE_BREAKS_PATTERN = re.compile(
+    r"(\n[ \t]*){3,}", flags=re.MULTILINE
+)
+_HEADER_PATTERN = re.compile(r"^#+.*$", flags=re.MULTILINE)
+_IMAGE_PATTERN = re.compile(r"\!\[.*?\]\(.*?\)")
+_LINK_PATTERN = re.compile(r"\[.*?\]\(.*?\)")
 
-def _ensure_str(content):
+
+def _ensure_str(content: str) -> str:
     if not isinstance(content, str):
         raise ValueError("Content must be a string")
     return content
@@ -32,8 +50,7 @@ def remove_above_first_header_if_level_one(content: str) -> str:
     """
     content = _ensure_str(content)
 
-    first_header_pattern = re.compile(r"^(?:\s*)(#+)\s", flags=re.MULTILINE)
-    match = first_header_pattern.search(content)
+    match = _FIRST_HEADER_PATTERN.search(content)
     if match and len(match.group(1)) == 1:
         return content[match.start() :]
     return content
@@ -48,8 +65,7 @@ def remove_attachments_header_and_first_line(content: str) -> str:
     """
     content = _ensure_str(content)
 
-    pattern = re.compile(r"(^|\n)## Attachments:\n[^\n]*(?:\n|$)")
-    return re.sub(pattern, r"\1", content)
+    return _ATTACHMENTS_HEADER_LINE_PATTERN.sub(r"\1", content)
 
 
 def remove_attachments_section(content: str) -> str:
@@ -74,11 +90,8 @@ def remove_inline_attachments(content: str) -> str:
     """
     content = _ensure_str(content)
 
-    nested_pattern = re.compile(r"\[!\[.*?\]\(attachments/.*?\)\]\(attachments/.*?\)")
-    standard_pattern = re.compile(r"!\[.*?\]\(attachments/.*?\)")
-
-    content = re.sub(nested_pattern, "", content)
-    return re.sub(standard_pattern, "", content)
+    content = _INLINE_ATTACHMENTS_NESTED_PATTERN.sub("", content)
+    return _INLINE_ATTACHMENTS_PATTERN.sub("", content)
 
 
 def clean_up_lines(content: str) -> str:
@@ -94,13 +107,10 @@ def clean_up_lines(content: str) -> str:
     content = _ensure_str(content)
 
     # Precompile regex patterns for efficiency
-    trailing_spaces_pattern = re.compile(r"[ \t]+$", flags=re.MULTILINE)
-    only_spaces_lines_pattern = re.compile(r"^[\t ]+$", flags=re.MULTILINE)
-
     # Remove trailing spaces or tabs from every line
-    content = re.sub(trailing_spaces_pattern, "", content)
+    content = _TRAILING_SPACES_PATTERN.sub("", content)
     # Remove lines that consist only of spaces or tab characters
-    content = re.sub(only_spaces_lines_pattern, "", content)
+    content = _ONLY_SPACES_LINES_PATTERN.sub("", content)
 
     return content
 
@@ -124,13 +134,11 @@ def convert_indented_blocks_to_code(content: str) -> str:
         stripped = content.rstrip("\n")
         return f"```\n{stripped}\n```\n"
 
-    indented_blocks_pattern = re.compile(r"(?:^ {4}.*(?:\n|$))+", flags=re.MULTILINE)
-
     def wrap_block(match):
         block = match.group(0).rstrip("\n")
         return f"```\n{block}\n```\n"
 
-    return re.sub(indented_blocks_pattern, wrap_block, content)
+    return _INDENTED_BLOCKS_PATTERN.sub(wrap_block, content)
 
 
 def reduce_excessive_line_breaks(content: str) -> str:
@@ -146,10 +154,8 @@ def reduce_excessive_line_breaks(content: str) -> str:
     content = _ensure_str(content)
 
     # Precompile regex pattern for excessive line breaks
-    excessive_line_breaks_pattern = re.compile(r"(\n[ \t]*){3,}", flags=re.MULTILINE)
-
     # Reduce excessive line breaks to two
-    return re.sub(excessive_line_breaks_pattern, "\n\n", content)
+    return _EXCESSIVE_LINE_BREAKS_PATTERN.sub("\n\n", content)
 
 
 def strip_basic_markdown_formatting(content: str) -> str:
@@ -161,9 +167,9 @@ def strip_basic_markdown_formatting(content: str) -> str:
     """
     content = _ensure_str(content)
 
-    content = re.sub(r"^#+.*$", "", content, flags=re.MULTILINE)
-    content = re.sub(r"\!\[.*?\]\(.*?\)", "", content)
-    content = re.sub(r"\[.*?\]\(.*?\)", "", content)
+    content = _HEADER_PATTERN.sub("", content)
+    content = _IMAGE_PATTERN.sub("", content)
+    content = _LINK_PATTERN.sub("", content)
     return content
 
 

@@ -36,6 +36,18 @@ def _chunk_text(text: str, chunk_tokens: int) -> list[str]:
     return chunk_text_by_tokens(text, chunk_tokens, TOKENIZER_NAME)
 
 
+def _chunk_tokens(
+    tokens: list[int], chunk_tokens: int, encoding
+) -> list[tuple[str, int]]:
+    if not tokens:
+        return []
+    chunks: list[tuple[str, int]] = []
+    for idx in range(0, len(tokens), chunk_tokens):
+        chunk_slice = tokens[idx : idx + chunk_tokens]
+        chunks.append((encoding.decode(chunk_slice), len(chunk_slice)))
+    return chunks
+
+
 def _build_index_inputs(
     documents_dir: Path, baseline: str
 ) -> tuple[list[str], list[str], dict[str, str], dict]:
@@ -61,19 +73,20 @@ def _build_index_inputs(
         content = doc_path.read_text(encoding="utf-8")
         doc_id = doc_path.stem
         source_doc_count += 1
-        doc_tokens = len(encoding.encode(content))
+        token_list = encoding.encode(content)
+        doc_tokens = len(token_list)
         total_source_tokens += doc_tokens
 
         if baseline == "uniform":
-            chunks = _chunk_text(content, UNIFORM_CHUNK_TOKENS)
+            chunks = _chunk_tokens(token_list, UNIFORM_CHUNK_TOKENS, encoding)
             if not chunks:
                 continue
-            for idx, chunk in enumerate(chunks):
+            for idx, (chunk, chunk_tokens) in enumerate(chunks):
                 chunk_id = f"{doc_id}::chunk{idx}"
                 documents.append(chunk)
                 ids.append(chunk_id)
                 chunk_to_doc[chunk_id] = doc_id
-                total_indexed_tokens += len(encoding.encode(chunk))
+                total_indexed_tokens += chunk_tokens
         else:
             if doc_tokens <= SHORT_MAX_TOKENS:
                 docs_by_category["short"] += 1
@@ -83,22 +96,22 @@ def _build_index_inputs(
                 total_indexed_tokens += doc_tokens
             elif doc_tokens <= MEDIUM_MAX_TOKENS:
                 docs_by_category["medium"] += 1
-                chunks = _chunk_text(content, MEDIUM_CHUNK_TOKENS)
-                for idx, chunk in enumerate(chunks):
+                chunks = _chunk_tokens(token_list, MEDIUM_CHUNK_TOKENS, encoding)
+                for idx, (chunk, chunk_tokens) in enumerate(chunks):
                     chunk_id = f"{doc_id}::chunk{idx}"
                     documents.append(chunk)
                     ids.append(chunk_id)
                     chunk_to_doc[chunk_id] = doc_id
-                    total_indexed_tokens += len(encoding.encode(chunk))
+                    total_indexed_tokens += chunk_tokens
             else:
                 docs_by_category["long"] += 1
-                chunks = _chunk_text(content, LONG_CHUNK_TOKENS)
-                for idx, chunk in enumerate(chunks):
+                chunks = _chunk_tokens(token_list, LONG_CHUNK_TOKENS, encoding)
+                for idx, (chunk, chunk_tokens) in enumerate(chunks):
                     chunk_id = f"{doc_id}::chunk{idx}"
                     documents.append(chunk)
                     ids.append(chunk_id)
                     chunk_to_doc[chunk_id] = doc_id
-                    total_indexed_tokens += len(encoding.encode(chunk))
+                    total_indexed_tokens += chunk_tokens
 
     efficiency_stats = {
         "source_documents": source_doc_count,

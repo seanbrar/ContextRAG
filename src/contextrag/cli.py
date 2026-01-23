@@ -5,7 +5,11 @@ from pathlib import Path
 
 import click
 
-from contextrag.config import load_config, resolve_embed_provider
+from contextrag.config import (
+    load_config,
+    require_embedding_provider,
+    resolve_embed_provider,
+)
 from contextrag.core.chunking import chunk_text_by_words
 from contextrag.core.constants import MEDIUM_MAX_TOKENS, SHORT_MAX_TOKENS
 from contextrag.core.io import checksum as checksum_text, iter_files, write_jsonl
@@ -25,29 +29,6 @@ TEXT_EXTENSIONS = (".md", ".txt")
 
 def _chunk_words(text: str, chunk_words: int, overlap: int) -> list[str]:
     return chunk_text_by_words(text, chunk_words, overlap)
-
-
-def _require_embedding_key(
-    config,
-    resolved_provider: str,
-    explicit_provider: str | None,
-) -> None:
-    if resolved_provider == "openai" and not config.openai_api_key:
-        if explicit_provider == "openai":
-            raise click.ClickException(
-                "OPENAI_API_KEY is required when --embed-provider openai is selected."
-            )
-        raise click.ClickException(
-            "OPENAI_API_KEY or OPENROUTER_API_KEY is required for embeddings."
-        )
-    if resolved_provider == "openrouter" and not config.openrouter_api_key:
-        if explicit_provider == "openrouter":
-            raise click.ClickException(
-                "OPENROUTER_API_KEY is required when --embed-provider openrouter is selected."
-            )
-        raise click.ClickException(
-            "OPENROUTER_API_KEY is required for OpenRouter embeddings."
-        )
 
 
 @click.group()
@@ -203,7 +184,12 @@ def embed(
     config = load_config()
     explicit_provider = embed_provider
     resolved_provider = resolve_embed_provider(config, explicit_provider=explicit_provider)
-    _require_embedding_key(config, resolved_provider, explicit_provider)
+    require_embedding_provider(
+        config,
+        resolved_provider=resolved_provider,
+        explicit_provider=explicit_provider,
+        error_cls=click.ClickException,
+    )
 
     output_path.mkdir(parents=True, exist_ok=True)
     embeddings_path = output_path / "embeddings.jsonl"
@@ -267,7 +253,12 @@ def index(
     """Build a vector index from Markdown documents."""
     config = load_config()
     resolved_provider = resolve_embed_provider(config, embed_provider)
-    _require_embedding_key(config, resolved_provider, embed_provider)
+    require_embedding_provider(
+        config,
+        resolved_provider=resolved_provider,
+        explicit_provider=embed_provider,
+        error_cls=click.ClickException,
+    )
     vector_db = VectorDB(
         collection_name=collection,
         persist_path=persist_path,
@@ -366,7 +357,12 @@ def eval(
 
     config = load_config()
     resolved_provider = resolve_embed_provider(config, embed_provider)
-    _require_embedding_key(config, resolved_provider, embed_provider)
+    require_embedding_provider(
+        config,
+        resolved_provider=resolved_provider,
+        explicit_provider=embed_provider,
+        error_cls=click.ClickException,
+    )
 
     results = run_eval(
         dataset_path=dataset_path,

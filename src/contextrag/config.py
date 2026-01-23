@@ -127,3 +127,23 @@ def resolve_embed_provider(
     config: AppConfig, explicit_provider: str | None = None
 ) -> str:
     return config.resolve_embed_provider(explicit_provider)
+
+
+def require_embedding_provider(
+    config: AppConfig,
+    resolved_provider: str,
+    explicit_provider: str | None = None,
+    error_cls: type[Exception] = ValueError,
+) -> None:
+    if resolved_provider == "openai" and not config.openai_api_key:
+        if explicit_provider == "openai":
+            raise error_cls(
+                "OPENAI_API_KEY is required when --embed-provider openai is selected."
+            )
+        raise error_cls("OPENAI_API_KEY or OPENROUTER_API_KEY is required for embeddings.")
+    if resolved_provider == "openrouter" and not config.openrouter_api_key:
+        if explicit_provider == "openrouter":
+            raise error_cls(
+                "OPENROUTER_API_KEY is required when --embed-provider openrouter is selected."
+            )
+        raise error_cls("OPENROUTER_API_KEY is required for OpenRouter embeddings.")
