@@ -55,6 +55,8 @@ OpenAI (if OPENAI_API_KEY) → OpenRouter (if OPENROUTER_API_KEY) → Local (alw
 - Chunk boundaries may split semantic units
 - No overlap implemented (could improve retrieval at boundary regions)
 
+**Evaluation outcome**: Testing showed no accuracy improvement over uniform chunking. Both strategies achieved identical precision@5 (0.197) and recall@5 (0.983) on a heterogeneous corpus. This suggests modern embedding models are robust to chunk boundary effects. See `docs/results.md` for full analysis.
+
 ## ChromaDB as Vector Store
 
 **Decision**: Use ChromaDB for vector storage and retrieval.

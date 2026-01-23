@@ -4,7 +4,7 @@
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
 [![Python 3.11-3.12](https://img.shields.io/badge/python-3.11--3.12-blue.svg)](https://www.python.org/downloads/)
 
-A scalable vector database system for semantic search and document retrieval with context-aware processing.
+A RAG evaluation framework exploring adaptive chunking strategies, with provider-agnostic embeddings and reproducible benchmarking.
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ A scalable vector database system for semantic search and document retrieval wit
 - [Testing](#testing)
 - [Docs](#docs)
 - [Results Summary](#results-summary)
-- [Future Enhancements](#future-enhancements)
+- [Future Directions](#future-directions)
 - [Related Work](#related-work)
 - [Maintainers](#maintainers)
 - [Contributing](#contributing)
@@ -41,12 +41,12 @@ The project's value lies in its **infrastructure**: a provider-agnostic embeddin
 
 ## Key Features
 
-- **Intelligent Document Processing**: Convert HTML to Markdown, clean document structure, and prepare text for embedding
-- **Context-Length Awareness**: Automatically categorize documents by token length to optimize processing
-- **Vector Embeddings**: Utilize OpenAI embeddings for semantic understanding of document content
-- **Similarity Matching**: Find related documents using cosine similarity between document vectors
-- **Markdown Processing**: Specialized handling for Markdown syntax and document structure
-- **Customizable Classification**: Group documents by topics and categories
+- **Provider-Agnostic Embeddings**: Automatic fallback chain (OpenAI → OpenRouter → local) with consistent interface
+- **Reproducible Evaluation**: YAML-driven configs, efficiency metrics, artifact logging, variance analysis
+- **Document Processing Pipeline**: HTML to Markdown conversion, normalization, token counting
+- **Length-Based Routing**: Classify documents into short/medium/long categories with configurable thresholds
+- **Vector Search**: ChromaDB integration with batched indexing for large corpora
+- **Extensible Architecture**: Modular design for testing alternative chunking and routing strategies
 
 ## System Architecture
 
@@ -170,7 +170,7 @@ converter.convert_all_files(use_target_folder=True)
 ```
 ## Context Length Management
 
-ContextRAG addresses the challenge of varying document lengths through a three-tier approach:
+ContextRAG implements a three-tier routing strategy based on document length:
 
 ```
 ┌────────────────────────────────────────────────────────────┐
@@ -179,17 +179,15 @@ ContextRAG addresses the challenge of varying document lengths through a three-t
 │  Short         │  Medium                │  Long            │
 │  (≤3500 tokens)│  (3500-15000 tokens)   │  (>15000 tokens) │
 ├────────────────┼────────────────────────┼──────────────────┤
-│ - Direct       │ - Chunked processing   │ - Advanced       │
-│   processing   │ - Section-based        │   chunking       │
-│ - Full context │   embeddings           │ - Hierarchical   │
-│   embedding    │ - Summary generation   │   embeddings     │
+│  No chunking   │  2000-token chunks     │  1000-token      │
+│  (preserve     │  (balance coherence    │  chunks (fine-   │
+│  coherence)    │  and granularity)      │  grained search) │
 └────────────────┴────────────────────────┴──────────────────┘
 ```
 
-This approach ensures:
-- Efficient processing of documents regardless of size
-- Optimal token usage for embedding models
-- Accurate semantic search across varying document lengths
+**Hypothesis**: Adaptive chunking would improve retrieval by preserving semantic coherence in shorter documents while applying appropriate granularity to longer ones.
+
+**Result**: Evaluation shows no accuracy improvement over uniform chunking. See [Results Summary](#results-summary) for details. The routing infrastructure remains useful for experimenting with alternative strategies.
 
 ## Evaluation
 

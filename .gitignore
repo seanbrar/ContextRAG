@@ -3,6 +3,7 @@
 **/*.html
 **/*.md
 !docs/**/*.md
+!data/eval-mixed/**
 **/__pycache__/
 /.pytest_cache/
 /.ruff_cache/
