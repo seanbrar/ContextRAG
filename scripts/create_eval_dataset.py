@@ -1,7 +1,8 @@
 
+from pathlib import Path
+
 import requests
 import tiktoken
-from pathlib import Path
 
 # Configuration
 OUTPUT_DIR = Path("data/eval-mixed/documents")

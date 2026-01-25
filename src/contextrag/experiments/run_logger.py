@@ -12,7 +12,7 @@ from typing import Any
 from contextrag.core.io import write_jsonl
 
 
-def _hash_json(payload: dict) -> str:
+def _hash_json(payload: dict[str, Any]) -> str:
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
@@ -70,8 +70,8 @@ def _system_info() -> dict[str, str]:
 
 def write_run_artifacts(
     run_dir: Path,
-    results: dict,
-    metadata: dict,
+    results: dict[str, Any],
+    metadata: dict[str, Any],
     dataset_path: Path | None = None,
 ) -> None:
     run_dir.mkdir(parents=True, exist_ok=True)

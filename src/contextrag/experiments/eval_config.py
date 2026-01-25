@@ -113,6 +113,7 @@ def load_eval_config(path: Path) -> EvalConfig:
         raise ValueError("Invalid eval config:\n- " + "\n- ".join(errors))
 
     baseline = _validate_baseline(baseline)
+    assert isinstance(dataset, str)
     return EvalConfig(
         dataset=dataset,
         baseline=baseline,

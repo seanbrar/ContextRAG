@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import argparse
-from pathlib import Path
 import urllib.error
 import urllib.request
-
+from pathlib import Path
 
 RFC_URL = "https://www.rfc-editor.org/rfc/rfc{rfc_id}.txt"
 

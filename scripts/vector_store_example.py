@@ -1,8 +1,10 @@
-from contextrag.index.vector_store import VectorDB
+"""Example script demonstrating chromaroute VectorStore usage."""
+
+from chromaroute import VectorStore
 
 
 def main() -> None:
-    vector_db = VectorDB(collection_name="my_collection")
+    vector_store = VectorStore(collection_name="my_collection")
 
     documents = [
         "The capital of California is Sacramento.",
@@ -27,10 +29,10 @@ def main() -> None:
         "Olympia is home to the Hands On Children's Museum, which features interactive exhibits for children to learn through play.",
     ]
 
-    vector_db.add_documents(documents)
+    vector_store.add_documents(documents)
 
     query_text = "What is the capital of California?"
-    results = vector_db.query(query_texts=[query_text])
+    results = vector_store.query(query_texts=[query_text])
 
     print(f"Query: {query_text}")
     for i, result in enumerate(results["documents"][0]):

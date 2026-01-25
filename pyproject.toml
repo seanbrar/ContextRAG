@@ -49,8 +49,34 @@ packages = [{ include = "contextrag", from = "src" }]
 
 [tool.poetry.group.dev.dependencies]
 isort = "^7.0.0"
+mypy = "^1.15.0"
 ruff = "^0.14.13"
 pytest-cov = "^7.0.0"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+mypy_path = "src"
+explicit_package_bases = true
+namespace_packages = true
+exclude = ["tests/", "scripts/", "chromaroute/"]
+
+[[tool.mypy.overrides]]
+module = [
+    "chromadb.*",
+    "chromaroute.*",
+    "tiktoken.*",
+    "sentence_transformers.*",
+    "gensim.*",
+    "nltk.*",
+    "sklearn.*",
+    "bs4.*",
+    "html2text.*",
+    "yaml.*",
+]
+ignore_missing_imports = true
 
 [build-system]
 requires = ["poetry-core"]
