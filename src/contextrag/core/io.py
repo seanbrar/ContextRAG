@@ -1,7 +1,7 @@
 import hashlib
 import json
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 
 def iter_files(root: Path, extensions: Iterable[str]) -> list[Path]:
@@ -11,7 +11,7 @@ def iter_files(root: Path, extensions: Iterable[str]) -> list[Path]:
     return sorted(files)
 
 
-def write_jsonl(path: Path, rows: Iterable[dict]) -> None:
+def write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:
         for row in rows:

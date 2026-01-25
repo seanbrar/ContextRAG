@@ -1,7 +1,6 @@
-from gensim import corpora, models
 import gensim
-
 import nltk
+from gensim import corpora, models
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 
