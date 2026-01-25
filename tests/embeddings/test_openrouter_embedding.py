@@ -1,7 +1,7 @@
 import pytest
 import requests
 
-from contextrag.embeddings.openrouter_embedding import OpenRouterEmbeddingFunction
+from chromaroute import OpenRouterEmbeddingFunction
 
 
 def test_openrouter_embedding_success(monkeypatch):

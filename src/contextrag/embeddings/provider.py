@@ -1,38 +1,62 @@
-from chromadb.utils import embedding_functions
+"""Embedding function factory with provider selection support."""
 
-from contextrag.config import AppConfig, resolve_embed_provider
-from contextrag.embeddings.openrouter_embedding import OpenRouterEmbeddingFunction
+from __future__ import annotations
+
+from chromadb.api.types import EmbeddingFunction
+from chromaroute import EmbedConfig, build_embedding_function as chromaroute_build
+
+from contextrag.config import AppConfig, require_embedding_provider
 
 
 def build_embedding_function(
-    config: AppConfig,
+    config: AppConfig | None = None,
     embedding_model: str | None = None,
     embed_provider: str | None = None,
-):
-    provider = resolve_embed_provider(config, embed_provider)
+) -> EmbeddingFunction:
+    """Build a ChromaDB-compatible embedding function via chromaroute.
 
-    if provider == "openai":
-        model_name = embedding_model or config.openai_embeddings_model
-        if not config.openai_api_key:
-            raise ValueError("OPENAI_API_KEY is required for OpenAI embeddings.")
-        return embedding_functions.OpenAIEmbeddingFunction(
-            model_name=model_name,
+    Args:
+        config: Optional ContextRAG AppConfig. If None, uses chromaroute defaults.
+        embedding_model: Optional model name override.
+        embed_provider: Optional provider override ("openrouter", "local", "auto").
+
+    Returns:
+        A ChromaDB-compatible EmbeddingFunction instance.
+
+    Raises:
+        ValueError: If a provider requires an API key that isn't configured.
+    """
+    if config is None:
+        return chromaroute_build(
+            embedding_model=embedding_model,
+            embed_provider=embed_provider,
         )
-    if provider == "openrouter":
-        model_name = embedding_model or config.openrouter_embeddings_model
-        if not config.openrouter_api_key:
-            raise ValueError("OPENROUTER_API_KEY is required for OpenRouter embeddings.")
-        return OpenRouterEmbeddingFunction(
-            api_key=config.openrouter_api_key,
-            model=model_name,
-            base_url=config.openrouter_base_url,
-            referer=config.openrouter_referer,
-            title=config.openrouter_title,
-            provider=config.openrouter_embed_provider_config(),
-        )
-    if provider == "local":
-        model_name = embedding_model or config.local_embeddings_model
-        return embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=model_name,
-        )
-    return embedding_functions.DefaultEmbeddingFunction()
+
+    resolved_provider = config.resolve_embed_provider(embed_provider)
+    require_embedding_provider(
+        config,
+        resolved_provider,
+        explicit_provider=embed_provider,
+    )
+
+    # Validate provider JSON if present
+    if config.openrouter_embed_provider_json:
+        config.openrouter_embed_provider_config()
+
+    # Build chromaroute config directly (thread-safe, no env mutation)
+    embed_config = EmbedConfig(
+        openrouter_api_key=config.openrouter_api_key,
+        openrouter_base_url=config.openrouter_base_url,
+        openrouter_embeddings_model=config.openrouter_embeddings_model,
+        openrouter_referer=config.openrouter_referer,
+        openrouter_title=config.openrouter_title,
+        openrouter_provider_json=config.openrouter_embed_provider_json,
+        local_embeddings_model=config.local_embeddings_model,
+        embed_provider=resolved_provider,
+    )
+
+    return chromaroute_build(
+        config=embed_config,
+        embedding_model=embedding_model,
+        embed_provider=embed_provider,
+    )

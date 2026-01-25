@@ -19,6 +19,7 @@ classifiers = [
 dependencies = [
     "beautifulsoup4~=4.14.3",
     "chromadb~=1.4.1",
+    "chromaroute~=0.2.3",
     "click~=8.3.1",
     "gensim~=4.4.0",
     "html2text~=2025.4.15",

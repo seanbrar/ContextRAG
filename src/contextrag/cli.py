@@ -1,3 +1,5 @@
+"""ContextRAG CLI - RAG evaluation framework."""
+
 from __future__ import annotations
 
 import json
@@ -5,22 +7,13 @@ from pathlib import Path
 
 import click
 
-from contextrag.config import (
-    load_config,
-    require_embedding_provider,
-    resolve_embed_provider,
-)
+from contextrag.config import load_config, require_embedding_provider, resolve_embed_provider
 from contextrag.core.chunking import chunk_text_by_words
-from contextrag.core.constants import MEDIUM_MAX_TOKENS, SHORT_MAX_TOKENS
-from contextrag.core.io import checksum as checksum_text, iter_files, write_jsonl
-from contextrag.core.routing import route_bucket
+from contextrag.core.io import iter_files
 from contextrag.core.tokenizer import count_tokens
-from contextrag.embeddings.provider import build_embedding_function
 from contextrag.eval.runner import run_eval
-from contextrag.experiments.eval_config import EvalConfig, load_eval_config
+from contextrag.experiments.eval_config import load_eval_config
 from contextrag.experiments.run_logger import write_run_artifacts
-from contextrag.ingest.html_to_markdown import HTMLToMarkdownConverter
-from contextrag.ingest.markdown_processing import modify_markdown
 from contextrag.index.vector_store import VectorDB
 
 
@@ -28,6 +21,7 @@ TEXT_EXTENSIONS = (".md", ".txt")
 
 
 def _chunk_words(text: str, chunk_words: int, overlap: int) -> list[str]:
+    """Split text into word-based chunks."""
     return chunk_text_by_words(text, chunk_words, overlap)
 
 
@@ -44,6 +38,7 @@ def _write_eval_outputs(
     summary_updates: dict[str, str] | None = None,
     metadata_updates: dict[str, str] | None = None,
 ) -> None:
+    """Run evaluation and write output artifacts."""
     results = run_eval(
         dataset_path=dataset_path,
         baseline=baseline,
@@ -86,199 +81,11 @@ def _write_eval_outputs(
 
 @click.group()
 def main() -> None:
-    """ContextRAG command line interface."""
-
-
-@main.command()
-@click.option("--input", "input_path", required=True, type=click.Path(path_type=Path))
-@click.option("--output", "output_path", required=True, type=click.Path(path_type=Path))
-@click.option(
-    "--format",
-    "format_",
-    type=click.Choice(["html", "markdown", "auto"]),
-    default="auto",
-)
-@click.option("--min-tokens", type=int, default=None)
-@click.option("--max-tokens", type=int, default=None)
-def ingest(
-    input_path: Path,
-    output_path: Path,
-    format_: str,
-    min_tokens: int | None,
-    max_tokens: int | None,
-) -> None:
-    """Convert raw documents into cleaned Markdown."""
-    output_path.mkdir(parents=True, exist_ok=True)
-
-    html_files = iter_files(input_path, [".html"])
-    md_files = iter_files(input_path, TEXT_EXTENSIONS)
-
-    if format_ == "auto":
-        format_ = "html" if html_files else "markdown"
-
-    manifest_rows: list[dict] = []
-
-    if format_ == "html":
-        converter = HTMLToMarkdownConverter(str(input_path))
-        for html_file in html_files:
-            html_content = converter._read_html_file(html_file)
-            if html_content is None:
-                continue
-            html_content = converter._remove_html_footer(html_content)
-            markdown = converter._html_to_markdown(html_content)
-            token_count = count_tokens(markdown)
-            if min_tokens is not None and token_count < min_tokens:
-                continue
-            if max_tokens is not None and token_count > max_tokens:
-                continue
-            output_file = output_path / html_file.with_suffix(".md").name
-            output_file.write_text(markdown, encoding="utf-8")
-            manifest_rows.append(
-                {
-                    "source": str(html_file),
-                    "output": str(output_file),
-                    "tokens": token_count,
-                }
-            )
-    else:
-        for md_file in md_files:
-            content = md_file.read_text(encoding="utf-8")
-            content = modify_markdown(content)
-            token_count = count_tokens(content)
-            if min_tokens is not None and token_count < min_tokens:
-                continue
-            if max_tokens is not None and token_count > max_tokens:
-                continue
-            output_file = output_path / md_file.name
-            output_file.write_text(content, encoding="utf-8")
-            manifest_rows.append(
-                {
-                    "source": str(md_file),
-                    "output": str(output_file),
-                    "tokens": token_count,
-                }
-            )
-
-    write_jsonl(output_path / "manifest.jsonl", manifest_rows)
-    click.echo(f"Ingested {len(manifest_rows)} files into {output_path}")
-
-
-@main.command()
-@click.option("--input", "input_path", required=True, type=click.Path(path_type=Path))
-@click.option("--output", "output_path", required=True, type=click.Path(path_type=Path))
-@click.option("--short-max", type=int, default=SHORT_MAX_TOKENS)
-@click.option("--medium-max", type=int, default=MEDIUM_MAX_TOKENS)
-@click.option(
-    "--chat-provider",
-    type=click.Choice(["openai", "openrouter"]),
-    default=None,
-)
-def route(
-    input_path: Path,
-    output_path: Path,
-    short_max: int,
-    medium_max: int,
-    chat_provider: str | None,
-) -> None:
-    """Route documents into length-based buckets."""
-    output_path.mkdir(parents=True, exist_ok=True)
-    buckets = {
-        "short": output_path / "short",
-        "medium": output_path / "medium",
-        "long": output_path / "long",
-    }
-    for path in buckets.values():
-        path.mkdir(parents=True, exist_ok=True)
-
-    routing_rows: list[dict] = []
-    for md_file in iter_files(input_path, TEXT_EXTENSIONS):
-        content = md_file.read_text(encoding="utf-8")
-        token_count = count_tokens(content)
-        bucket = route_bucket(
-            token_count,
-            short_max=short_max,
-            medium_max=medium_max,
-        )
-        output_file = buckets[bucket] / md_file.name
-        output_file.write_text(content, encoding="utf-8")
-        routing_rows.append(
-            {
-                "source": str(md_file),
-                "output": str(output_file),
-                "tokens": token_count,
-                "bucket": bucket,
-                "chat_provider": chat_provider,
-            }
-        )
-
-    write_jsonl(output_path / "routing.jsonl", routing_rows)
-    click.echo(f"Routed {len(routing_rows)} files into {output_path}")
-
-
-@main.command()
-@click.option("--input", "input_path", required=True, type=click.Path(path_type=Path))
-@click.option("--output", "output_path", required=True, type=click.Path(path_type=Path))
-@click.option("--model", default=None)
-@click.option("--cache", "cache_path", default=None, type=click.Path(path_type=Path))
-@click.option(
-    "--embed-provider",
-    "embed_provider",
-    type=click.Choice(["auto", "openai", "openrouter", "local"]),
-    default=None,
-)
-def embed(
-    input_path: Path,
-    output_path: Path,
-    model: str | None,
-    cache_path: Path | None,
-    embed_provider: str | None,
-) -> None:
-    """Generate embeddings for Markdown documents."""
-    config = load_config()
-    explicit_provider = embed_provider
-    resolved_provider = resolve_embed_provider(config, explicit_provider=explicit_provider)
-    require_embedding_provider(
-        config,
-        resolved_provider=resolved_provider,
-        explicit_provider=explicit_provider,
-        error_cls=click.ClickException,
-    )
-
-    output_path.mkdir(parents=True, exist_ok=True)
-    embeddings_path = output_path / "embeddings.jsonl"
-
-    cache: dict[str, list[float]] = {}
-    if cache_path and cache_path.exists():
-        cache = json.loads(cache_path.read_text(encoding="utf-8"))
-
-    embedding_function = build_embedding_function(
-        config=config,
-        embedding_model=model,
-        embed_provider=resolved_provider,
-    )
-
-    rows: list[dict] = []
-    for md_file in iter_files(input_path, TEXT_EXTENSIONS):
-        content = md_file.read_text(encoding="utf-8")
-        content_checksum = checksum_text(content)
-        embedding = cache.get(content_checksum)
-        if embedding is None:
-            embedding = embedding_function([content])[0]
-            cache[content_checksum] = embedding
-        rows.append(
-            {
-                "id": md_file.stem,
-                "path": str(md_file),
-                "tokens": count_tokens(content),
-                "embedding": embedding,
-            }
-        )
-
-    write_jsonl(embeddings_path, rows)
-    if cache_path:
-        cache_path.write_text(json.dumps(cache), encoding="utf-8")
-
-    click.echo(f"Embedded {len(rows)} files into {embeddings_path}")
+    """ContextRAG - RAG evaluation framework.
+    
+    A CLI tool for evaluating retrieval-augmented generation strategies
+    with comprehensive metrics (accuracy, efficiency, and cost).
+    """
 
 
 @main.command()
@@ -289,7 +96,7 @@ def embed(
 @click.option(
     "--embed-provider",
     "embed_provider",
-    type=click.Choice(["auto", "openai", "openrouter", "local"]),
+    type=click.Choice(["auto", "openrouter", "local"]),
     default=None,
 )
 @click.option("--chunk-words", type=int, default=None)
@@ -366,7 +173,7 @@ def query(collection: str, persist_path: str, query_text: str, top_k: int) -> No
 @click.option(
     "--embed-provider",
     "embed_provider",
-    type=click.Choice(["auto", "openai", "openrouter", "local"]),
+    type=click.Choice(["auto", "openrouter", "local"]),
     default=None,
 )
 @click.option("--run-dir", "run_dir", type=click.Path(path_type=Path))
@@ -382,7 +189,11 @@ def eval(
     run_dir: Path | None,
     config_path: Path | None,
 ) -> None:
-    """Run retrieval evaluation."""
+    """Run retrieval evaluation.
+    
+    This is the core command for evaluating RAG retrieval strategies.
+    Supports both uniform chunking and adaptive (router) baselines.
+    """
     eval_config = None
     if config_path:
         eval_config = load_eval_config(config_path)
@@ -471,7 +282,11 @@ def demo(
     persist_path: str | None,
     embedding_model: str | None,
 ) -> None:
-    """Run the offline demo evaluation with local embeddings."""
+    """Run the offline demo evaluation with local embeddings.
+    
+    This command requires no API keys - it uses local sentence-transformers
+    for embeddings and runs against the bundled demo dataset.
+    """
     config = load_config()
     resolved_provider = resolve_embed_provider(config, explicit_provider="local")
     require_embedding_provider(
@@ -498,34 +313,38 @@ def doctor() -> None:
     from importlib.util import find_spec
 
     config = load_config()
-    checks = [
-        ("OPENAI_API_KEY", bool(config.openai_api_key)),
-        ("OPENROUTER_API_KEY", bool(config.openrouter_api_key)),
-    ]
-    for name, ok in checks:
-        status = "ok" if ok else "missing"
-        click.echo(f"{name}: {status}")
-    resolved_provider = resolve_embed_provider(config, None)
-    click.echo(f"embeddings_provider: {resolved_provider}")
+    
+    # API Keys
+    click.echo("=== API Keys ===")
+    click.echo(f"OPENROUTER_API_KEY: {'ok' if config.openrouter_api_key else 'missing'}")
+    click.echo(f"OPENAI_API_KEY: {'ok' if config.openai_api_key else 'missing'}")
+    
+    # Resolved providers
+    click.echo("\n=== Providers ===")
+    resolved_embed = resolve_embed_provider(config, None)
+    click.echo(f"embed_provider: {resolved_embed}")
+    click.echo(f"chat_provider: {config.chat_provider}")
+    
+    # Models
+    click.echo("\n=== Models ===")
+    click.echo(f"openrouter_embeddings_model: {config.openrouter_embeddings_model}")
     click.echo(f"local_embeddings_model: {config.local_embeddings_model}")
-    if not config.openai_api_key and not config.openrouter_api_key:
-        click.echo("note: set OPENAI_API_KEY or OPENROUTER_API_KEY for hosted embeddings")
+    click.echo(f"openai_chat_model: {config.openai_chat_model}")
+    
+    # Dependencies
+    click.echo("\n=== Dependencies ===")
+    deps = [
+        ("chromadb", "chromadb"),
+        ("chromaroute", "chromaroute"),
+        ("tiktoken", "tiktoken"),
+        ("sentence-transformers", "sentence_transformers"),
+    ]
+    for name, module in deps:
+        status = "ok" if find_spec(module) else "missing"
+        click.echo(f"{name}: {status}")
 
-    try:
-        import tiktoken  # noqa: F401
-
-        click.echo("tiktoken: ok")
-    except ImportError:
-        click.echo("tiktoken: missing")
-
-    click.echo(
-        "chromadb: {}".format("ok" if find_spec("chromadb") else "missing")
-    )
-    click.echo(
-        "sentence-transformers: {}".format(
-            "ok" if find_spec("sentence_transformers") else "missing"
-        )
-    )
+    if not config.openrouter_api_key and not config.openai_api_key:
+        click.echo("\nnote: Set OPENROUTER_API_KEY for hosted embeddings")
 
 
 if __name__ == "__main__":
