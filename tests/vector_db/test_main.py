@@ -72,28 +72,26 @@ class TestVectorDB:
         for docs, distances in zip(results["documents"], results["distances"]):
             assert len(docs) == len(distances)
 
-    def test_openai_provider_requires_key(self, vector_db):
+    def test_openrouter_provider_requires_key(self, vector_db):
         config = AppConfig(
             openai_api_key=None,
-            openai_embeddings_model="text-embedding-3-small",
-            openai_chat_model_short="gpt-3.5-turbo-1106",
-            openai_chat_model_medium="gpt-3.5-turbo-16k",
+            openai_chat_model="gpt-4o-mini",
+            
+            
             openrouter_api_key=None,
             openrouter_base_url="https://openrouter.ai/api/v1",
             openrouter_chat_model="mistralai/devstral-2512:free",
             openrouter_embeddings_model="qwen/qwen3-embedding-8b",
             local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
-            contextrag_chat_provider="openai",
-            contextrag_embed_provider="openai",
+            chat_provider="openai",
+            embed_provider="openrouter",
             openrouter_referer=None,
             openrouter_title=None,
             openrouter_embed_provider_json=None,
-            openrouter_embed_provider_order=None,
-            openrouter_embed_allow_fallbacks=None,
         )
-        with pytest.raises(ValueError, match="OPENAI_API_KEY is required"):
+        with pytest.raises(ValueError, match="OPENROUTER_API_KEY is required"):
             vector_db._build_embedding_function(
                 config=config,
                 embedding_model=None,
-                embed_provider="openai",
+                embed_provider="openrouter",
             )

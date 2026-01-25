@@ -14,21 +14,19 @@ class DummyEmbedding:
 def _config(**overrides):
     data = dict(
         openai_api_key="ok",
-        openai_embeddings_model="text-embedding-3-small",
-        openai_chat_model_short="gpt-3.5-turbo-1106",
-        openai_chat_model_medium="gpt-3.5-turbo-16k",
+        openai_chat_model="gpt-4o-mini",
+        
+        
         openrouter_api_key="ok",
         openrouter_base_url="https://openrouter.ai/api/v1",
         openrouter_chat_model="mistralai/devstral-2512:free",
         openrouter_embeddings_model="qwen/qwen3-embedding-8b",
         local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
-        contextrag_chat_provider="openai",
-        contextrag_embed_provider="auto",
+        chat_provider="openai",
+        embed_provider="auto",
         openrouter_referer=None,
         openrouter_title=None,
         openrouter_embed_provider_json=None,
-        openrouter_embed_provider_order=None,
-        openrouter_embed_allow_fallbacks=None,
     )
     data.update(overrides)
     return AppConfig(**data)
@@ -39,15 +37,19 @@ def test_build_embedding_function_openrouter_json(monkeypatch):
         openai_api_key=None,
         openrouter_embed_provider_json=json.dumps({"order": ["x"]}),
     )
+    captured = {}
 
-    monkeypatch.setattr(
-        provider, "OpenRouterEmbeddingFunction", lambda **kwargs: DummyEmbedding()
-    )
+    def fake_build(config=None, embedding_model=None, embed_provider=None):
+        captured["config"] = config
+        return DummyEmbedding()
+
+    monkeypatch.setattr(provider, "chromaroute_build", fake_build)
     db = vector_store.VectorDB.__new__(vector_store.VectorDB)
     ef = vector_store.VectorDB._build_embedding_function(
         db, config, None, "openrouter"
     )
     assert isinstance(ef, DummyEmbedding)
+    assert captured["config"].openrouter_provider_json == config.openrouter_embed_provider_json
 
 
 def test_build_embedding_function_openrouter_invalid_json(monkeypatch):
@@ -60,56 +62,35 @@ def test_build_embedding_function_openrouter_invalid_json(monkeypatch):
         vector_store.VectorDB._build_embedding_function(db, config, None, "openrouter")
 
 
-def test_build_embedding_function_openrouter_provider_order(monkeypatch):
-    config = _config(
-        openai_api_key=None,
-        openrouter_embed_provider_json=None,
-        openrouter_embed_provider_order="alpha, beta",
-        openrouter_embed_allow_fallbacks="true",
-    )
-
+def test_build_embedding_function_openrouter_env(monkeypatch):
+    config = _config(openai_api_key=None)
     captured = {}
 
-    def fake_openrouter(**kwargs):
-        captured.update(kwargs)
+    def fake_build(config=None, embedding_model=None, embed_provider=None):
+        captured["config"] = config
         return DummyEmbedding()
 
-    monkeypatch.setattr(provider, "OpenRouterEmbeddingFunction", fake_openrouter)
+    monkeypatch.setattr(provider, "chromaroute_build", fake_build)
     db = vector_store.VectorDB.__new__(vector_store.VectorDB)
     vector_store.VectorDB._build_embedding_function(db, config, None, "openrouter")
-    assert captured["provider"] == {"order": ["alpha", "beta"], "allow_fallbacks": True}
+    assert captured["config"].embed_provider == "openrouter"
+    assert captured["config"].openrouter_embeddings_model == config.openrouter_embeddings_model
 
 
 def test_build_embedding_function_local(monkeypatch):
     config = _config(openai_api_key=None, openrouter_api_key=None)
+    captured = {}
 
-    monkeypatch.setattr(
-        provider.embedding_functions,
-        "SentenceTransformerEmbeddingFunction",
-        lambda model_name: DummyEmbedding(),
-    )
+    def fake_build(config=None, embedding_model=None, embed_provider=None):
+        captured["config"] = config
+        return DummyEmbedding()
+
+    monkeypatch.setattr(provider, "chromaroute_build", fake_build)
     db = vector_store.VectorDB.__new__(vector_store.VectorDB)
     ef = vector_store.VectorDB._build_embedding_function(db, config, None, "local")
     assert isinstance(ef, DummyEmbedding)
-
-
-def test_build_embedding_function_default(monkeypatch):
-    config = _config()
-    monkeypatch.setattr(
-        provider.embedding_functions,
-        "DefaultEmbeddingFunction",
-        lambda: DummyEmbedding(),
-    )
-    db = vector_store.VectorDB.__new__(vector_store.VectorDB)
-    ef = vector_store.VectorDB._build_embedding_function(db, config, None, "unknown")
-    assert isinstance(ef, DummyEmbedding)
-
-
-def test_build_embedding_function_openai_requires_key():
-    config = _config(openai_api_key=None, openrouter_api_key=None)
-    db = vector_store.VectorDB.__new__(vector_store.VectorDB)
-    with pytest.raises(ValueError, match="OPENAI_API_KEY"):
-        vector_store.VectorDB._build_embedding_function(db, config, None, "openai")
+    assert captured["config"].embed_provider == "local"
+    assert captured["config"].local_embeddings_model == config.local_embeddings_model
 
 
 def test_build_embedding_function_openrouter_requires_key():

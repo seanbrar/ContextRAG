@@ -72,7 +72,7 @@ class OpenAIChatProvider(ChatProvider):
         client: OpenAI | None = None,
     ) -> None:
         config = load_config()
-        self.model = model or config.openai_chat_model_short
+        self.model = model or config.openai_chat_model
         self.client = client or OpenAI(api_key=config.openai_api_key)
 
     def complete(

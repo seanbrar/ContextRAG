@@ -9,7 +9,7 @@ class VectorDB:
     """A class to manage vector database operations using ChromaDB.
 
     This class provides functionality to create and manage collections in ChromaDB,
-    add documents, and perform similarity searches using OpenAI embeddings.
+    add documents, and perform similarity searches using configured embeddings.
 
     Attributes:
         collection_name (str): Name of the ChromaDB collection.

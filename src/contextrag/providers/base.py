@@ -1,18 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Iterable
-
-
-class EmbeddingsProvider(ABC):
-    @abstractmethod
-    def embed(
-        self, texts: Iterable[str], model: str | None = None
-    ) -> list[list[float]]:
-        raise NotImplementedError
+from typing import Any
 
 
 class ChatProvider(ABC):
+    """Abstract base class for chat providers."""
+
     @abstractmethod
     def complete(
         self,
@@ -20,4 +14,14 @@ class ChatProvider(ABC):
         model: str | None = None,
         temperature: float = 0,
     ) -> str:
+        """Generate a chat completion.
+
+        Args:
+            messages: List of message dicts with 'role' and 'content' keys.
+            model: Optional model override.
+            temperature: Sampling temperature (0-2).
+
+        Returns:
+            The model's response content.
+        """
         raise NotImplementedError
