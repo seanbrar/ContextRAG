@@ -52,11 +52,11 @@ Output: `runs/demo_eval.json` with precision/recall metrics.
 
 | Command | Description |
 |---------|-------------|
-| `contextrag demo` | Offline evaluation with local embeddings |
 | `contextrag eval` | Full evaluation with configurable providers |
-| `contextrag index` | Build vector index from documents |
-| `contextrag query` | Query the vector index |
+| `contextrag demo` | Offline evaluation with local embeddings |
 | `contextrag doctor` | Check configuration health |
+| `contextrag db index` | Build vector index from documents |
+| `contextrag db query` | Query the vector index |
 
 ### Example: Full Evaluation
 
@@ -74,13 +74,13 @@ poetry run contextrag eval \
 
 ```bash
 # Build index
-poetry run contextrag index \
+poetry run contextrag db index \
     --input data/demo/documents \
     --collection my_docs \
     --persist ./runs/chroma
 
 # Query
-poetry run contextrag query \
+poetry run contextrag db query \
     --collection my_docs \
     --persist ./runs/chroma \
     --query "HTTP caching headers"

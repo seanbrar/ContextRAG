@@ -113,12 +113,14 @@ ContextRAG now depends on chromaroute for embeddings, keeping only the evaluatio
 ContextRAG is now a focused evaluation CLI:
 
 ```bash
-# Core commands
-contextrag demo      # Offline evaluation
-contextrag eval      # Full evaluation
-contextrag index     # Build vector index
-contextrag query     # Query index
-contextrag doctor    # Check health
+# Primary commands
+contextrag eval      # Full evaluation with configurable providers
+contextrag demo      # Offline evaluation with local embeddings
+contextrag doctor    # Check configuration health
+
+# Database operations
+contextrag db index  # Build vector index
+contextrag db query  # Query index
 ```
 
-The routing and ingest commands were removed—they represented historical complexity, not current value.
+The routing and ingest commands were removed—they represented historical complexity, not current value. Embedding functionality is now delegated to [chromaroute](https://github.com/seanbrar/chromaroute).

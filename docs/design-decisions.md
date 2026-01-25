@@ -120,3 +120,35 @@ runs/{run_name}/
 2. Metric calculations (high coverage)
 3. Provider integrations (mocked HTTP calls)
 4. End-to-end pipeline (manual verification)
+
+## Configuration Architecture
+
+**Decision**: Use composition where `AppConfig` contains `chromaroute.EmbedConfig`.
+
+**Rationale**:
+- Single source of truth for embedding configuration
+- Clean delegation to chromaroute for all embedding operations
+- Avoids field duplication between ContextRAG and chromaroute configs
+- OpenRouter credentials are shared between chat and embeddings via property delegation
+
+**Structure**:
+```python
+@dataclass(frozen=True)
+class AppConfig:
+    # Chat-specific (ContextRAG)
+    openai_api_key: str | None
+    openai_chat_model: str
+    openrouter_chat_model: str
+    chat_provider: str
+
+    # Embeddings (delegated to chromaroute)
+    embed_config: EmbedConfig
+
+    @property
+    def openrouter_api_key(self) -> str | None:
+        return self.embed_config.openrouter_api_key
+```
+
+**Tradeoffs**:
+- Requires chromaroute as a dependency (acceptable since it's our extracted library)
+- Properties for shared fields add indirection but maintain clean API
