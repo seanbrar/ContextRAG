@@ -19,18 +19,18 @@ This document explains key engineering decisions in ContextRAG and their rationa
 
 ## Provider-Agnostic Embedding Layer
 
-**Decision**: Support multiple embedding providers (OpenAI, OpenRouter, local/HuggingFace) with automatic fallback.
+**Decision**: Use `chromaroute` for provider-agnostic embeddings with OpenRouter + local fallback.
 
 **Rationale**:
-- OpenAI embeddings are high quality but require API key and incur costs
-- OpenRouter provides free-tier access to various models
+- OpenRouter provides access to multiple hosted embedding models with routing support
 - Local embeddings enable offline operation and zero marginal cost
-- Fallback chain ensures the system works in degraded conditions
+- Provider selection ensures a working default with minimal setup
 
 **Implementation**:
 ```
-OpenAI (if OPENAI_API_KEY) → OpenRouter (if OPENROUTER_API_KEY) → Local (always available)
+OpenRouter (if OPENROUTER_API_KEY) → Local (always available)
 ```
+`chromaroute` handles provider routing and failure fallback.
 
 **Tradeoffs**:
 - Different providers produce incompatible embedding spaces
