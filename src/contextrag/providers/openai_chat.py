@@ -1,9 +1,11 @@
-from typing import Any, List, Optional
+from typing import List, Optional
+
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
 from contextrag.config import load_config
-from contextrag.providers.base import ChatProvider
+from contextrag.providers.base import ChatProvider, MessageParam
+
 
 class ChatManager:
     """A class to manage chat interactions with OpenAI models.
@@ -16,10 +18,10 @@ class ChatManager:
         conversation_history: List of conversation messages.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize ChatManager with OpenAI client and empty conversation history."""
         self.client = OpenAI()
-        self.conversation_history: List[dict] = []
+        self.conversation_history: List[MessageParam] = []
 
     def complete(
         self,
@@ -39,7 +41,7 @@ class ChatManager:
         Returns:
             ChatCompletion: The model's response.
         """
-        messages = []
+        messages: list[MessageParam] = []
 
         if system_message:
             messages.append({"role": "system", "content": system_message})
@@ -52,7 +54,7 @@ class ChatManager:
             temperature=temperature,
         )
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset conversation history to empty state."""
         self.conversation_history = []
 
@@ -77,7 +79,7 @@ class OpenAIChatProvider(ChatProvider):
 
     def complete(
         self,
-        messages: list[dict[str, Any]],
+        messages: list[MessageParam],
         model: str | None = None,
         temperature: float = 0,
     ) -> str:
@@ -86,4 +88,5 @@ class OpenAIChatProvider(ChatProvider):
             messages=messages,
             temperature=temperature,
         )
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        return content if content is not None else ""

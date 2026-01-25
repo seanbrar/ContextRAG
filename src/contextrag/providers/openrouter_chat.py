@@ -3,7 +3,7 @@ from __future__ import annotations
 from openai import OpenAI
 
 from contextrag.config import load_config
-from contextrag.providers.base import ChatProvider
+from contextrag.providers.base import ChatProvider, MessageParam
 
 
 class OpenRouterChatProvider(ChatProvider):
@@ -24,7 +24,7 @@ class OpenRouterChatProvider(ChatProvider):
 
     def complete(
         self,
-        messages: list[dict[str, str]],
+        messages: list[MessageParam],
         model: str | None = None,
         temperature: float = 0,
     ) -> str:
@@ -33,4 +33,5 @@ class OpenRouterChatProvider(ChatProvider):
             messages=messages,
             temperature=temperature,
         )
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        return content if content is not None else ""

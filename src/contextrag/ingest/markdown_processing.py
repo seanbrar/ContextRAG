@@ -134,7 +134,7 @@ def convert_indented_blocks_to_code(content: str) -> str:
         stripped = content.rstrip("\n")
         return f"```\n{stripped}\n```\n"
 
-    def wrap_block(match):
+    def wrap_block(match: re.Match[str]) -> str:
         block = match.group(0).rstrip("\n")
         return f"```\n{block}\n```\n"
 

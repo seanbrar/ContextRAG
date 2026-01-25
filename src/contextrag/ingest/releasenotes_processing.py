@@ -1,7 +1,7 @@
-import re
 import logging
-from typing import Optional
 import os
+import re
+from typing import Optional
 
 # Setup logging with external configuration option
 logging_level = os.getenv("LOGGING_LEVEL", "INFO").upper()
@@ -29,9 +29,10 @@ def is_table_start(line: str, next_line: Optional[str] = None) -> bool:
     :param next_line: The next line in the text.
     :return: True if the line indicates the start of a table, False otherwise.
     """
+    if next_line is None:
+        return False
     return (
         TABLE_TYPE_2_PATTERN in line
-        and next_line
         and (TABLE_TYPE_1_PATTERN in next_line or TABLE_TYPE_2_PATTERN in next_line)
     )
 
@@ -159,7 +160,7 @@ def ensure_correct_url_format(entry: str) -> str:
     )
 
 
-def process_buffer_for_replacements(buffer: list) -> str:
+def process_buffer_for_replacements(buffer: list[str]) -> str:
     """
     Process a buffer of lines for various replacements and normalization.
 
@@ -214,14 +215,15 @@ def add_url_to_key(entry: str) -> str:
     key_match = key_regex.search(entry)
     if key_match:
         key_value = key_match.group().strip("[]")
+        company = COMPANY_NAME or "UNKNOWN"
         url_pattern = (
             rf"\[{re.escape(key_value)}\]"
-            rf"\(https://{re.escape(COMPANY_NAME)}\.atlassian\.net/browse/"
+            rf"\(https://{re.escape(company)}\.atlassian\.net/browse/"
             rf"{re.escape(key_value)}\)"
         )
         if not re.search(url_pattern, entry):
             key_pattern = r"\[" + re.escape(key_value) + r"\]"
-            new_url_pattern = f"[{key_value}](https://{COMPANY_NAME}.atlassian.net/browse/{key_value})"
+            new_url_pattern = f"[{key_value}](https://{company}.atlassian.net/browse/{key_value})"
             entry = re.sub(key_pattern, new_url_pattern, entry)
     return entry
 
@@ -234,8 +236,8 @@ def transform_entries(text: str) -> str:
     :return: The transformed text with processed entries.
     """
     lines = text.split("\n")
-    entry_buffer = []
-    entries = []
+    entry_buffer: list[str] = []
+    entries: list[str] = []
 
     for line in lines:
         if should_flush_buffer(line, entry_buffer):
@@ -263,7 +265,7 @@ def process_line(line: str) -> str:
     )
 
 
-def should_flush_buffer(line: str, buffer: list) -> bool:
+def should_flush_buffer(line: str, buffer: list[str]) -> bool:
     """
     Determine whether the current buffer should be flushed based on the line content.
 
@@ -274,7 +276,7 @@ def should_flush_buffer(line: str, buffer: list) -> bool:
     return is_non_data_entry(line) or is_data_entry_start(line, buffer)
 
 
-def flush_buffer(buffer: list) -> str:
+def flush_buffer(buffer: list[str]) -> str:
     """
     Process and clear the current buffer, returning the processed text.
 
@@ -286,7 +288,7 @@ def flush_buffer(buffer: list) -> str:
     return processed_text
 
 
-def process_buffer_if_needed(buffer: list) -> str:
+def process_buffer_if_needed(buffer: list[str]) -> str:
     """
     Process the buffer if it contains data, otherwise return an empty string.
 
@@ -306,7 +308,7 @@ def is_non_data_entry(line: str) -> bool:
     return line.startswith("## ") or "![](" in line or "Key | Summary | T |" in line
 
 
-def is_data_entry_start(line: str, buffer: list) -> bool:
+def is_data_entry_start(line: str, buffer: list[str]) -> bool:
     """
     Check if the line is the start of a data entry.
 
@@ -314,7 +316,7 @@ def is_data_entry_start(line: str, buffer: list) -> bool:
     :param buffer: The current buffer.
     :return: True if it's the start of a data entry, False otherwise.
     """
-    return key_regex.match(line) and buffer
+    return bool(key_regex.match(line) and buffer)
 
 
 def finalize_entries(text: str) -> str:

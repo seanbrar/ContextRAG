@@ -6,7 +6,6 @@ from pathlib import Path
 
 from contextrag.core.logging import get_logger
 
-
 logger = get_logger(__name__)
 
 __all__ = ["extract_categories_from_file"]

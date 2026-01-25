@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TypeAlias
+
+from openai.types.chat import ChatCompletionMessageParam
+
+MessageParam: TypeAlias = ChatCompletionMessageParam
 
 
 class ChatProvider(ABC):
@@ -10,7 +14,7 @@ class ChatProvider(ABC):
     @abstractmethod
     def complete(
         self,
-        messages: list[dict[str, Any]],
+        messages: list[MessageParam],
         model: str | None = None,
         temperature: float = 0,
     ) -> str:

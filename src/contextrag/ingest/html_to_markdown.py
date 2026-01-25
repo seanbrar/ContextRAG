@@ -1,9 +1,11 @@
-import os
 import logging
+import os
 from pathlib import Path
-from typing import Optional, Dict, Any
-from bs4 import BeautifulSoup
+from typing import Any, Dict, Optional
+
 import html2text
+from bs4 import BeautifulSoup
+
 from contextrag.core.routing import route_bucket
 from contextrag.core.tokenizer import count_tokens
 
@@ -48,7 +50,7 @@ class HTMLToMarkdownConverter:
 
     def _write_markdown_file(
         self, file_path: Path, content: str, use_target_folder: bool = False
-    ):
+    ) -> None:
         """
         Write Markdown content to a file, optionally in a target folder based on content length.
 
@@ -91,8 +93,8 @@ class HTMLToMarkdownConverter:
 
         bucket = route_bucket(count_tokens(str(content)))
         return self.folder_path / bucket
-        
-    def convert_all_files(self, use_target_folder: bool = False):
+
+    def convert_all_files(self, use_target_folder: bool = False) -> None:
         """
         Convert all HTML files in the folder to Markdown, optionally sorting them into target folders.
 

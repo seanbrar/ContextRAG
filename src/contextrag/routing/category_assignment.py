@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
 import logging
 import os
 import re
+from datetime import datetime
 
 from dotenv import load_dotenv
 
@@ -12,7 +12,6 @@ from contextrag.core.routing import route_bucket
 from contextrag.core.tokenizer import count_tokens
 from contextrag.ingest.markdown_processing import preprocess_similarity_text
 from contextrag.providers.openai_chat import ChatManager, ChatModels
-
 
 logger = get_logger(__name__)
 
@@ -27,7 +26,7 @@ __all__ = [
 ]
 
 
-def read_markdown_files(folder_path: str = "markdown_grouping/markdown") -> dict:
+def read_markdown_files(folder_path: str = "markdown_grouping/markdown") -> dict[str, str]:
     """Read markdown files from the specified directory."""
     markdown_files: dict[str, str] = {}
     for filename in os.listdir(folder_path):
@@ -88,6 +87,8 @@ def main() -> None:
             )
 
             message = response.choices[0].message.content
+            if message is None:
+                message = ""
             categories = re.findall(r'"""(.*?)"""|```(.*?)```', message, re.DOTALL)
 
             if categories:
