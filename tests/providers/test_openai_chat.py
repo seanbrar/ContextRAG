@@ -1,5 +1,6 @@
-from contextrag.providers.openai_chat import ChatManager, OpenAIChatProvider
+from chromaroute import EmbedConfig
 from contextrag.config import AppConfig
+from contextrag.providers.openai_chat import ChatManager, OpenAIChatProvider
 
 
 def test_openai_chat_provider_complete(monkeypatch):
@@ -14,21 +15,22 @@ def test_openai_chat_provider_complete(monkeypatch):
 
             return type("Response", (), {"choices": [Choice()]})()
 
+    embed_config = EmbedConfig(
+        openrouter_api_key=None,
+        openrouter_base_url="https://openrouter.ai/api/v1",
+        openrouter_embeddings_model="qwen/qwen3-embedding-8b",
+        openrouter_referer=None,
+        openrouter_title=None,
+        openrouter_provider_json=None,
+        local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
+        embed_provider="auto",
+    )
     config = AppConfig(
         openai_api_key="key",
         openai_chat_model="gpt-4o-mini",
-        
-        
-        openrouter_api_key=None,
-        openrouter_base_url="https://openrouter.ai/api/v1",
         openrouter_chat_model="mistralai/devstral-2512:free",
-        openrouter_embeddings_model="qwen/qwen3-embedding-8b",
-        local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
         chat_provider="openai",
-        embed_provider="auto",
-        openrouter_referer=None,
-        openrouter_title=None,
-        openrouter_embed_provider_json=None,
+        embed_config=embed_config,
     )
 
     monkeypatch.setattr("contextrag.providers.openai_chat.load_config", lambda: config)

@@ -30,7 +30,7 @@ def test_index_command_chunks(monkeypatch, tmp_path):
             self.documents = documents
             self.ids = ids
 
-    monkeypatch.setattr("contextrag.cli.VectorDB", FakeVectorDB)
+    monkeypatch.setattr("contextrag.cli.VectorStore", FakeVectorDB)
     monkeypatch.setattr("contextrag.cli.resolve_embed_provider", lambda config, provider: "local")
     monkeypatch.setattr("contextrag.cli.load_config", lambda: make_test_config(
         openai_api_key=None,
@@ -42,7 +42,7 @@ def test_index_command_chunks(monkeypatch, tmp_path):
     result = runner.invoke(
         main,
         [
-            "index",
+            "db", "index",
             "--input",
             str(input_dir),
             "--chunk-words",
@@ -78,8 +78,8 @@ def test_index_command_defaults_openrouter_chunk_words(monkeypatch, tmp_path):
         captured["chunk_words"] = chunk_words
         return [text]
 
-    monkeypatch.setattr("contextrag.cli.VectorDB", FakeVectorDB)
-    monkeypatch.setattr("contextrag.cli._chunk_words", fake_chunk_words)
+    monkeypatch.setattr("contextrag.cli.VectorStore", FakeVectorDB)
+    monkeypatch.setattr("contextrag.cli.chunk_text_by_words", fake_chunk_words)
     monkeypatch.setattr("contextrag.cli.resolve_embed_provider", lambda config, provider: "openrouter")
     monkeypatch.setattr("contextrag.cli.load_config", lambda: make_test_config(
         openai_api_key=None,
@@ -90,7 +90,7 @@ def test_index_command_defaults_openrouter_chunk_words(monkeypatch, tmp_path):
     result = runner.invoke(
         main,
         [
-            "index",
+            "db", "index",
             "--input",
             str(input_dir),
         ],
@@ -109,11 +109,11 @@ def test_query_command_outputs_results(monkeypatch, tmp_path):
             assert n_results == 2
             return {"documents": [["doc1", "doc2"]], "distances": [[0.1, 0.2]]}
 
-    monkeypatch.setattr("contextrag.cli.VectorDB", FakeVectorDB)
+    monkeypatch.setattr("contextrag.cli.VectorStore", FakeVectorDB)
     runner = CliRunner()
     result = runner.invoke(
         main,
-        ["query", "--collection", "col", "--persist", "path", "--query", "question", "--k", "2"],
+        ["db", "query", "--collection", "col", "--persist", "path", "--query", "question", "--k", "2"],
     )
     assert result.exit_code == 0
     assert "1. doc1" in result.output

@@ -1,16 +1,11 @@
 import pytest
+
 from contextrag.ingest.markdown_processing import (
-    modify_markdown,
+    clean_up_lines, convert_indented_blocks_to_code, modify_markdown,
+    preprocess_similarity_text, reduce_excessive_line_breaks,
     remove_above_first_header_if_level_one,
-    remove_attachments_header_and_first_line,
-    remove_attachments_section,
-    remove_inline_attachments,
-    clean_up_lines,
-    convert_indented_blocks_to_code,
-    reduce_excessive_line_breaks,
-    strip_basic_markdown_formatting,
-    preprocess_similarity_text,
-)
+    remove_attachments_header_and_first_line, remove_attachments_section,
+    remove_inline_attachments, strip_basic_markdown_formatting)
 
 # 1. Function-Specific Tests
 

@@ -26,10 +26,13 @@ def test_checksum_stable():
     assert io.checksum("hello") != io.checksum("hello!")
 
 
+from contextrag.core import chunking
+
+
 def test_chunk_words_handles_overlap_and_empty():
-    assert cli._chunk_words("", chunk_words=3, overlap=1) == []
-    assert cli._chunk_words("one two three", chunk_words=0, overlap=2) == [
+    assert chunking.chunk_text_by_words("", chunk_words=3, overlap=1) == []
+    assert chunking.chunk_text_by_words("one two three", chunk_words=0, overlap=2) == [
         "one two three"
     ]
-    chunks = cli._chunk_words("one two three four", chunk_words=2, overlap=1)
+    chunks = chunking.chunk_text_by_words("one two three four", chunk_words=2, overlap=1)
     assert chunks == ["one two", "two three", "three four"]

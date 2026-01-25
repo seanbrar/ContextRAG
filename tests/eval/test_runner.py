@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from chromaroute import EmbedConfig
 from contextrag.config import AppConfig
 from contextrag.core import chunking
 from contextrag.eval import runner
@@ -112,22 +113,25 @@ def test_run_eval_with_fake_vector_db(monkeypatch, tmp_path):
                 return {"ids": [["doc1"]]}
             return {"ids": [["doc2"]]}
 
+    embed_config = EmbedConfig(
+        openrouter_api_key=None,
+        openrouter_base_url="https://openrouter.ai/api/v1",
+        openrouter_embeddings_model="qwen/qwen3-embedding-8b",
+        openrouter_referer=None,
+        openrouter_title=None,
+        openrouter_provider_json=None,
+        local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
+        embed_provider="local",
+    )
     config = AppConfig(
         openai_api_key=None,
         openai_chat_model="gpt-4o-mini",
-        openrouter_api_key=None,
-        openrouter_base_url="https://openrouter.ai/api/v1",
         openrouter_chat_model="mistralai/devstral-2512:free",
-        openrouter_embeddings_model="qwen/qwen3-embedding-8b",
-        local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
         chat_provider="openai",
-        embed_provider="local",
-        openrouter_referer=None,
-        openrouter_title=None,
-        openrouter_embed_provider_json=None,
+        embed_config=embed_config,
     )
 
-    monkeypatch.setattr(runner, "VectorDB", FakeVectorDB)
+    monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)
     monkeypatch.setattr(runner, "get_encoding", lambda name=None: DummyEncoding())
     monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
     monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
@@ -177,22 +181,25 @@ def test_run_eval_costs_with_openrouter_provider(monkeypatch, tmp_path):
         def query(self, query_texts, n_results):
             return {"ids": [["doc1"]]}
 
+    embed_config = EmbedConfig(
+        openrouter_api_key="ok",
+        openrouter_base_url="https://openrouter.ai/api/v1",
+        openrouter_embeddings_model="qwen/qwen3-embedding-8b",
+        openrouter_referer=None,
+        openrouter_title=None,
+        openrouter_provider_json=None,
+        local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
+        embed_provider="openrouter",
+    )
     config = AppConfig(
         openai_api_key="key",
         openai_chat_model="gpt-4o-mini",
-        openrouter_api_key="ok",
-        openrouter_base_url="https://openrouter.ai/api/v1",
         openrouter_chat_model="mistralai/devstral-2512:free",
-        openrouter_embeddings_model="qwen/qwen3-embedding-8b",
-        local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
         chat_provider="openai",
-        embed_provider="openrouter",
-        openrouter_referer=None,
-        openrouter_title=None,
-        openrouter_embed_provider_json=None,
+        embed_config=embed_config,
     )
 
-    monkeypatch.setattr(runner, "VectorDB", FakeVectorDB)
+    monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)
     monkeypatch.setattr(runner, "load_config", lambda: config)
     monkeypatch.setattr(runner, "get_encoding", lambda name=None: DummyEncoding())
     monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())

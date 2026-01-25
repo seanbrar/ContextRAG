@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+from chromaroute import EmbedConfig, VectorStore
 from contextrag.config import AppConfig
-from contextrag.index.vector_store import VectorDB
 
 
 class FakeEmbeddingFunction:
@@ -43,17 +43,13 @@ class FakeEmbeddingFunction:
         return FakeEmbeddingFunction()
 
 
-class TestVectorDB:
+class TestVectorStore:
     @pytest.fixture
     def vector_db(self):
-        return VectorDB(
+        return VectorStore(
             collection_name="test_collection",
             embedding_function=FakeEmbeddingFunction(),
         )
-
-    def test_get_or_create_collection(self, vector_db):
-        collection = vector_db.get_or_create_collection()
-        assert collection.name == "test_collection"
 
     def test_add_documents(self, vector_db):
         documents = ["document 1", "document 2", "document 3"]
@@ -73,25 +69,27 @@ class TestVectorDB:
             assert len(docs) == len(distances)
 
     def test_openrouter_provider_requires_key(self, vector_db):
+        embed_config = EmbedConfig(
+            openrouter_api_key=None,
+            openrouter_base_url="https://openrouter.ai/api/v1",
+            openrouter_embeddings_model="qwen/qwen3-embedding-8b",
+            openrouter_referer=None,
+            openrouter_title=None,
+            openrouter_provider_json=None,
+            local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
+            embed_provider="openrouter",
+        )
         config = AppConfig(
             openai_api_key=None,
             openai_chat_model="gpt-4o-mini",
-            
-            
-            openrouter_api_key=None,
-            openrouter_base_url="https://openrouter.ai/api/v1",
             openrouter_chat_model="mistralai/devstral-2512:free",
-            openrouter_embeddings_model="qwen/qwen3-embedding-8b",
-            local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
             chat_provider="openai",
-            embed_provider="openrouter",
-            openrouter_referer=None,
-            openrouter_title=None,
-            openrouter_embed_provider_json=None,
+            embed_config=embed_config,
         )
+        # VectorStore.__init__ calls build_embedding_function which should raise
         with pytest.raises(ValueError, match="OPENROUTER_API_KEY is required"):
-            vector_db._build_embedding_function(
-                config=config,
-                embedding_model=None,
+            VectorStore(
+                collection_name="test_fail",
+                config=config.embed_config,
                 embed_provider="openrouter",
             )
