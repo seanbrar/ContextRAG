@@ -114,21 +114,17 @@ def test_run_eval_with_fake_vector_db(monkeypatch, tmp_path):
 
     config = AppConfig(
         openai_api_key=None,
-        openai_embeddings_model="text-embedding-3-small",
-        openai_chat_model_short="gpt-3.5-turbo-1106",
-        openai_chat_model_medium="gpt-3.5-turbo-16k",
+        openai_chat_model="gpt-4o-mini",
         openrouter_api_key=None,
         openrouter_base_url="https://openrouter.ai/api/v1",
         openrouter_chat_model="mistralai/devstral-2512:free",
         openrouter_embeddings_model="qwen/qwen3-embedding-8b",
         local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
-        contextrag_chat_provider="openai",
-        contextrag_embed_provider="local",
+        chat_provider="openai",
+        embed_provider="local",
         openrouter_referer=None,
         openrouter_title=None,
         openrouter_embed_provider_json=None,
-        openrouter_embed_provider_order=None,
-        openrouter_embed_allow_fallbacks=None,
     )
 
     monkeypatch.setattr(runner, "VectorDB", FakeVectorDB)
@@ -161,7 +157,7 @@ def test_run_eval_missing_inputs(tmp_path):
         runner.run_eval(tmp_path, baseline="router", k=1)
 
 
-def test_run_eval_costs_with_openai_provider(monkeypatch, tmp_path):
+def test_run_eval_costs_with_openrouter_provider(monkeypatch, tmp_path):
     documents_dir = tmp_path / "documents"
     documents_dir.mkdir()
     (documents_dir / "doc1.md").write_text("alpha beta", encoding="utf-8")
@@ -183,28 +179,24 @@ def test_run_eval_costs_with_openai_provider(monkeypatch, tmp_path):
 
     config = AppConfig(
         openai_api_key="key",
-        openai_embeddings_model="text-embedding-3-small",
-        openai_chat_model_short="gpt-3.5-turbo-1106",
-        openai_chat_model_medium="gpt-3.5-turbo-16k",
-        openrouter_api_key=None,
+        openai_chat_model="gpt-4o-mini",
+        openrouter_api_key="ok",
         openrouter_base_url="https://openrouter.ai/api/v1",
         openrouter_chat_model="mistralai/devstral-2512:free",
         openrouter_embeddings_model="qwen/qwen3-embedding-8b",
         local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
-        contextrag_chat_provider="openai",
-        contextrag_embed_provider="openai",
+        chat_provider="openai",
+        embed_provider="openrouter",
         openrouter_referer=None,
         openrouter_title=None,
         openrouter_embed_provider_json=None,
-        openrouter_embed_provider_order=None,
-        openrouter_embed_allow_fallbacks=None,
     )
 
     monkeypatch.setattr(runner, "VectorDB", FakeVectorDB)
     monkeypatch.setattr(runner, "load_config", lambda: config)
     monkeypatch.setattr(runner, "get_encoding", lambda name=None: DummyEncoding())
     monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
-    monkeypatch.setattr(runner, "resolve_embed_provider", lambda *_: "openai")
+    monkeypatch.setattr(runner, "resolve_embed_provider", lambda *_: "openrouter")
 
     results = runner.run_eval(
         dataset_path=tmp_path,
@@ -215,5 +207,5 @@ def test_run_eval_costs_with_openai_provider(monkeypatch, tmp_path):
         embedding_model=None,
     )
     cost = results["summary"]["cost"]
-    assert cost["model_cost_per_million_tokens"] == 0.02
+    assert cost["model_cost_per_million_tokens"] == 0.01
     assert cost["total_cost_usd"] is not None

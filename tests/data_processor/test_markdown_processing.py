@@ -8,6 +8,8 @@ from contextrag.ingest.markdown_processing import (
     clean_up_lines,
     convert_indented_blocks_to_code,
     reduce_excessive_line_breaks,
+    strip_basic_markdown_formatting,
+    preprocess_similarity_text,
 )
 
 # 1. Function-Specific Tests
@@ -212,3 +214,26 @@ def test_modify_markdown_integration(input_md, expected_md):
     - Empty input.
     """
     assert modify_markdown(input_md).strip() == expected_md.strip()
+
+
+def test_strip_basic_markdown_formatting_removes_headers_links_images():
+    content = "# Header\nText ![img](path) and [link](url)"
+    assert strip_basic_markdown_formatting(content) == "\nText  and "
+
+
+def test_strip_basic_markdown_formatting_requires_string():
+    with pytest.raises(ValueError, match="Content must be a string"):
+        strip_basic_markdown_formatting(123)
+
+
+def test_preprocess_similarity_text_pipeline():
+    content = (
+        "Intro ![Img](attachments/a.png)\n"
+        "[Link](http://x)\n"
+        "# Header\n"
+        "Line\n\n\n\nMore\n"
+        "## Attachments:\n"
+        "File"
+    )
+    expected = "Intro\n\n\nLine\n\nMore"
+    assert preprocess_similarity_text(content) == expected

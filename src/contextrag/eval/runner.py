@@ -203,10 +203,12 @@ def run_eval(
 
     config = load_config()
     resolved_provider = resolve_embed_provider(config, embed_provider)
-    resolved_model = config.resolve_embedding_model(
-        provider=resolved_provider,
-        explicit_model=embedding_model,
-    )
+    if embedding_model:
+        resolved_model = embedding_model
+    elif resolved_provider == "openrouter":
+        resolved_model = config.openrouter_embeddings_model
+    else:
+        resolved_model = config.local_embeddings_model
 
     avg_query_latency = (
         sum(query_latencies) / len(query_latencies) if query_latencies else 0.0
