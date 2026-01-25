@@ -1,16 +1,11 @@
 """Tests for ContextRAG CLI commands."""
 
 import json
-import sys
-from pathlib import Path
 
 from click.testing import CliRunner
 
-# Add tests directory to path for conftest import
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from conftest import make_test_config
-
 from contextrag.cli import main
+from tests.conftest import make_test_config
 
 
 def test_index_command_chunks(monkeypatch, tmp_path):

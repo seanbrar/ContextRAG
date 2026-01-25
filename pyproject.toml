@@ -61,7 +61,7 @@ warn_unused_configs = true
 mypy_path = "src"
 explicit_package_bases = true
 namespace_packages = true
-exclude = ["tests/", "scripts/", "chromaroute/"]
+exclude = ["scripts/", "chromaroute/"]
 
 [[tool.mypy.overrides]]
 module = [
@@ -75,8 +75,16 @@ module = [
     "bs4.*",
     "html2text.*",
     "yaml.*",
+    "requests.*",
+    "requests",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+check_untyped_defs = false
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
 
 [build-system]
 requires = ["poetry-core"]
