@@ -3,28 +3,28 @@ from __future__ import annotations
 import json
 import time
 from pathlib import Path
+from typing import Any
 
+from tiktoken import Encoding
+
+from chromaroute import VectorStore
 from contextrag.config import load_config, resolve_embed_provider
 from contextrag.core.chunking import chunk_text_by_tokens
-from contextrag.core.constants import (
-    LONG_CHUNK_TOKENS,
-    MEDIUM_CHUNK_TOKENS,
-    MEDIUM_MAX_TOKENS,
-    SHORT_MAX_TOKENS,
-    TOKENIZER_NAME,
-    UNIFORM_CHUNK_TOKENS,
-)
+from contextrag.core.constants import (LONG_CHUNK_TOKENS, MEDIUM_CHUNK_TOKENS,
+                                       MEDIUM_MAX_TOKENS, SHORT_MAX_TOKENS,
+                                       TOKENIZER_NAME, UNIFORM_CHUNK_TOKENS)
 from contextrag.core.costs import get_embedding_cost_per_million
 from contextrag.core.tokenizer import get_encoding
+from contextrag.embeddings.provider import build_embedding_function
 from contextrag.eval.metrics import precision_at_k, recall_at_k
-from contextrag.index.vector_store import VectorDB
+
 
 def _get_embedding_cost_per_million(model: str) -> float | None:
     return get_embedding_cost_per_million(model)
 
 
-def _load_queries(path: Path) -> list[dict]:
-    queries: list[dict] = []
+def _load_queries(path: Path) -> list[dict[str, Any]]:
+    queries: list[dict[str, Any]] = []
     with path.open("r", encoding="utf-8") as handle:
         for line in handle:
             if line.strip():
@@ -37,7 +37,7 @@ def _chunk_text(text: str, chunk_tokens: int) -> list[str]:
 
 
 def _chunk_tokens(
-    tokens: list[int], chunk_tokens: int, encoding
+    tokens: list[int], chunk_tokens: int, encoding: Encoding
 ) -> list[tuple[str, int]]:
     if not tokens:
         return []
@@ -50,7 +50,7 @@ def _chunk_tokens(
 
 def _build_index_inputs(
     documents_dir: Path, baseline: str
-) -> tuple[list[str], list[str], dict[str, str], dict]:
+) -> tuple[list[str], list[str], dict[str, str], dict[str, Any]]:
     """Build index inputs with efficiency tracking.
 
     Returns:
@@ -113,7 +113,7 @@ def _build_index_inputs(
                     chunk_to_doc[chunk_id] = doc_id
                     total_indexed_tokens += chunk_tokens
 
-    efficiency_stats = {
+    efficiency_stats: dict[str, Any] = {
         "source_documents": source_doc_count,
         "total_chunks": len(documents),
         "total_source_tokens": total_source_tokens,
@@ -136,7 +136,7 @@ def run_eval(
     persist_path: str | None = None,
     embed_provider: str | None = None,
     embedding_model: str | None = None,
-) -> dict:
+) -> dict[str, Any]:
     documents_dir = dataset_path / "documents"
     queries_path = dataset_path / "queries.jsonl"
 
@@ -154,20 +154,25 @@ def run_eval(
 
     # Create and populate vector index
     index_start = time.time()
-    vector_db = VectorDB(
+    config = load_config()
+    embedding_fn = build_embedding_function(
+        config=config,
+        embedding_model=embedding_model,
+        embed_provider=embed_provider,
+    )
+    vector_store = VectorStore(
         collection_name=f"eval-{int(time.time())}",
         persist_path=persist_path,
-        embed_provider=embed_provider,
-        embedding_model=embedding_model,
+        embedding_function=embedding_fn,
     )
-    vector_db.add_documents(documents=documents, ids=ids)
+    vector_store.add_documents(documents=documents, ids=ids)
     index_duration = time.time() - index_start
 
     queries = _load_queries(queries_path)
     precision_scores: list[float] = []
     recall_scores: list[float] = []
     query_latencies: list[float] = []
-    per_query: list[dict] = []
+    per_query: list[dict[str, Any]] = []
 
     # Track query tokens for cost calculation
     encoding = get_encoding(TOKENIZER_NAME)
@@ -179,7 +184,7 @@ def run_eval(
         total_query_tokens += len(encoding.encode(query_text))
 
         query_start = time.time()
-        results = vector_db.query(query_texts=[query_text], n_results=k)
+        results = vector_store.query(query_texts=[query_text], n_results=k)
         query_latency = time.time() - query_start
         query_latencies.append(query_latency)
 
@@ -201,14 +206,11 @@ def run_eval(
             }
         )
 
-    config = load_config()
     resolved_provider = resolve_embed_provider(config, embed_provider)
     if embedding_model:
         resolved_model = embedding_model
-    elif resolved_provider == "openrouter":
-        resolved_model = config.openrouter_embeddings_model
     else:
-        resolved_model = config.local_embeddings_model
+        resolved_model = config.embed_config.resolve_model(resolved_provider)
 
     avg_query_latency = (
         sum(query_latencies) / len(query_latencies) if query_latencies else 0.0
