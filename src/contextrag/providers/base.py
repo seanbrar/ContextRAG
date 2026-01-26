@@ -1,3 +1,5 @@
+"""Chat provider base class and type definitions."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -10,6 +12,8 @@ MessageParam: TypeAlias = ChatCompletionMessageParam
 
 class ChatProvider(ABC):
     """Abstract base class for chat providers."""
+
+    model: str
 
     @abstractmethod
     def complete(
