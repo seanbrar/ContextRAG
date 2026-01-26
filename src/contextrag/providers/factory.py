@@ -97,12 +97,12 @@ def _create_openai(config: Config, model: str | None) -> ChatProvider:
 
 def _create_openrouter(config: Config, model: str | None) -> ChatProvider:
     """Factory function for OpenRouter provider."""
-    if not config.openrouter_api_key:
+    if not config.embed.openrouter_api_key:
         raise ValueError("OPENROUTER_API_KEY is required for OpenRouter chat.")
     return OpenRouterChatProvider(
         model=model or config.openrouter_chat_model,
-        api_key=config.openrouter_api_key,
-        base_url=config.openrouter_base_url,
+        api_key=config.embed.openrouter_api_key,
+        base_url=config.embed.openrouter_base_url,
     )
 
 

@@ -186,11 +186,10 @@ def run_eval(
 
     # Load config and create embedding function
     cfg = config or load_config()
-    embed_config = cfg.to_embed_config()
 
     index_start = time.time()
     embedding_fn = build_embedding_function(
-        config=embed_config,
+        config=cfg.embed,
         embedding_model=embedding_model,
         embed_provider=embed_provider,
     )
@@ -242,7 +241,7 @@ def run_eval(
 
     # Resolve final provider and model
     resolved_provider = cfg.resolve_embed_provider(embed_provider)
-    resolved_model = embedding_model or embed_config.resolve_model(resolved_provider)
+    resolved_model = embedding_model or cfg.embed.resolve_model(resolved_provider)
 
     # Calculate aggregate metrics
     avg_query_latency = sum(query_latencies) / len(query_latencies) if query_latencies else 0.0

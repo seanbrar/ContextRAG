@@ -216,7 +216,9 @@ def doctor() -> None:
     config = load_config()
 
     click.echo("=== API Keys ===")
-    click.echo(f"OPENROUTER_API_KEY: {'ok' if config.openrouter_api_key else 'missing'}")
+    click.echo(
+        f"OPENROUTER_API_KEY: {'ok' if config.embed.openrouter_api_key else 'missing'}"
+    )
     click.echo(f"OPENAI_API_KEY: {'ok' if config.openai_api_key else 'missing'}")
 
     click.echo("\n=== Providers ===")
@@ -224,8 +226,8 @@ def doctor() -> None:
     click.echo(f"chat_provider: {config.chat_provider}")
 
     click.echo("\n=== Models ===")
-    click.echo(f"openrouter_embeddings: {config.openrouter_embeddings_model}")
-    click.echo(f"local_embeddings: {config.local_embeddings_model}")
+    click.echo(f"openrouter_embeddings: {config.embed.openrouter_embeddings_model}")
+    click.echo(f"local_embeddings: {config.embed.local_embeddings_model}")
     click.echo(f"openai_chat: {config.openai_chat_model}")
     click.echo(f"openrouter_chat: {config.openrouter_chat_model}")
 
@@ -239,7 +241,7 @@ def doctor() -> None:
     for name, module in deps:
         click.echo(f"{name}: {'ok' if find_spec(module) else 'missing'}")
 
-    if not config.openrouter_api_key and not config.openai_api_key:
+    if not config.embed.openrouter_api_key and not config.openai_api_key:
         click.echo("\nnote: Set OPENROUTER_API_KEY for hosted embeddings")
 
 
@@ -271,9 +273,8 @@ def db_index(
     resolved_provider = config.resolve_embed_provider(embed_provider)
     config.require_embed_provider(resolved_provider, embed_provider, click.ClickException)
 
-    embed_config = config.to_embed_config()
     embedding_fn = build_embedding_function(
-        config=embed_config,
+        config=config.embed,
         embedding_model=embedding_model,
         embed_provider=embed_provider,
     )
@@ -317,8 +318,7 @@ def db_query(
 ) -> None:
     """Query a vector index."""
     config = load_config()
-    embed_config = config.to_embed_config()
-    embedding_fn = build_embedding_function(config=embed_config)
+    embedding_fn = build_embedding_function(config=config.embed)
     vector_store = VectorStore(
         collection_name=collection,
         persist_path=persist_path,
