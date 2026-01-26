@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import pytest
-
 from chromaroute import EmbedConfig, VectorStore
+
 from contextrag.config import AppConfig
 
 

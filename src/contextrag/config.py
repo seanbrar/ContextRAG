@@ -5,9 +5,8 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-from dotenv import load_dotenv
-
 from chromaroute import EmbedConfig
+from dotenv import load_dotenv
 
 
 def _env(key: str, default: str | None = None) -> str | None:

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from chromaroute import VectorStore, build_embedding_function
+
 from contextrag.chunking import get_strategy
 from contextrag.config import Config, load_config
 from contextrag.core.constants import (LONG_CHUNK_TOKENS, MEDIUM_CHUNK_TOKENS,

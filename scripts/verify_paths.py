@@ -11,6 +11,7 @@ src_path = project_root / "src"
 sys.path.append(str(src_path))
 
 from chromaroute import VectorStore
+
 from contextrag.config import load_config
 from contextrag.embeddings.provider import build_embedding_function
 from contextrag.providers.openai_chat import OpenAIChatProvider

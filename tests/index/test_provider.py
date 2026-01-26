@@ -2,6 +2,7 @@ import json
 
 from chromaroute import build_embedding_function
 from chromaroute import embedding as embedding_module
+
 from contextrag.config import Config
 
 
