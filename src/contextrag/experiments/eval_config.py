@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import yaml
 
@@ -29,13 +28,13 @@ ALLOWED_KEYS = {
     "run_dir",
 }
 
-ALLOWED_BASELINES = {"uniform", "router"}
+ALLOWED_BASELINES = {"uniform", "adaptive", "router"}
 ALLOWED_EMBED_PROVIDERS = {"auto", "openrouter", "local"}
 CURRENT_SCHEMA_VERSION = 1
 
 
 def _validate_baseline(value: str) -> str:
-    if value not in {"uniform", "router"}:
+    if value not in ALLOWED_BASELINES:
         raise ValueError(f"Unsupported baseline '{value}'.")
     return value
 

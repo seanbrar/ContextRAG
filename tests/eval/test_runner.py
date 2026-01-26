@@ -1,15 +1,14 @@
 import json
-from pathlib import Path
 
 import pytest
 
-from chromaroute import EmbedConfig
 from contextrag.config import AppConfig
 from contextrag.core import chunking
 from contextrag.eval import runner
 
 
 class DummyEncoding:
+    name = "test"
     def encode(self, text):
         return text.split()
 
@@ -18,24 +17,31 @@ class DummyEncoding:
 
 
 def test_get_embedding_cost_per_million():
-    assert runner._get_embedding_cost_per_million("text-embedding-3-small") == 0.02
-    assert runner._get_embedding_cost_per_million("openai/text-embedding-3-small") == 0.02
-    assert runner._get_embedding_cost_per_million("unknown") is None
+    from contextrag.core.costs import get_embedding_cost_per_million
+    assert get_embedding_cost_per_million("text-embedding-3-small") == 0.02
+    assert get_embedding_cost_per_million("openai/text-embedding-3-small") == 0.02
+    assert get_embedding_cost_per_million("unknown") is None
 
 
-def test_chunk_text(monkeypatch):
-    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
-    chunks = runner._chunk_text("one two three four", chunk_tokens=2)
-    assert chunks == ["one two", "three four"]
+def test_chunk_document(monkeypatch):
+    from contextrag.chunking import chunk_document
 
+    encoding = DummyEncoding()
+    
+    def uniform_strategy(text, enc):
+        tokens = enc.encode(text)
+        chunks = []
+        for i in range(0, len(tokens), 2):
+            chunk_tokens = tokens[i:i+2]
+            chunks.append((enc.decode(chunk_tokens), len(chunk_tokens)))
+        from contextrag.chunking.strategies import ChunkResult
+        return ChunkResult(chunks=chunks, source_tokens=len(tokens), category="uniform")
 
-def test_chunk_text_empty_returns_empty(monkeypatch):
-    class EmptyEncoding(DummyEncoding):
-        def encode(self, text):
-            return []
-
-    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: EmptyEncoding())
-    assert runner._chunk_text("", chunk_tokens=2) == []
+    monkeypatch.setattr("contextrag.chunking.strategies.get_strategy", lambda name: uniform_strategy)
+    monkeypatch.setattr("contextrag.chunking.strategies.get_encoding", lambda name: encoding)
+    
+    result = chunk_document("one two three four", strategy="uniform")
+    assert [c[0] for c in result.chunks] == ["one two", "three four"]
 
 
 def test_load_queries_skips_blank_lines(tmp_path):
@@ -113,7 +119,11 @@ def test_run_eval_with_fake_vector_db(monkeypatch, tmp_path):
                 return {"ids": [["doc1"]]}
             return {"ids": [["doc2"]]}
 
-    embed_config = EmbedConfig(
+    config = AppConfig(
+        openai_api_key=None,
+        openai_chat_model="gpt-4o-mini",
+        openrouter_chat_model="mistralai/devstral-2512:free",
+        chat_provider="openai",
         openrouter_api_key=None,
         openrouter_base_url="https://openrouter.ai/api/v1",
         openrouter_embeddings_model="qwen/qwen3-embedding-8b",
@@ -122,13 +132,6 @@ def test_run_eval_with_fake_vector_db(monkeypatch, tmp_path):
         openrouter_provider_json=None,
         local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
         embed_provider="local",
-    )
-    config = AppConfig(
-        openai_api_key=None,
-        openai_chat_model="gpt-4o-mini",
-        openrouter_chat_model="mistralai/devstral-2512:free",
-        chat_provider="openai",
-        embed_config=embed_config,
     )
 
     monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)
@@ -181,7 +184,11 @@ def test_run_eval_costs_with_openrouter_provider(monkeypatch, tmp_path):
         def query(self, query_texts, n_results):
             return {"ids": [["doc1"]]}
 
-    embed_config = EmbedConfig(
+    config = AppConfig(
+        openai_api_key="key",
+        openai_chat_model="gpt-4o-mini",
+        openrouter_chat_model="mistralai/devstral-2512:free",
+        chat_provider="openai",
         openrouter_api_key="ok",
         openrouter_base_url="https://openrouter.ai/api/v1",
         openrouter_embeddings_model="qwen/qwen3-embedding-8b",
@@ -191,19 +198,11 @@ def test_run_eval_costs_with_openrouter_provider(monkeypatch, tmp_path):
         local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
         embed_provider="openrouter",
     )
-    config = AppConfig(
-        openai_api_key="key",
-        openai_chat_model="gpt-4o-mini",
-        openrouter_chat_model="mistralai/devstral-2512:free",
-        chat_provider="openai",
-        embed_config=embed_config,
-    )
 
     monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)
     monkeypatch.setattr(runner, "load_config", lambda: config)
     monkeypatch.setattr(runner, "get_encoding", lambda name=None: DummyEncoding())
     monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
-    monkeypatch.setattr(runner, "resolve_embed_provider", lambda *_: "openrouter")
 
     results = runner.run_eval(
         dataset_path=tmp_path,
