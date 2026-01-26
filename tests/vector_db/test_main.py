@@ -68,8 +68,13 @@ class TestVectorStore:
         for docs, distances in zip(results["documents"], results["distances"]):
             assert len(docs) == len(distances)
 
-    def test_openrouter_provider_requires_key(self, vector_db):
-        embed_config = EmbedConfig(
+    def test_openrouter_provider_requires_key(self):
+        from chromaroute import build_embedding_function
+        config = AppConfig(
+            openai_api_key=None,
+            openai_chat_model="gpt-4o-mini",
+            openrouter_chat_model="mistralai/devstral-2512:free",
+            chat_provider="openai",
             openrouter_api_key=None,
             openrouter_base_url="https://openrouter.ai/api/v1",
             openrouter_embeddings_model="qwen/qwen3-embedding-8b",
@@ -79,17 +84,8 @@ class TestVectorStore:
             local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
             embed_provider="openrouter",
         )
-        config = AppConfig(
-            openai_api_key=None,
-            openai_chat_model="gpt-4o-mini",
-            openrouter_chat_model="mistralai/devstral-2512:free",
-            chat_provider="openai",
-            embed_config=embed_config,
-        )
-        # VectorStore.__init__ calls build_embedding_function which should raise
         with pytest.raises(ValueError, match="OPENROUTER_API_KEY is required"):
-            VectorStore(
-                collection_name="test_fail",
-                config=config.embed_config,
+            build_embedding_function(
+                config=config.to_embed_config(),
                 embed_provider="openrouter",
             )
