@@ -1,8 +1,7 @@
 import gensim
 import nltk
-from gensim import corpora, models
+from gensim import corpora
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer, WordNetLemmatizer
 
 nltk.download("punkt")
 nltk.download("stopwords")

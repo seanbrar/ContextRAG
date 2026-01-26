@@ -1,8 +1,6 @@
 import json
-from pathlib import Path
 
-from contextrag import cli
-from contextrag.core import io
+from contextrag.core import chunking, io
 
 
 def test_iter_files_filters_and_sorts(tmp_path):
@@ -24,9 +22,6 @@ def test_write_jsonl_roundtrip(tmp_path):
 def test_checksum_stable():
     assert io.checksum("hello") == io.checksum("hello")
     assert io.checksum("hello") != io.checksum("hello!")
-
-
-from contextrag.core import chunking
 
 
 def test_chunk_words_handles_overlap_and_empty():

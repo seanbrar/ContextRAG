@@ -69,7 +69,7 @@ class TestVectorStore:
             assert len(docs) == len(distances)
 
     def test_openrouter_provider_requires_key(self):
-        from chromaroute import EmbedConfig, build_embedding_function
+        from chromaroute import build_embedding_function
         embed = EmbedConfig(
             openrouter_api_key=None,
             openrouter_base_url="https://openrouter.ai/api/v1",

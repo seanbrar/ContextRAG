@@ -1,6 +1,5 @@
 """Tests for ContextRAG CLI commands."""
 
-import json
 
 from click.testing import CliRunner
 

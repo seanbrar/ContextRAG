@@ -10,7 +10,7 @@ text = "Natural Language Processing is evolving rapidly."
 tokens = nltk.word_tokenize(text)
 
 stop_words = set(stopwords.words("english"))
-filtered_tokens = [w for w in tokens if not w.lower() in stop_words]
+filtered_tokens = [w for w in tokens if w.lower() not in stop_words]
 
 stemmer = PorterStemmer()
 stemmed_tokens = [stemmer.stem(w) for w in filtered_tokens]

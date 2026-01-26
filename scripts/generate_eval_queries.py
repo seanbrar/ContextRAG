@@ -1,10 +1,9 @@
 
 import json
 import os
-import random
 import time
 from pathlib import Path
-from typing import Dict, List
+from typing import List
 
 import openai
 from dotenv import load_dotenv
