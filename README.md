@@ -101,7 +101,7 @@ EMBED_PROVIDER=auto                  # auto | openrouter | local
 OPENROUTER_EMBEDDINGS_MODEL=openai/text-embedding-3-small
 LOCAL_EMBEDDINGS_MODEL=sentence-transformers/all-MiniLM-L6-v2
 
-# Chat (for categorization features)
+# Chat (for future semantic chunking research)
 OPENAI_API_KEY=sk-...               # For OpenAI chat
 OPENAI_CHAT_MODEL=gpt-4o-mini
 CONTEXTRAG_CHAT_PROVIDER=auto       # auto | openai | openrouter

@@ -123,32 +123,45 @@ runs/{run_name}/
 
 ## Configuration Architecture
 
-**Decision**: Use composition where `AppConfig` contains `chromaroute.EmbedConfig`.
+**Decision**: Use composition where `Config` contains `chromaroute.EmbedConfig`.
 
 **Rationale**:
 - Single source of truth for embedding configuration
 - Clean delegation to chromaroute for all embedding operations
 - Avoids field duplication between ContextRAG and chromaroute configs
-- OpenRouter credentials are shared between chat and embeddings via property delegation
 
 **Structure**:
 ```python
 @dataclass(frozen=True)
-class AppConfig:
+class Config:
+    # Embeddings (delegated to chromaroute)
+    embed: EmbedConfig
+
     # Chat-specific (ContextRAG)
     openai_api_key: str | None
+    chat_provider: str
     openai_chat_model: str
     openrouter_chat_model: str
-    chat_provider: str
-
-    # Embeddings (delegated to chromaroute)
-    embed_config: EmbedConfig
-
-    @property
-    def openrouter_api_key(self) -> str | None:
-        return self.embed_config.openrouter_api_key
 ```
 
 **Tradeoffs**:
 - Requires chromaroute as a dependency (acceptable since it's our extracted library)
-- Properties for shared fields add indirection but maintain clean API
+
+## Chat Providers (Future Work)
+
+**Decision**: Preserve chat provider abstractions for planned semantic chunking research.
+
+**Context**: The `providers/` module contains `ChatProvider` abstractions for OpenAI and OpenRouter. These were originally used for dataset creation and document categorization. Current evaluation uses embedding-only retrieval.
+
+**Future direction**: Semantic chunking research.
+
+**Hypothesis**: LLM-guided semantic boundaries may improve retrieval quality compared to fixed-token chunking.
+
+**Approach**:
+```
+Document → LLM identifies semantic breaks → Chunk at boundaries → Embed → Evaluate
+```
+
+This extends the current evaluation framework to test whether intelligent segmentation outperforms the null result found with adaptive token-based chunking. The chat providers enable this research path without requiring new infrastructure.
+
+**Status**: Preserved, not currently active in CLI. Will be integrated when semantic chunking experiments begin.
