@@ -19,8 +19,8 @@ RAG evaluation framework demonstrating that **adaptive chunking does not improve
 
 | Strategy | Precision@5 | Recall@5 |
 |----------|-------------|----------|
-| Uniform chunking | 0.847 | 0.761 |
-| Adaptive router | 0.847 | 0.761 |
+| Uniform chunking | 0.197 | 0.983 |
+| Adaptive router | 0.197 | 0.983 |
 
 The null result held across multiple embedding models (OpenAI text-embedding-3-small, Qwen3-embedding-8b, local MiniLM) and k values (3, 5, 10).
 
