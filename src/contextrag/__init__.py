@@ -1,5 +1,5 @@
 """ContextRAG - RAG evaluation framework."""
 
-from contextrag.config import AppConfig, Config, load_config
+from contextrag.config import Config, load_config
 
-__all__ = ["AppConfig", "Config", "load_config"]
+__all__ = ["Config", "load_config"]

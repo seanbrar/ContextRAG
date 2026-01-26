@@ -9,8 +9,8 @@ import click
 from chromaroute import VectorStore, build_embedding_function
 
 from contextrag.config import load_config
-from contextrag.core.chunking import chunk_text_by_words
 from contextrag.core.io import iter_files
+from contextrag.core.text import chunk_text_by_words
 from contextrag.eval.runner import run_eval
 from contextrag.experiments.eval_config import load_eval_config
 from contextrag.experiments.run_logger import write_run_artifacts

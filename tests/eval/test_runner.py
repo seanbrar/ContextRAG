@@ -4,7 +4,7 @@ import pytest
 from chromaroute import EmbedConfig
 
 from contextrag.config import Config
-from contextrag.core import chunking
+from contextrag.core import tokenizer
 from contextrag.eval import runner
 
 
@@ -53,7 +53,7 @@ def test_load_queries_skips_blank_lines(tmp_path):
 
 def test_build_index_inputs_uniform(monkeypatch, tmp_path):
     monkeypatch.setattr(runner, "get_encoding", lambda name=None: DummyEncoding())
-    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
+    monkeypatch.setattr(tokenizer, "get_encoding", lambda name=None: DummyEncoding())
     doc_path = tmp_path / "doc.md"
     doc_path.write_text("one two three four five", encoding="utf-8")
 
@@ -79,7 +79,7 @@ def test_build_index_inputs_router_categories(monkeypatch, tmp_path):
             return "chunk"
 
     monkeypatch.setattr(runner, "get_encoding", lambda name=None: FakeEncoding())
-    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: FakeEncoding())
+    monkeypatch.setattr(tokenizer, "get_encoding", lambda name=None: FakeEncoding())
     (tmp_path / "short.md").write_text("short", encoding="utf-8")
     (tmp_path / "medium.md").write_text("medium", encoding="utf-8")
     (tmp_path / "long.md").write_text("long", encoding="utf-8")
@@ -139,8 +139,8 @@ def test_run_eval_with_fake_vector_db(monkeypatch, tmp_path):
 
     monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)
     monkeypatch.setattr(runner, "get_encoding", lambda name=None: DummyEncoding())
-    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
-    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
+    monkeypatch.setattr(tokenizer, "get_encoding", lambda name=None: DummyEncoding())
+    monkeypatch.setattr(tokenizer, "get_encoding", lambda name=None: DummyEncoding())
     monkeypatch.setattr(runner, "load_config", lambda: config)
 
     results = runner.run_eval(
@@ -207,7 +207,7 @@ def test_run_eval_costs_with_openrouter_provider(monkeypatch, tmp_path):
     monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)
     monkeypatch.setattr(runner, "load_config", lambda: config)
     monkeypatch.setattr(runner, "get_encoding", lambda name=None: DummyEncoding())
-    monkeypatch.setattr(chunking, "get_encoding", lambda name=None: DummyEncoding())
+    monkeypatch.setattr(tokenizer, "get_encoding", lambda name=None: DummyEncoding())
 
     results = runner.run_eval(
         dataset_path=tmp_path,

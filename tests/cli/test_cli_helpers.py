@@ -1,6 +1,6 @@
 import json
 
-from contextrag.core import chunking, io
+from contextrag.core import io, text
 
 
 def test_iter_files_filters_and_sorts(tmp_path):
@@ -25,9 +25,9 @@ def test_checksum_stable():
 
 
 def test_chunk_words_handles_overlap_and_empty():
-    assert chunking.chunk_text_by_words("", chunk_words=3, overlap=1) == []
-    assert chunking.chunk_text_by_words("one two three", chunk_words=0, overlap=2) == [
+    assert text.chunk_text_by_words("", chunk_words=3, overlap=1) == []
+    assert text.chunk_text_by_words("one two three", chunk_words=0, overlap=2) == [
         "one two three"
     ]
-    chunks = chunking.chunk_text_by_words("one two three four", chunk_words=2, overlap=1)
+    chunks = text.chunk_text_by_words("one two three four", chunk_words=2, overlap=1)
     assert chunks == ["one two", "two three", "three four"]

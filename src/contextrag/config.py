@@ -97,7 +97,3 @@ def load_config() -> Config:
         openrouter_chat_model=_env("OPENROUTER_CHAT_MODEL", "mistralai/devstral-2512:free")
         or "mistralai/devstral-2512:free",
     )
-
-
-# Backwards compatibility alias (deprecated)
-AppConfig = Config

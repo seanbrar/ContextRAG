@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from chromaroute import EmbedConfig, VectorStore
 
-from contextrag.config import AppConfig
+from contextrag.config import Config
 
 
 class FakeEmbeddingFunction:
@@ -80,7 +80,7 @@ class TestVectorStore:
             local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
             embed_provider="openrouter",
         )
-        config = AppConfig(
+        config = Config(
             embed=embed,
             openai_api_key=None,
             openai_chat_model="gpt-4o-mini",
