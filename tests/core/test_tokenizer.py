@@ -20,6 +20,8 @@ def test_count_tokens_uses_tiktoken(monkeypatch):
         return dummy
 
     monkeypatch.setattr(tokenizer.tiktoken, "get_encoding", fake_get_encoding)
+    # Clear the cache so get_encoding calls the mock
+    monkeypatch.setattr(tokenizer, "_ENCODINGS", {})
     assert tokenizer.count_tokens("hello") == 4
 
 
