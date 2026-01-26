@@ -68,6 +68,10 @@ poetry run contextrag eval \
     --baseline uniform \
     --k 5 \
     --output runs/eval.json
+
+# Baseline options: uniform, adaptive, router
+# See all options:
+poetry run contextrag eval --help
 ```
 
 ### Example: Build and Query Index
