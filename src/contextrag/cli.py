@@ -7,12 +7,10 @@ from pathlib import Path
 
 import click
 
-from chromaroute import VectorStore
-from contextrag.config import (load_config, require_embedding_provider,
-                               resolve_embed_provider)
+from chromaroute import VectorStore, build_embedding_function
+from contextrag.config import load_config
 from contextrag.core.chunking import chunk_text_by_words
 from contextrag.core.io import iter_files
-from contextrag.embeddings.provider import build_embedding_function
 from contextrag.eval.runner import run_eval
 from contextrag.experiments.eval_config import load_eval_config
 from contextrag.experiments.run_logger import write_run_artifacts
@@ -96,7 +94,7 @@ def main() -> None:
 @main.command()
 @click.option("--config", "config_path", type=click.Path(path_type=Path))
 @click.option("--dataset", "dataset_path", type=click.Path(path_type=Path))
-@click.option("--baseline", type=click.Choice(["uniform", "router"]))
+@click.option("--baseline", type=click.Choice(["uniform", "adaptive", "router"]))
 @click.option("--k", "top_k", type=int)
 @click.option("--output", "output_path", type=click.Path(path_type=Path))
 @click.option("--run-dir", "run_dir", type=click.Path(path_type=Path))
@@ -147,11 +145,10 @@ def eval(
     baseline = baseline or "router"
     top_k = top_k or 5
 
+    # Validate provider requirements
     config = load_config()
-    resolved_provider = resolve_embed_provider(config, embed_provider)
-    require_embedding_provider(
-        config, resolved_provider, embed_provider, click.ClickException
-    )
+    resolved_provider = config.resolve_embed_provider(embed_provider)
+    config.require_embed_provider(resolved_provider, embed_provider, click.ClickException)
 
     _run_evaluation(
         dataset_path=dataset_path,
@@ -167,11 +164,26 @@ def eval(
 
 
 @main.command()
-@click.option("--dataset", "dataset_path", default=Path("data/demo"), type=click.Path(path_type=Path))
-@click.option("--baseline", type=click.Choice(["uniform", "router"]), default="uniform")
+@click.option(
+    "--dataset",
+    "dataset_path",
+    default=Path("data/demo"),
+    type=click.Path(path_type=Path),
+)
+@click.option("--baseline", type=click.Choice(["uniform", "adaptive", "router"]), default="uniform")
 @click.option("--k", "top_k", type=int, default=5)
-@click.option("--output", "output_path", default=Path("runs/demo_eval.json"), type=click.Path(path_type=Path))
-@click.option("--run-dir", "run_dir", default=Path("runs/demo_eval"), type=click.Path(path_type=Path))
+@click.option(
+    "--output",
+    "output_path",
+    default=Path("runs/demo_eval.json"),
+    type=click.Path(path_type=Path),
+)
+@click.option(
+    "--run-dir",
+    "run_dir",
+    default=Path("runs/demo_eval"),
+    type=click.Path(path_type=Path),
+)
 def demo(
     dataset_path: Path,
     baseline: str,
@@ -202,7 +214,6 @@ def doctor() -> None:
     from importlib.util import find_spec
 
     config = load_config()
-    embed = config.embed_config
 
     click.echo("=== API Keys ===")
     click.echo(f"OPENROUTER_API_KEY: {'ok' if config.openrouter_api_key else 'missing'}")
@@ -213,8 +224,8 @@ def doctor() -> None:
     click.echo(f"chat_provider: {config.chat_provider}")
 
     click.echo("\n=== Models ===")
-    click.echo(f"openrouter_embeddings: {embed.openrouter_embeddings_model}")
-    click.echo(f"local_embeddings: {embed.local_embeddings_model}")
+    click.echo(f"openrouter_embeddings: {config.openrouter_embeddings_model}")
+    click.echo(f"local_embeddings: {config.local_embeddings_model}")
     click.echo(f"openai_chat: {config.openai_chat_model}")
     click.echo(f"openrouter_chat: {config.openrouter_chat_model}")
 
@@ -257,13 +268,12 @@ def db_index(
 ) -> None:
     """Build a vector index from documents."""
     config = load_config()
-    resolved_provider = resolve_embed_provider(config, embed_provider)
-    require_embedding_provider(
-        config, resolved_provider, embed_provider, click.ClickException
-    )
+    resolved_provider = config.resolve_embed_provider(embed_provider)
+    config.require_embed_provider(resolved_provider, embed_provider, click.ClickException)
 
+    embed_config = config.to_embed_config()
     embedding_fn = build_embedding_function(
-        config=config,
+        config=embed_config,
         embedding_model=embedding_model,
         embed_provider=embed_provider,
     )
@@ -273,6 +283,7 @@ def db_index(
         embedding_function=embedding_fn,
     )
 
+    # Default chunk size for OpenRouter to stay within embedding limits
     if resolved_provider == "openrouter" and chunk_words is None:
         chunk_words = 400
 
@@ -306,7 +317,8 @@ def db_query(
 ) -> None:
     """Query a vector index."""
     config = load_config()
-    embedding_fn = build_embedding_function(config=config)
+    embed_config = config.to_embed_config()
+    embedding_fn = build_embedding_function(config=embed_config)
     vector_store = VectorStore(
         collection_name=collection,
         persist_path=persist_path,

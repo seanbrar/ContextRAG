@@ -26,7 +26,6 @@ def test_index_command_chunks(monkeypatch, tmp_path):
             self.ids = ids
 
     monkeypatch.setattr("contextrag.cli.VectorStore", FakeVectorDB)
-    monkeypatch.setattr("contextrag.cli.resolve_embed_provider", lambda config, provider: "local")
     monkeypatch.setattr("contextrag.cli.load_config", lambda: make_test_config(
         openai_api_key=None,
         openrouter_api_key=None,
@@ -75,7 +74,6 @@ def test_index_command_defaults_openrouter_chunk_words(monkeypatch, tmp_path):
 
     monkeypatch.setattr("contextrag.cli.VectorStore", FakeVectorDB)
     monkeypatch.setattr("contextrag.cli.chunk_text_by_words", fake_chunk_words)
-    monkeypatch.setattr("contextrag.cli.resolve_embed_provider", lambda config, provider: "openrouter")
     monkeypatch.setattr("contextrag.cli.load_config", lambda: make_test_config(
         openai_api_key=None,
         embed_provider="auto",
@@ -186,7 +184,6 @@ def test_eval_command_requires_output(monkeypatch, tmp_path):
 def test_doctor_reports_status(monkeypatch):
     config = make_test_config(openai_api_key=None)
     monkeypatch.setattr("contextrag.cli.load_config", lambda: config)
-    monkeypatch.setattr("contextrag.cli.resolve_embed_provider", lambda cfg, provider: "openrouter")
 
     runner = CliRunner()
     result = runner.invoke(main, ["doctor"])
@@ -198,7 +195,6 @@ def test_doctor_reports_status(monkeypatch):
 def test_doctor_reports_missing_keys(monkeypatch):
     config = make_test_config(openai_api_key=None, openrouter_api_key=None)
     monkeypatch.setattr("contextrag.cli.load_config", lambda: config)
-    monkeypatch.setattr("contextrag.cli.resolve_embed_provider", lambda cfg, provider: "local")
 
     runner = CliRunner()
     result = runner.invoke(main, ["doctor"])
