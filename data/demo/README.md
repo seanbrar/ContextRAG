@@ -11,7 +11,7 @@ Each line in queries.jsonl contains:
 Quick demo:
 
 ```bash
-poetry run contextrag eval \
+uv run contextrag eval \
   --dataset data/demo \
   --baseline uniform \
   --k 5 \

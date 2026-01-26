@@ -13,6 +13,5 @@
 /runs/
 .DS_Store
 .env
-poetry.lock
 .coverage
 !README.md

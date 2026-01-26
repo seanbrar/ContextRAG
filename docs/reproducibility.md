@@ -28,7 +28,7 @@ Included datasets:
 This run uses local embeddings and produces reproducible artifacts:
 
 ```bash
-poetry run contextrag eval \
+uv run contextrag eval \
   --dataset data/demo \
   --baseline uniform \
   --k 5 \
@@ -45,7 +45,7 @@ The first run downloads the local embedding model
 For larger evals with saved artifacts:
 
 ```bash
-poetry run contextrag eval --config experiments/eval_rfc.yaml --run-dir runs/eval_rfc
+uv run contextrag eval --config experiments/eval_rfc.yaml --run-dir runs/eval_rfc
 ```
 
 ## Artifacts

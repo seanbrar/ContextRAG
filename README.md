@@ -40,13 +40,23 @@ For full methodology, see [docs/paper.md](docs/paper.md).
 # Install
 git clone https://github.com/seanbrar/ContextRAG.git
 cd ContextRAG
-poetry install
+uv sync --all-extras
 
 # Run offline demo (no API keys needed)
-poetry run contextrag demo
+uv run contextrag demo
 ```
 
 Output: `runs/demo_eval.json` with precision/recall metrics.
+
+## Dev Helpers
+
+```bash
+# Install deps
+make install
+
+# Lint, typecheck, tests
+make all
+```
 
 ## CLI Commands
 
@@ -63,7 +73,7 @@ Output: `runs/demo_eval.json` with precision/recall metrics.
 ```bash
 # With OpenRouter embeddings
 export OPENROUTER_API_KEY=sk-or-...
-poetry run contextrag eval \
+uv run contextrag eval \
     --dataset data/demo \
     --baseline uniform \
     --k 5 \
@@ -71,20 +81,20 @@ poetry run contextrag eval \
 
 # Baseline options: uniform, adaptive, router
 # See all options:
-poetry run contextrag eval --help
+uv run contextrag eval --help
 ```
 
 ### Example: Build and Query Index
 
 ```bash
 # Build index
-poetry run contextrag db index \
+uv run contextrag db index \
     --input data/demo/documents \
     --collection my_docs \
     --persist ./runs/chroma
 
 # Query
-poetry run contextrag db query \
+uv run contextrag db query \
     --collection my_docs \
     --persist ./runs/chroma \
     --query "HTTP caching headers"
@@ -138,7 +148,7 @@ ContextRAG is a CLI tool built on [chromaroute](https://github.com/seanbrar/chro
 ## Testing
 
 ```bash
-poetry run pytest tests/ -v --cov=contextrag
+make test-cov
 ```
 
 Target: 95% coverage maintained.

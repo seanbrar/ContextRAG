@@ -27,6 +27,15 @@ dependencies = [
     "sentence-transformers (>=5.2.0,<6.0.0)",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "isort>=7.0.0",
+    "mypy>=1.15.0",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.13",
+]
+
 [project.urls]
 Homepage = "https://github.com/seanbrar/ContextRAG"
 Repository = "https://github.com/seanbrar/ContextRAG"
@@ -35,15 +44,8 @@ Issues = "https://github.com/seanbrar/ContextRAG/issues"
 [project.scripts]
 contextrag = "contextrag.cli:main"
 
-[tool.poetry]
-packages = [{ include = "contextrag", from = "src" }]
-
-[tool.poetry.group.dev.dependencies]
-isort = "^7.0.0"
-mypy = "^1.15.0"
-pytest = "^9.0.2"
-pytest-cov = "^7.0.0"
-ruff = "^0.14.13"
+[tool.hatch.build.targets.wheel]
+packages = ["src/contextrag"]
 
 [tool.ruff]
 exclude = [".archive/"]
@@ -77,5 +79,5 @@ disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
