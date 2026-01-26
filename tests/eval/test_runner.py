@@ -1,8 +1,9 @@
 import json
 
 import pytest
+from chromaroute import EmbedConfig
 
-from contextrag.config import AppConfig
+from contextrag.config import Config
 from contextrag.core import chunking
 from contextrag.eval import runner
 
@@ -119,19 +120,21 @@ def test_run_eval_with_fake_vector_db(monkeypatch, tmp_path):
                 return {"ids": [["doc1"]]}
             return {"ids": [["doc2"]]}
 
-    config = AppConfig(
+    config = Config(
+        embed=EmbedConfig(
+            openrouter_api_key=None,
+            openrouter_base_url="https://openrouter.ai/api/v1",
+            openrouter_embeddings_model="qwen/qwen3-embedding-8b",
+            openrouter_referer=None,
+            openrouter_title=None,
+            openrouter_provider_json=None,
+            local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
+            embed_provider="local",
+        ),
         openai_api_key=None,
         openai_chat_model="gpt-4o-mini",
         openrouter_chat_model="mistralai/devstral-2512:free",
         chat_provider="openai",
-        openrouter_api_key=None,
-        openrouter_base_url="https://openrouter.ai/api/v1",
-        openrouter_embeddings_model="qwen/qwen3-embedding-8b",
-        openrouter_referer=None,
-        openrouter_title=None,
-        openrouter_provider_json=None,
-        local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
-        embed_provider="local",
     )
 
     monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)
@@ -184,19 +187,21 @@ def test_run_eval_costs_with_openrouter_provider(monkeypatch, tmp_path):
         def query(self, query_texts, n_results):
             return {"ids": [["doc1"]]}
 
-    config = AppConfig(
+    config = Config(
+        embed=EmbedConfig(
+            openrouter_api_key="ok",
+            openrouter_base_url="https://openrouter.ai/api/v1",
+            openrouter_embeddings_model="qwen/qwen3-embedding-8b",
+            openrouter_referer=None,
+            openrouter_title=None,
+            openrouter_provider_json=None,
+            local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
+            embed_provider="openrouter",
+        ),
         openai_api_key="key",
         openai_chat_model="gpt-4o-mini",
         openrouter_chat_model="mistralai/devstral-2512:free",
         chat_provider="openai",
-        openrouter_api_key="ok",
-        openrouter_base_url="https://openrouter.ai/api/v1",
-        openrouter_embeddings_model="qwen/qwen3-embedding-8b",
-        openrouter_referer=None,
-        openrouter_title=None,
-        openrouter_provider_json=None,
-        local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
-        embed_provider="openrouter",
     )
 
     monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)
