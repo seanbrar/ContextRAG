@@ -61,6 +61,37 @@ def _render(payload: dict[str, Any]) -> str:
             f"{delta.get('mrr_at_k', 0.0):.3f} | "
             f"{delta.get('ndcg_at_k', 0.0):.3f} |"
         )
+
+    lines.extend(
+        [
+            "",
+            "## Uniform vs Router (Inference)",
+            "",
+            "| k | Metric | Mean Delta (router-uniform) | 95% CI | p-value |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+    )
+    metrics = [
+        ("precision_at_k", "Precision@k"),
+        ("recall_at_k", "Recall@k"),
+        ("hit_at_1", "Hit@1"),
+        ("reciprocal_rank_at_k", "MRR@k"),
+        ("ndcg_at_k", "nDCG@k"),
+    ]
+    for comparison in comparisons:
+        inference = comparison.get("inference", {})
+        for metric_key, label in metrics:
+            if metric_key not in inference:
+                continue
+            item = inference[metric_key]
+            ci = item.get("ci95", [0.0, 0.0])
+            lines.append(
+                "| "
+                f"{comparison['k']} | {label} | "
+                f"{item.get('mean_delta', 0.0):.3f} | "
+                f"[{ci[0]:.3f}, {ci[1]:.3f}] | "
+                f"{item.get('paired_randomization_p_value', 1.0):.4f} |"
+            )
     lines.append("")
     return "\n".join(lines)
 

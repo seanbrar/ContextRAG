@@ -28,7 +28,10 @@ This document explains key engineering decisions in ContextRAG and their rationa
 
 **Implementation**:
 ```
-OpenRouter (if OPENROUTER_API_KEY) → Local (always available)
+Auto provider selection with explicit overrides:
+- OpenRouter when `OPENROUTER_API_KEY` is present
+- OpenAI when explicitly selected with `OPENAI_API_KEY`
+- Local fallback for offline/default operation
 ```
 `chromaroute` handles provider routing and failure fallback.
 
@@ -55,7 +58,7 @@ OpenRouter (if OPENROUTER_API_KEY) → Local (always available)
 - Chunk boundaries may split semantic units
 - No overlap implemented (could improve retrieval at boundary regions)
 
-**Evaluation outcome**: Testing showed no accuracy improvement over uniform chunking. Both strategies achieved identical precision@5 (0.197) and recall@5 (0.983) on a heterogeneous corpus. This suggests modern embedding models are robust to chunk boundary effects. See `docs/results.md` for full analysis.
+**Evaluation outcome**: Testing showed no accuracy improvement over uniform chunking. On hosted mixed-corpus runs the strategies tied on precision/recall, while on the expanded local matrix router underperformed uniform across tested `k` values. This suggests modern embedding models are robust to simple length-based routing and that extra routing complexity is not justified here. See `docs/results.md` for full analysis.
 
 ## ChromaDB as Vector Store
 

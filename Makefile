@@ -1,4 +1,4 @@
-.PHONY: install test test-cov lint typecheck format clean build all repro-local
+.PHONY: install test test-cov lint typecheck format clean build all repro-local reviewer-bundle
 
 # Development setup
 install:
@@ -46,3 +46,7 @@ repro-local:
 		--embed-provider local \
 		--run-root runs/matrix_eval_expanded_local \
 		--persist-root runs/chroma-matrix-eval-expanded-local
+
+# Build a reviewer-ready artifact bundle (expanded + external matrices and paper tables)
+reviewer-bundle:
+	uv run python scripts/build_reviewer_bundle.py

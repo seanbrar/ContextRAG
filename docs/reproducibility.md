@@ -22,6 +22,8 @@ Included datasets:
 
 - `data/demo` — small RFC-based dataset for offline demo runs
 - `data/eval-mixed` — mixed corpus used in the main evaluation (larger)
+- `data/eval-expanded` — expanded mixed corpus with multi-relevance and hard negatives
+- `data/eval-external` — external RFC holdout split for transfer checks
 
 ## Offline Demo (Deterministic)
 
@@ -73,6 +75,20 @@ python3 scripts/render_matrix_report.py \
   --input runs/matrix_eval_expanded_local/matrix_summary.json \
   --output docs/matrix_eval_expanded_local.md
 ```
+
+## Reviewer Bundle (Recommended)
+
+Build all reviewer-facing local artifacts in one command:
+
+```bash
+make reviewer-bundle
+```
+
+This regenerates:
+- expanded local matrix (`runs/reviewer_bundle/matrix_eval_expanded_local`)
+- external holdout matrix (`runs/reviewer_bundle/matrix_eval_external_local`)
+- markdown dashboards under `docs/`
+- paper-ready tables at `docs/paper_tables.md`
 
 ## Artifacts
 

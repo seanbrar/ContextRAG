@@ -76,7 +76,7 @@ baseline: router
 
 ### The Finding
 
-**No difference.** Precision@5 and Recall@5 were identical across strategies.
+**No win for routing.** Precision@5 and Recall@5 were identical on the hosted mixed-corpus slice, and later expanded local-matrix runs showed uniform outperforming router.
 
 This held across:
 - Mixed-corpus runs with OpenAI `text-embedding-3-small`
@@ -85,7 +85,7 @@ This held across:
 
 ### Interpretation
 
-Modern embedding models are remarkably robust to chunking strategy. The semantic similarity computation handles varying chunk sizes gracefully.
+Modern embedding models appear robust to simple length-based routing. In this project, routing complexity did not produce better retrieval quality than uniform chunking.
 
 ## The chromaroute Extraction
 

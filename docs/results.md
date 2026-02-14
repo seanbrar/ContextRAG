@@ -4,9 +4,15 @@ This document summarizes evaluation methodology and results for ContextRAG.
 
 ## Primary Finding
 
-**Adaptive length-based chunking does not improve retrieval accuracy over uniform chunking in the evaluated setup.**
+**Adaptive length-based chunking does not outperform uniform chunking in the evaluated setup.**
 
-Across two datasets (homogeneous RFC corpus and heterogeneous mixed corpus), the router strategy achieves identical precision and recall to the uniform baseline. The router produces marginally fewer chunks (1.8% reduction on mixed corpus) but this efficiency gain does not translate to accuracy improvement.
+Across committed runs, the router strategy never beats the uniform baseline:
+- mixed corpus (hosted OpenAI embeddings): identical precision/recall
+- RFC-only corpus (hosted OpenRouter embeddings): identical precision/recall
+- expanded local matrix (`k={3,5,10}`): router underperforms on all tested `k`
+- external local holdout (`k={3,5,10}`): router ties or underperforms uniform
+
+The router produces marginally fewer chunks (1.8% reduction on mixed corpus), but this efficiency gain does not translate to better retrieval quality.
 
 For the mixed-corpus experiment committed in this repository, three repeated `k=5` runs produced identical aggregate precision/recall.
 
@@ -23,10 +29,11 @@ For the mixed-corpus experiment committed in this repository, three repeated `k=
 **Embedding providers**:
 - Mixed corpus: OpenAI (`text-embedding-3-small`)
 - RFC-only corpus: OpenRouter (`qwen/qwen3-embedding-8b`)
+- Expanded/external matrices: local MiniLM (`sentence-transformers/all-MiniLM-L6-v2`)
 
 **Determinism**: Local embeddings are deterministic for a fixed model version. Hosted API providers can change behavior over time; repeated runs here were stable for aggregate precision/recall.
 
-**Artifacts**: Each run writes `summary.json`, `per_query.jsonl`, and `metadata.json` under `runs/{run_name}/`.
+**Artifacts**: Each run writes `summary.json`, `per_query.jsonl`, `metadata.json`, and `manifest.json` under `runs/{run_name}/`.
 
 ## Mixed Corpus Evaluation (Primary)
 
@@ -100,7 +107,7 @@ Length-based routing would improve retrieval by:
 
 ### Observed Result
 
-**The hypothesis is not supported in this benchmark setup.** Retrieval accuracy was unchanged between strategies on the evaluated corpora.
+**The hypothesis is not supported in this benchmark setup.** Across committed slices, routing never beats uniform and is often slightly worse on rank-sensitive metrics.
 
 ### Possible Explanations
 
@@ -111,7 +118,7 @@ Length-based routing would improve retrieval by:
 ### Value of This Finding
 
 This negative result is itself valuable:
-- **Simplicity wins**: Uniform chunking is simpler and equally effective
+- **Simplicity wins**: Uniform chunking is simpler and equal or better in committed runs
 - **Methodology demonstration**: Rigorous comparison with efficiency metrics and multiple runs
 - **Infrastructure reusability**: The evaluation framework can test other strategies
 
@@ -126,7 +133,7 @@ This negative result is itself valuable:
 ## Expanded Matrix Evaluation (Local, v2 Dataset)
 
 To stress-test the methodology with multi-relevance labels, we ran:
-- Dataset: `data/eval-expanded` (88 queries, including graded relevance)
+- Dataset: `data/eval-expanded` (100 queries, including graded relevance + hard negatives)
 - Provider: local MiniLM (`sentence-transformers/all-MiniLM-L6-v2`)
 - Matrix: `uniform` vs `router` across `k={3,5,10}`
 
@@ -134,20 +141,49 @@ To stress-test the methodology with multi-relevance labels, we ran:
 
 | Baseline | k | Precision@k | Recall@k | Hit@1 | MRR@k | nDCG@k |
 | --- | --- | --- | --- | --- | --- | --- |
-| Uniform | 3 | 0.352 | 0.743 | 0.784 | 0.839 | 0.780 |
-| Router | 3 | 0.330 | 0.674 | 0.705 | 0.765 | 0.707 |
-| Uniform | 5 | 0.252 | 0.853 | 0.784 | 0.866 | 0.820 |
-| Router | 5 | 0.241 | 0.796 | 0.705 | 0.798 | 0.755 |
-| Uniform | 10 | 0.153 | 0.912 | 0.784 | 0.866 | 0.847 |
-| Router | 10 | 0.150 | 0.878 | 0.705 | 0.808 | 0.795 |
+| Uniform | 3 | 0.363 | 0.728 | 0.800 | 0.853 | 0.766 |
+| Router | 3 | 0.343 | 0.668 | 0.730 | 0.788 | 0.702 |
+| Uniform | 5 | 0.258 | 0.835 | 0.800 | 0.877 | 0.808 |
+| Router | 5 | 0.248 | 0.785 | 0.730 | 0.818 | 0.751 |
+| Uniform | 10 | 0.156 | 0.901 | 0.810 | 0.882 | 0.842 |
+| Router | 10 | 0.152 | 0.866 | 0.730 | 0.826 | 0.789 |
 
 ### Interpretation
 
 1. Router did not outperform uniform on any tested `k` value in this local matrix.
-2. The direction of effect was consistent across precision, recall, Hit@1, MRR, and nDCG.
-3. This run demonstrates a broader, more sensitive evaluation setup than the original single-label `k=5` slice.
+2. The direction of effect was consistently negative across precision, recall, Hit@1, MRR, and nDCG.
+3. Per-k comparison artifacts include confidence intervals and paired randomization p-values under `runs/matrix_eval_expanded_local/comparisons/`.
+4. This run demonstrates a broader, more sensitive evaluation setup than the original single-label `k=5` slice.
 
 Full local dashboard: `docs/matrix_eval_expanded_local.md`
+
+---
+
+## External Holdout Matrix (Local)
+
+To check transfer beyond the original mixed corpus, we added an external RFC holdout:
+- Dataset: `data/eval-external` (10 held-out RFCs, 36 queries)
+- Provider: local MiniLM (`sentence-transformers/all-MiniLM-L6-v2`)
+- Matrix: `uniform` vs `router` across `k={3,5,10}`
+
+### Aggregate Metrics
+
+| Baseline | k | Precision@k | Recall@k | Hit@1 | MRR@k | nDCG@k |
+| --- | --- | --- | --- | --- | --- | --- |
+| Uniform | 3 | 0.407 | 0.725 | 0.667 | 0.792 | 0.712 |
+| Router | 3 | 0.398 | 0.716 | 0.639 | 0.773 | 0.689 |
+| Uniform | 5 | 0.289 | 0.818 | 0.667 | 0.799 | 0.756 |
+| Router | 5 | 0.289 | 0.818 | 0.639 | 0.780 | 0.739 |
+| Uniform | 10 | 0.175 | 0.930 | 0.667 | 0.808 | 0.812 |
+| Router | 10 | 0.175 | 0.926 | 0.639 | 0.789 | 0.794 |
+
+### Interpretation
+
+1. Router still does not outperform uniform on any tested `k`.
+2. Precision/recall effects are near-zero on this split, while rank-sensitive metrics (Hit@1/MRR/nDCG) remain slightly worse for router.
+3. Combined with expanded-matrix underperformance, this strengthens the canonical claim that length-based routing does not provide a quality win here.
+
+Full local dashboard: `docs/matrix_eval_external_local.md`
 
 ---
 
@@ -199,3 +235,5 @@ The custom ChromaDB-OpenRouter integration enables 50–90% cost reduction by ro
 | Mixed | Router | `runs/eval_mixed_router/summary.json` | `runs/eval_mixed_router/per_query.jsonl` |
 | RFC | Uniform | `runs/eval_uniform_v2/summary.json` | `runs/eval_uniform_v2/per_query.jsonl` |
 | RFC | Router | `runs/eval_router_v2/summary.json` | `runs/eval_router_v2/per_query.jsonl` |
+| Expanded matrix | Uniform/Router | `runs/reviewer_bundle/matrix_eval_expanded_local/*/summary.json` | `runs/reviewer_bundle/matrix_eval_expanded_local/*/per_query.jsonl` |
+| External matrix | Uniform/Router | `runs/reviewer_bundle/matrix_eval_external_local/*/summary.json` | `runs/reviewer_bundle/matrix_eval_external_local/*/per_query.jsonl` |

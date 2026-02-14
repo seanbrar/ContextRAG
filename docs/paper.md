@@ -2,7 +2,7 @@
 
 ## Abstract
 
-ContextRAG explores whether adaptive chunking strategies—routing documents to different processing pipelines based on length—can improve retrieval quality in RAG systems. We implement a three-tier routing system and evaluate it against uniform chunking on a heterogeneous document corpus. **Our evaluation finds no accuracy improvement from adaptive chunking**: both strategies achieve identical precision and recall. This negative result suggests that modern embedding models are robust to chunk boundary effects, and simpler uniform strategies may be preferable. The project contributes a reproducible evaluation framework with provider-agnostic embeddings and comprehensive efficiency metrics.
+ContextRAG explores whether adaptive chunking strategies—routing documents to different processing pipelines based on length—can improve retrieval quality in RAG systems. We implement a three-tier routing system and evaluate it against uniform chunking across committed benchmark slices. **Our evaluation finds that adaptive routing never outperforms uniform chunking**: it ties on the hosted mixed-corpus slice and underperforms on the expanded local matrix. This negative result suggests that modern embedding models are robust to simple length-based chunk routing, and simpler uniform strategies may be preferable. The project contributes a reproducible evaluation framework with provider-agnostic embeddings, statistical comparison utilities, and comprehensive efficiency metrics.
 
 ## Motivation
 
@@ -49,6 +49,10 @@ Mixed corpus of 12 documents spanning three length categories:
 
 Total: 493,423 tokens, 60 queries, 3 evaluation runs.
 
+Additional benchmark slices:
+- **Expanded mixed corpus** (`data/eval-expanded`): 100 queries with graded relevance and hard negatives
+- **External holdout** (`data/eval-external`): 10 held-out RFCs, 36 queries with graded relevance
+
 ### Results
 
 | Baseline | Precision@5 | Recall@5 | Chunks | Variance |
@@ -56,7 +60,7 @@ Total: 493,423 tokens, 60 queries, 3 evaluation runs.
 | Uniform | 0.197 | 0.983 | 499 | 0 |
 | Router | 0.197 | 0.983 | 490 | 0 |
 
-**Key finding**: Both strategies achieve identical retrieval accuracy. The router produces 1.8% fewer chunks, but this marginal efficiency gain does not translate to accuracy improvement. Results are deterministic across multiple runs.
+**Key finding (canonical)**: Length-based routing does not beat uniform chunking. On the hosted mixed-corpus slice, both strategies are identical on precision/recall. On the expanded local matrix, router underperforms uniform across tested `k` values.
 
 ## Discussion
 
@@ -69,7 +73,7 @@ Total: 493,423 tokens, 60 queries, 3 evaluation runs.
 ### Value of This Work
 
 This negative result is itself informative:
-- **Simplicity wins**: Uniform chunking is equally effective with less complexity
+- **Simplicity wins**: Uniform chunking is equal or better in committed runs with less complexity
 - **Methodology contribution**: Reproducible framework for testing RAG strategies
 - **Infrastructure reusability**: Provider-agnostic embeddings and evaluation tools
 
@@ -79,6 +83,7 @@ This negative result is itself informative:
 - Length thresholds are heuristic, not learned
 - Hosted-provider reproducibility can drift over time
 - Expanded local matrix (`data/eval-expanded`) improves metric sensitivity, but remains corpus-specific
+- External holdout checks transfer but remains standards-domain focused
 
 ## Future Directions
 
