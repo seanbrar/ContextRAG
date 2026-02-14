@@ -52,6 +52,7 @@ Total: 493,423 tokens, 60 queries, 3 evaluation runs.
 Additional benchmark slices:
 - **Expanded mixed corpus** (`data/eval-expanded`): 100 queries with graded relevance and hard negatives
 - **External holdout** (`data/eval-external`): 10 held-out RFCs, 36 queries with graded relevance
+- **Public transfer slice** (`data/eval-scifact-mini`): 40 BEIR SciFact queries over 220 abstracts
 
 ### Results
 
@@ -90,4 +91,4 @@ This negative result is itself informative:
 - **Cost-aware routing**: Route to different providers based on cost/quality tradeoffs
 - **Hybrid search**: Combine dense and sparse retrieval (BM25)
 - **Alternative strategies**: Semantic chunking, overlapping windows, hierarchical embeddings
-- **Broader benchmarks**: Evaluate on standard IR datasets (NQ, TriviaQA)
+- **Broader benchmarks**: Extend beyond SciFact to larger standard IR datasets (NQ, TriviaQA)

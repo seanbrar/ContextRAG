@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +18,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 BUNDLE_RUN_ROOT = ROOT / "runs" / "reviewer_bundle"
 BUNDLE_PERSIST_ROOT = ROOT / "runs" / "chroma-reviewer-bundle"
+PREREG_PATH = ROOT / "docs" / "preregistration.md"
+PREREG_LOCK_PATH = ROOT / "docs" / "preregistration_lock.json"
 
 DATASETS: list[dict[str, Any]] = [
     {
@@ -33,6 +37,14 @@ DATASETS: list[dict[str, Any]] = [
         "persist_root": BUNDLE_PERSIST_ROOT / "matrix_eval_external_local",
         "report": ROOT / "docs" / "matrix_eval_external_local.md",
         "label": "data/eval-external",
+    },
+    {
+        "name": "scifact",
+        "dataset": Path("data/eval-scifact-mini"),
+        "run_root": BUNDLE_RUN_ROOT / "matrix_eval_scifact_local",
+        "persist_root": BUNDLE_PERSIST_ROOT / "matrix_eval_scifact_local",
+        "report": ROOT / "docs" / "matrix_eval_scifact_local.md",
+        "label": "data/eval-scifact-mini",
     },
 ]
 
@@ -75,11 +87,48 @@ def _run_render_paper_tables(summary_paths: list[Path], labels: list[str], outpu
     subprocess.run(command, check=True)
 
 
+def _run_build_core_annotations() -> None:
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "build_core_annotations.py"),
+        ],
+        check=True,
+    )
+
+
 def _load(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError(f"Expected JSON object in {path}")
     return payload
+
+
+def _git_commit() -> str | None:
+    try:
+        output = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return None
+    return output or None
+
+
+def _prereg_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _write_preregistration_lock() -> None:
+    payload = {
+        "schema_version": 1,
+        "generated_at": int(time.time()),
+        "path": str(PREREG_PATH.relative_to(ROOT)),
+        "sha256": _prereg_sha256(PREREG_PATH),
+        "git_commit": _git_commit(),
+    }
+    PREREG_LOCK_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
 def _format_reviewer_bundle(summary_paths: list[Path], labels: list[str]) -> str:
@@ -114,7 +163,9 @@ def _format_reviewer_bundle(summary_paths: list[Path], labels: list[str]) -> str
             "",
             "- `docs/matrix_eval_expanded_local.md`",
             "- `docs/matrix_eval_external_local.md`",
+            "- `docs/matrix_eval_scifact_local.md`",
             "- `docs/paper_tables.md`",
+            "- `docs/preregistration_lock.json`",
             "",
             "## Rebuild",
             "",
@@ -130,6 +181,7 @@ def _format_reviewer_bundle(summary_paths: list[Path], labels: list[str]) -> str
 def main() -> None:
     BUNDLE_RUN_ROOT.mkdir(parents=True, exist_ok=True)
     BUNDLE_PERSIST_ROOT.mkdir(parents=True, exist_ok=True)
+    _run_build_core_annotations()
 
     summary_paths: list[Path] = []
     labels: list[str] = []
@@ -162,6 +214,7 @@ def main() -> None:
     _run_render_paper_tables(summary_paths, labels, ROOT / "docs" / "paper_tables.md")
     reviewer_bundle = _format_reviewer_bundle(summary_paths, labels)
     (ROOT / "docs" / "reviewer_bundle.md").write_text(reviewer_bundle, encoding="utf-8")
+    _write_preregistration_lock()
 
 
 if __name__ == "__main__":

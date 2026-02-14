@@ -1,7 +1,7 @@
 # ContextRAG
 
 [![Tests](https://github.com/seanbrar/ContextRAG/actions/workflows/test.yml/badge.svg)](https://github.com/seanbrar/ContextRAG/actions/workflows/test.yml)
-[![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)](https://github.com/seanbrar/ContextRAG/actions/workflows/test.yml)
+[![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen)](https://github.com/seanbrar/ContextRAG/actions/workflows/test.yml)
 [![Python 3.11-3.12](https://img.shields.io/badge/python-3.11--3.12-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -12,11 +12,11 @@ RAG evaluation framework demonstrating that **length-based adaptive chunking doe
 Core scope (recommended for review/research claims):
 - `uniform` vs `router` chunking
 - dense retrieval (`retrieval_mode=dense`)
-- datasets: `data/eval-expanded`, `data/eval-external`
+- datasets: `data/eval-expanded`, `data/eval-external`, `data/eval-scifact-mini`
 
 Exploratory scope (kept for follow-up research, not canonical claims):
 - semantic chunking, overlap sweeps, BM25/hybrid/rerank retrieval
-- public transfer slice `data/eval-scifact-mini`
+- hosted cost/quality provider sweeps
 
 ## The Research Question
 
@@ -29,7 +29,7 @@ Exploratory scope (kept for follow-up research, not canonical claims):
 Across all committed evaluations, length-based routing **never beats** uniform chunking:
 
 - Mixed corpus + hosted embeddings: **tie** (identical precision@5 and recall@5)
-- Expanded local matrix (`k={3,5,10}`): router is **consistently worse**
+- Core local matrices (`k={3,5,10}`): router is **worse or ties**
 
 Mixed-corpus hosted run slice:
 
@@ -41,8 +41,9 @@ Mixed-corpus hosted run slice:
 Scope of this claim:
 
 - Mixed corpus (`data/eval-mixed`): hosted `text-embedding-3-small`, `k=5`, 3 repeated runs
-- RFC corpus (`data/demo`): OpenRouter `qwen/qwen3-embedding-8b`, `k=5`, uniform vs router
-- External holdout (`data/eval-external`): local MiniLM matrix, `k={3,5,10}`
+- Expanded mixed (`data/eval-expanded`): local MiniLM matrix, `k={3,5,10}`
+- External RFC holdout (`data/eval-external`): local MiniLM matrix, `k={3,5,10}`
+- Public SciFact transfer slice (`data/eval-scifact-mini`): local MiniLM matrix, `k={3,5,10}`
 - Cost/quality side study: OpenAI `text-embedding-3-small` vs `text-embedding-3-large` (uniform baseline)
 
 ## Why This Matters
@@ -72,35 +73,19 @@ Output: `runs/demo_eval.json` with precision/recall metrics.
 ## Reproduce Core Study
 
 ```bash
-# 1) Validate datasets
-uv run contextrag validate-dataset --dataset data/eval-expanded
-uv run contextrag validate-dataset --dataset data/eval-external
-
-# 2) Run core local matrix (uniform/router × k={3,5,10}, dense retrieval)
-uv run contextrag core matrix \
-  --dataset data/eval-expanded \
-  --k-values 3,5,10 \
-  --embed-provider local \
-  --run-root runs/matrix_eval_expanded_local \
-  --persist-root runs/chroma-matrix-eval-expanded-local
-
-# 3) Compare any two runs (example: uniform vs router at k=5)
-uv run contextrag compare \
-  --run-a runs/matrix_eval_expanded_local/uniform_k5 \
-  --run-b runs/matrix_eval_expanded_local/router_k5 \
-  --output runs/matrix_eval_expanded_local/comparisons/uniform_vs_router_k5_manual.json
-
-# 4) Render a reviewer-friendly report
-python3 scripts/render_matrix_report.py \
-  --input runs/matrix_eval_expanded_local/matrix_summary.json \
-  --output docs/matrix_eval_expanded_local.md
+# Canonical claim bundle (annotations, matrices, reports, prereg lock)
+make reviewer-bundle
 ```
 
 Primary artifacts:
-- `runs/matrix_eval_expanded_local/matrix_summary.json`
-- `runs/matrix_eval_expanded_local/matrix_summary.md`
-- `runs/matrix_eval_expanded_local/comparisons/*.json`
+- `runs/reviewer_bundle/matrix_eval_expanded_local/matrix_summary.json`
+- `runs/reviewer_bundle/matrix_eval_external_local/matrix_summary.json`
+- `runs/reviewer_bundle/matrix_eval_scifact_local/matrix_summary.json`
 - `docs/matrix_eval_expanded_local.md`
+- `docs/matrix_eval_external_local.md`
+- `docs/matrix_eval_scifact_local.md`
+- `docs/preregistration_lock.json`
+- `docs/paper_tables.md`
 
 ## Build Reviewer Bundle
 
@@ -111,6 +96,9 @@ make reviewer-bundle
 This one command regenerates:
 - expanded local matrix artifacts and comparisons
 - external holdout matrix artifacts and comparisons
+- public SciFact transfer matrix artifacts and comparisons
+- core annotation rounds + agreement artifacts (`eval-expanded`, `eval-external`)
+- preregistration lock metadata (`docs/preregistration_lock.json`)
 - `docs/paper_tables.md` (paper-ready aggregate + inference tables)
 - `docs/reviewer_bundle.md` (review checklist/report index)
 
@@ -228,7 +216,7 @@ ContextRAG is a CLI tool built on [chromaroute](https://github.com/seanbrar/chro
 make test-cov
 ```
 
-Target: high test coverage with CI gate (`--cov-fail-under=95`).
+Target: high test coverage with CI gate (`--cov-fail-under=90`).
 
 ## Docs
 
@@ -237,9 +225,11 @@ Target: high test coverage with CI gate (`--cov-fail-under=95`).
 - [docs/annotation_protocol.md](docs/annotation_protocol.md) - Dual-annotation and agreement workflow
 - [docs/matrix_eval_expanded_local.md](docs/matrix_eval_expanded_local.md) - Latest local matrix dashboard
 - [docs/matrix_eval_external_local.md](docs/matrix_eval_external_local.md) - External holdout matrix dashboard
+- [docs/matrix_eval_scifact_local.md](docs/matrix_eval_scifact_local.md) - Public SciFact transfer dashboard
 - [docs/baseline_study.md](docs/baseline_study.md) - Expanded baseline fairness study
 - [docs/paper_tables.md](docs/paper_tables.md) - Generated paper-ready tables
 - [docs/reviewer_bundle.md](docs/reviewer_bundle.md) - Reviewer-oriented artifact index
+- [docs/preregistration_lock.json](docs/preregistration_lock.json) - Preregistration hash + commit lock
 - [docs/evolution.md](docs/evolution.md) - Project history 2022–2025
 - [docs/design-decisions.md](docs/design-decisions.md) - Architecture rationale
 

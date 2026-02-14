@@ -47,8 +47,8 @@
 
 ## Primary Endpoint (nDCG@k)
 
-| k | Margin | Equivalent | Non-inferior | Superior |
-| --- | --- | --- | --- | --- |
-| 3 | 0.020 | false | false | false |
-| 5 | 0.020 | false | false | false |
-| 10 | 0.020 | false | false | false |
+| k | Margin | alpha | p(lower) | p(upper) | Equivalent | Non-inferior | Superior |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 3 | 0.020 | 0.050 | 0.5448 | 0.0201 | false | false | false |
+| 5 | 0.020 | 0.050 | 0.4081 | 0.0107 | false | false | false |
+| 10 | 0.020 | 0.050 | 0.4456 | 0.0063 | false | false | false |

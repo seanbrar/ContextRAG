@@ -7,7 +7,7 @@ Analysis expectations are preregistered in `docs/preregistration.md`.
 Core claim boundary:
 - Compare `uniform` vs `router`
 - Use `retrieval_mode=dense`
-- Use `data/eval-expanded` and `data/eval-external`
+- Use `data/eval-expanded`, `data/eval-external`, and `data/eval-scifact-mini`
 
 Other baselines/retrieval modes are exploratory extensions.
 
@@ -73,14 +73,15 @@ Embedding-provider note:
 
 ## Matrix Runs (Recommended)
 
-Run the claim-aligned matrix with local embeddings:
+Run a claim-aligned matrix with local embeddings (example dataset shown):
 
 ```bash
 uv run contextrag core matrix \
   --dataset data/eval-expanded \
   --k-values 3,5,10 \
   --embed-provider local \
-  --run-root runs/matrix_eval_expanded_local
+  --run-root runs/reviewer_bundle/matrix_eval_expanded_local \
+  --persist-root runs/chroma-reviewer-bundle/matrix_eval_expanded_local
 ```
 
 This writes:
@@ -92,7 +93,7 @@ Optional dashboard rendering:
 
 ```bash
 python3 scripts/render_matrix_report.py \
-  --input runs/matrix_eval_expanded_local/matrix_summary.json \
+  --input runs/reviewer_bundle/matrix_eval_expanded_local/matrix_summary.json \
   --output docs/matrix_eval_expanded_local.md
 ```
 
@@ -105,10 +106,13 @@ make reviewer-bundle
 ```
 
 This regenerates:
+- annotation rounds + agreement artifacts for `data/eval-expanded` and `data/eval-external`
 - expanded local matrix (`runs/reviewer_bundle/matrix_eval_expanded_local`)
 - external holdout matrix (`runs/reviewer_bundle/matrix_eval_external_local`)
+- SciFact transfer matrix (`runs/reviewer_bundle/matrix_eval_scifact_local`)
 - markdown dashboards under `docs/`
 - paper-ready tables at `docs/paper_tables.md`
+- preregistration lock metadata at `docs/preregistration_lock.json`
 
 ## Exploratory Extensions
 

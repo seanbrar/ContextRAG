@@ -104,16 +104,23 @@ def _render(payload: dict[str, Any]) -> str:
             "",
             "## Primary Endpoint (nDCG@k)",
             "",
-            "| k | Margin | Equivalent | Non-inferior | Superior |",
-            "| --- | --- | --- | --- | --- |",
+            "| k | Margin | alpha | p(lower) | p(upper) | Equivalent | Non-inferior | Superior |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- |",
         ]
     )
     for comparison in comparisons:
         endpoint = comparison.get("inference", {}).get("ndcg_at_k", {})
         margin = endpoint.get("equivalence_margin", payload.get("equivalence_margin", 0.02))
+        tost = endpoint.get("tost", {})
+        alpha = float(tost.get("alpha", 0.05))
+        p_lower = float(tost.get("p_value_lower", 1.0))
+        p_upper = float(tost.get("p_value_upper", 1.0))
         lines.append(
             "| "
             f"{comparison['k']} | {margin:.3f} | "
+            f"{alpha:.3f} | "
+            f"{p_lower:.4f} | "
+            f"{p_upper:.4f} | "
             f"{str(endpoint.get('equivalent_within_margin', False)).lower()} | "
             f"{str(endpoint.get('non_inferior_within_margin', False)).lower()} | "
             f"{str(endpoint.get('superior_to_zero', False)).lower()} |"

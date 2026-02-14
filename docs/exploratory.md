@@ -22,14 +22,11 @@ Outputs:
 - `runs/baseline_study/baseline_study_summary.json`
 - `docs/baseline_study.md`
 
-## Public Benchmark Slice
+## Public Benchmark Variants
 
-`data/eval-scifact-mini` is a non-RFC transfer slice built from BEIR SciFact
-(40 queries, 220 docs).
-
-```bash
-uv run contextrag validate-dataset --dataset data/eval-scifact-mini
-```
+`data/eval-scifact-mini` is now part of the canonical core matrix scope.
+Exploratory work on this slice should focus on non-core retrieval modes or
+chunking variants.
 
 ## Artifact Evaluation Mode
 

@@ -52,7 +52,7 @@ def _render(rows: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def main(force_run: bool = False) -> None:
+def main(reuse_existing: bool = False) -> None:
     RUN_ROOT.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, Any]] = []
 
@@ -61,7 +61,7 @@ def main(force_run: bool = False) -> None:
         output_path = ROOT / config.output
         run_dir = ROOT / (config.run_dir or f"runs/{scenario}")
 
-        if output_path.exists() and not force_run:
+        if output_path.exists() and reuse_existing:
             results = json.loads(output_path.read_text(encoding="utf-8"))
         else:
             results = run_eval(
@@ -124,9 +124,9 @@ def main(force_run: bool = False) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--force-run",
+        "--reuse-existing",
         action="store_true",
-        help="Re-run all scenarios instead of reusing existing run JSON outputs.",
+        help="Reuse existing run JSON outputs when present.",
     )
     args = parser.parse_args()
-    main(force_run=args.force_run)
+    main(reuse_existing=args.reuse_existing)

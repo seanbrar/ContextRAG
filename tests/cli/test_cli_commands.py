@@ -581,6 +581,37 @@ def test_core_eval_command_forces_dense(monkeypatch, tmp_path):
     assert captured["retrieval_candidates"] == 50
 
 
+def test_core_eval_accepts_scifact_dataset(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_run_evaluation(**kwargs):
+        captured.update(kwargs)
+
+    monkeypatch.setattr("contextrag.cli._run_evaluation", fake_run_evaluation)
+    monkeypatch.setattr("contextrag.cli.load_config", lambda: make_test_config(embed_provider="local"))
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "core",
+            "eval",
+            "--dataset",
+            "data/eval-scifact-mini",
+            "--baseline",
+            "uniform",
+            "--k",
+            "5",
+            "--embed-provider",
+            "local",
+            "--output",
+            str(tmp_path / "core_scifact_eval.json"),
+        ],
+    )
+    assert result.exit_code == 0
+    assert captured["dataset_path"].as_posix() == "data/eval-scifact-mini"
+
+
 def test_core_matrix_command_uses_claim_aligned_defaults(monkeypatch, tmp_path):
     captured = {}
 

@@ -1,13 +1,16 @@
 {
   "schema_version": 1,
   "files": {
-    "runs/reviewer_bundle/matrix_eval_expanded_local/matrix_summary.json": "e77b021537f3ceaae5c253b70f97aa43cb35c75c5382ef79433e176602f6725e",
-    "runs/reviewer_bundle/matrix_eval_external_local/matrix_summary.json": "03168af1ced006e9616e4359507be98f9fd25c95922fcf3caf970be0759a8c88",
-    "docs/matrix_eval_expanded_local.md": "ff5bb9d3ff4e8926500797e9c729bbd7df16cedad288624ba77401fb7c23e653",
-    "docs/matrix_eval_external_local.md": "1d4bb61e18aa76bdda62f101728e2c3a91b40705c02341523c72a1fb48a7596f",
-    "docs/paper_tables.md": "d3b161bf03125186eec40a8772ec5186747ea63978cbf1072792d26aca216bd3",
-    "docs/reviewer_bundle.md": "7cc12761a606d84f0728c6e0ad7015cd88a370cb1844bf02e7b6ec658d632fc8",
-    "runs/baseline_study/baseline_study_summary.json": "51a01bb6366839ef9b8f381ab7a8a8d0b5b67dd95e3346585e5c8f1907e18798",
-    "docs/baseline_study.md": "7719bff5ffd2ee3fd131af9fda04362207d401db1b1db68593933c23546ac0d7"
+    "runs/reviewer_bundle/matrix_eval_expanded_local/matrix_summary.json": "f0b19f9a6cddfc6e81771f14937e94b1a5ca9817667ae6b3c5380076e3baf799",
+    "runs/reviewer_bundle/matrix_eval_external_local/matrix_summary.json": "0b73dc6691a6038d10960edfa1e991b7d667d6e6ef83bb1be90c439f1d12c64b",
+    "runs/reviewer_bundle/matrix_eval_scifact_local/matrix_summary.json": "7391529cf823343dc26e530a886819a41349c850205e876b27ed6c7a970b557e",
+    "docs/matrix_eval_expanded_local.md": "4ceedb4361967a744bd0faaab07746ac9a8717dcfc34504cc0b95fc3cebebbf6",
+    "docs/matrix_eval_external_local.md": "8a7ea96125e6394359157a17667c076354d2bfb3dde69d98bcb3028e55b4018b",
+    "docs/matrix_eval_scifact_local.md": "1c2b149ae4bc88b7ce3430d0a16917e4048b90848c87a1140e246fa35e516be1",
+    "docs/paper_tables.md": "60ffc4a103cb42cd3def56a7c79908363068e3639faf483cb36041d79280c5c2",
+    "docs/reviewer_bundle.md": "4bd884e2011f8fbe1af72d7985324960d51f0d8abcfb36c2a888ad034bda7136",
+    "docs/preregistration_lock.json": "a65072da4d9ea2768306d4c6c25bd85a81ee55e805a80745fbe73cd84aad0757",
+    "runs/baseline_study/baseline_study_summary.json": "c7c24c403f733b9c37f66335ac87b2c2622b9867df84f30045fc1cb0c48e955a",
+    "docs/baseline_study.md": "6e1448888a36d9f60f0bb53e3870bab42349bc46e158d7fba7e76d65d00d94b9"
   }
 }

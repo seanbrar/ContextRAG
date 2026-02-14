@@ -22,17 +22,24 @@ from contextrag.experiments.matrix import run_matrix
 from contextrag.experiments.run_logger import write_run_artifacts
 
 TEXT_EXTENSIONS = (".md", ".txt")
-CORE_DATASET_OPTIONS = ("data/eval-expanded", "data/eval-external")
+CORE_DATASET_OPTIONS = (
+    "data/eval-expanded",
+    "data/eval-external",
+    "data/eval-scifact-mini",
+)
 CORE_BASELINES = ("uniform", "router")
 CORE_RETRIEVAL_MODE = "dense"
 ARTIFACT_CHECKSUMS_PATH = Path("docs/artifact_checksums.json")
 ARTIFACT_FILES = [
     Path("runs/reviewer_bundle/matrix_eval_expanded_local/matrix_summary.json"),
     Path("runs/reviewer_bundle/matrix_eval_external_local/matrix_summary.json"),
+    Path("runs/reviewer_bundle/matrix_eval_scifact_local/matrix_summary.json"),
     Path("docs/matrix_eval_expanded_local.md"),
     Path("docs/matrix_eval_external_local.md"),
+    Path("docs/matrix_eval_scifact_local.md"),
     Path("docs/paper_tables.md"),
     Path("docs/reviewer_bundle.md"),
+    Path("docs/preregistration_lock.json"),
     Path("runs/baseline_study/baseline_study_summary.json"),
     Path("docs/baseline_study.md"),
 ]
@@ -45,7 +52,7 @@ def _parse_csv_items(value: str) -> list[str]:
 def _is_core_dataset(dataset_path: Path) -> bool:
     dataset_name = dataset_path.name
     dataset_posix = dataset_path.as_posix().rstrip("/")
-    return dataset_name in {"eval-expanded", "eval-external"} or dataset_posix in CORE_DATASET_OPTIONS
+    return dataset_name in {"eval-expanded", "eval-external", "eval-scifact-mini"} or dataset_posix in CORE_DATASET_OPTIONS
 
 
 def _is_core_matrix_configuration(*, baselines: list[str], retrieval_mode: str) -> bool:

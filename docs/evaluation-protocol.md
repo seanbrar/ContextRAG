@@ -116,6 +116,7 @@ Each run directory includes:
 
 When reporting benchmark claims, include:
 - primary endpoint outcome (`nDCG@k`)
+- TOST lower/upper one-sided p-values and equivalence decision for the primary endpoint
 - corrected p-values (Holm-adjusted)
 - effect sizes and equivalence/non-inferiority outputs
 - any explicit deviations from `docs/preregistration.md`

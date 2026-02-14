@@ -6,6 +6,9 @@ This document defines the pre-registered analysis plan for ContextRAG's core
 question: whether length-based chunk routing improves retrieval quality versus a
 uniform baseline.
 
+Lock metadata is written to `docs/preregistration_lock.json` by the reviewer
+bundle pipeline (`make reviewer-bundle`).
+
 ## Research Question
 
 Does routing documents into short/medium/long chunking policies improve
@@ -40,7 +43,7 @@ Operationalized as:
 
 - Baselines: `uniform`, `router`
 - Provider: `local` (MiniLM) for deterministic artifact generation
-- Datasets: `data/eval-expanded`, `data/eval-external`
+- Datasets: `data/eval-expanded`, `data/eval-external`, `data/eval-scifact-mini`
 - k-values: `3, 5, 10`
 
 ## Decision Rules
@@ -50,7 +53,8 @@ For each dataset/k pair:
 2. Report mean delta, bootstrap 95% CI, and paired randomization p-value
 3. Apply Holm-Bonferroni correction across tested metrics per dataset/k slice
 4. Evaluate equivalence for the primary endpoint (`nDCG@k`) using TOST with a
-   symmetric margin `epsilon = 0.02`
+   symmetric margin `epsilon = 0.02` and `alpha = 0.05` (paired z
+   approximation over per-query deltas)
 
 Interpretation:
 - Improvement claim: corrected p-value < 0.05 and positive mean delta for the
@@ -71,7 +75,8 @@ Each comparison report must include:
 - Raw per-metric p-values
 - Holm-adjusted p-values
 - Effect sizes (Cohen's d and Cliff's delta)
-- Equivalence/non-inferiority fields for the primary metric
+- Equivalence/non-inferiority fields for the primary metric, including TOST
+  lower/upper p-values and pass/fail flags
 
 ## Deviations Policy
 
