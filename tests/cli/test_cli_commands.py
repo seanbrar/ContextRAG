@@ -1,9 +1,12 @@
 """Tests for ContextRAG CLI commands."""
 
 
+import json
+
 from click.testing import CliRunner
 
 from contextrag.cli import main
+from contextrag.core.io import write_jsonl
 from tests.conftest import make_test_config
 
 
@@ -201,3 +204,38 @@ def test_doctor_reports_missing_keys(monkeypatch):
     assert "OPENROUTER_API_KEY: missing" in result.output
     assert "OPENAI_API_KEY: missing" in result.output
     assert "embed_provider: local" in result.output
+
+
+def test_compare_command_writes_output(tmp_path):
+    run_a = tmp_path / "run_a"
+    run_b = tmp_path / "run_b"
+    run_a.mkdir()
+    run_b.mkdir()
+
+    (run_a / "summary.json").write_text(
+        json.dumps({"precision_at_k": 0.5, "recall_at_k": 1.0}),
+        encoding="utf-8",
+    )
+    (run_b / "summary.json").write_text(
+        json.dumps({"precision_at_k": 0.5, "recall_at_k": 1.0}),
+        encoding="utf-8",
+    )
+    write_jsonl(
+        run_a / "per_query.jsonl",
+        [{"query": "q", "relevant_ids": ["d"], "retrieved_ids": ["x"], "precision_at_k": 0.0}],
+    )
+    write_jsonl(
+        run_b / "per_query.jsonl",
+        [{"query": "q", "relevant_ids": ["d"], "retrieved_ids": ["d"], "precision_at_k": 1.0}],
+    )
+
+    output = tmp_path / "compare.json"
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        ["compare", "--run-a", str(run_a), "--run-b", str(run_b), "--output", str(output)],
+    )
+    assert result.exit_code == 0
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["counts"]["queries_compared"] == 1
+    assert payload["counts"]["retrieved_ids_changed"] == 1

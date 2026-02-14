@@ -11,6 +11,7 @@ from chromaroute import VectorStore, build_embedding_function
 from contextrag.config import load_config
 from contextrag.core.io import iter_files
 from contextrag.core.text import chunk_text_by_words
+from contextrag.eval.compare import compare_runs
 from contextrag.eval.runner import run_eval
 from contextrag.experiments.eval_config import load_eval_config
 from contextrag.experiments.run_logger import write_run_artifacts
@@ -243,6 +244,29 @@ def doctor() -> None:
 
     if not config.embed.openrouter_api_key and not config.openai_api_key:
         click.echo("\nnote: Set OPENROUTER_API_KEY for hosted embeddings")
+
+
+@main.command()
+@click.option("--run-a", "run_a", required=True, type=click.Path(path_type=Path))
+@click.option("--run-b", "run_b", required=True, type=click.Path(path_type=Path))
+@click.option(
+    "--output",
+    "output_path",
+    default=Path("runs/compare.json"),
+    type=click.Path(path_type=Path),
+)
+def compare(run_a: Path, run_b: Path, output_path: Path) -> None:
+    """Compare two evaluation runs and write query-level delta diagnostics."""
+    comparison = compare_runs(run_a, run_b)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(comparison, indent=2), encoding="utf-8")
+
+    counts = comparison["counts"]
+    click.echo(
+        f"compared={counts['queries_compared']} "
+        f"retrieved_changed={counts['retrieved_ids_changed']} "
+        f"metrics_changed={counts['metric_values_changed']}"
+    )
 
 
 # Database subgroup for lower-level operations
