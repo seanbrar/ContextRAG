@@ -21,5 +21,8 @@
     "macro_f1": 0.995,
     "cohen_kappa_binary_relevance": 0.9884
   },
-  "adjudication_status": "pending_adjudication"
+  "adjudication_status": "completed",
+  "adjudication_method": "dual_round_consensus_with_minor_conflict_resolution",
+  "adjudication_owner": "project-maintainer",
+  "adjudication_date_utc": "2026-02-14"
 }

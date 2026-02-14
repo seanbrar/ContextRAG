@@ -3,6 +3,7 @@ Expanded mixed-corpus benchmark for ContextRAG.
 Contents:
 - `documents/`: copied from `data/eval-mixed/documents`
 - `queries.jsonl`: 100 total queries
+- `annotations/`: retrospective dual-pass rounds and agreement report
 - `provenance.json`: dataset/source and annotation metadata
 - 60 legacy single-label queries (`relevant_ids`)
 - 28 multi-label/graded synthesis queries (`relevant`)
@@ -16,6 +17,12 @@ Rebuild command:
 
 ```bash
 python3 scripts/build_eval_expanded.py
+```
+
+Build annotation artifacts:
+
+```bash
+python3 scripts/build_core_annotations.py
 ```
 
 Validation:

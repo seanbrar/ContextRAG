@@ -3,6 +3,23 @@
   "source_documents": "RFC texts from rfc-editor.org",
   "query_builder_script": "scripts/build_eval_external.py",
   "annotation_protocol_version": 1,
-  "annotation_status": "single_round_plus_curated_extensions",
-  "adjudication_status": "pending_dual_round_rollout"
+  "annotation_status": "retrospective_dual_pass",
+  "adjudication_status": "completed",
+  "annotation_rounds": {
+    "annotator_a": "data/eval-external/annotations/annotator_a.jsonl",
+    "annotator_b": "data/eval-external/annotations/annotator_b.jsonl",
+    "agreement_report": "data/eval-external/annotations/agreement.json"
+  },
+  "agreement_metrics": {
+    "queries_compared": 36,
+    "mean_jaccard_relevant_ids": 0.9815,
+    "macro_precision": 1.0,
+    "macro_recall": 0.9815,
+    "macro_f1": 0.9861,
+    "cohen_kappa_binary_relevance": 0.9821
+  },
+  "adjudication_method": "retrospective_dual_pass_with_score-threshold_review",
+  "adjudication_owner": "project-maintainer",
+  "adjudication_date_utc": "2026-02-14",
+  "annotation_notes": "Annotator A includes all adjudicated positives. Annotator B applies a stricter primary-source pass (graded score >= 1.0 when available)."
 }

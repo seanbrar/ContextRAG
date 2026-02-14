@@ -8,6 +8,7 @@ Purpose:
 Contents:
 - `documents/`: 10 RFC texts not used in the mixed/expanded corpora
 - `queries.jsonl`: 36 total queries
+- `annotations/`: retrospective dual-pass rounds and agreement report
 - `provenance.json`: dataset/source and annotation metadata
 - 20 single-label queries (`relevant_ids`)
 - 16 multi-label/graded queries (`relevant`)
@@ -24,4 +25,10 @@ Validation:
 
 ```bash
 uv run contextrag validate-dataset --dataset data/eval-external
+```
+
+Build annotation artifacts:
+
+```bash
+python3 scripts/build_core_annotations.py
 ```

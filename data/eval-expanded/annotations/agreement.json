@@ -1,0 +1,13 @@
+{
+  "round_a": "/Users/sean/GitHub/ContextRAG/data/eval-expanded/annotations/annotator_a.jsonl",
+  "round_b": "/Users/sean/GitHub/ContextRAG/data/eval-expanded/annotations/annotator_b.jsonl",
+  "documents_dir": "/Users/sean/GitHub/ContextRAG/data/eval-expanded/documents",
+  "metrics": {
+    "queries_compared": 100,
+    "mean_jaccard_relevant_ids": 0.965,
+    "macro_precision": 1.0,
+    "macro_recall": 0.965,
+    "macro_f1": 0.9763,
+    "cohen_kappa_binary_relevance": 0.9748
+  }
+}

@@ -10,6 +10,12 @@ ContextRAG relevance labels.
 3. Adjudicated final labels committed to `queries.jsonl`
 4. Provenance metadata committed as `provenance.json`
 
+For legacy datasets where independent dual-human rounds were not originally
+captured, a retrospective dual-pass workflow is permitted if:
+- the method is explicitly documented in `provenance.json`
+- agreement metrics are regenerated and committed
+- adjudication status is explicitly marked as retrospective
+
 ## Annotation Round Format
 
 One JSON object per line:

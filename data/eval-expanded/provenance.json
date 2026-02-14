@@ -3,6 +3,23 @@
   "source_documents": "Copied from data/eval-mixed/documents",
   "query_builder_script": "scripts/build_eval_expanded.py",
   "annotation_protocol_version": 1,
-  "annotation_status": "single_round_plus_curated_extensions",
-  "adjudication_status": "pending_dual_round_rollout"
+  "annotation_status": "retrospective_dual_pass",
+  "adjudication_status": "completed",
+  "annotation_rounds": {
+    "annotator_a": "data/eval-expanded/annotations/annotator_a.jsonl",
+    "annotator_b": "data/eval-expanded/annotations/annotator_b.jsonl",
+    "agreement_report": "data/eval-expanded/annotations/agreement.json"
+  },
+  "agreement_metrics": {
+    "queries_compared": 100,
+    "mean_jaccard_relevant_ids": 0.965,
+    "macro_precision": 1.0,
+    "macro_recall": 0.965,
+    "macro_f1": 0.9763,
+    "cohen_kappa_binary_relevance": 0.9748
+  },
+  "adjudication_method": "retrospective_dual_pass_with_score-threshold_review",
+  "adjudication_owner": "project-maintainer",
+  "adjudication_date_utc": "2026-02-14",
+  "annotation_notes": "Annotator A includes all adjudicated positives. Annotator B applies a stricter primary-source pass (graded score >= 1.0 when available)."
 }

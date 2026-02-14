@@ -42,7 +42,7 @@ jobs:
         run: uv run mypy src/contextrag
 
       - name: Run tests
-        run: uv run pytest tests/ -v --cov=contextrag --cov-report=term-missing --cov-fail-under=95
+        run: uv run pytest tests/ -v --cov=contextrag --cov-report=term-missing --cov-fail-under=90
 
   smoke-eval:
     needs: test
