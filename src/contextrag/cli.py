@@ -151,7 +151,7 @@ def eval(
     if not output_path:
         raise click.ClickException("--output is required (or provide --config).")
 
-    baseline = baseline or "router"
+    baseline = baseline or "uniform"
     top_k = top_k or 5
 
     # Validate provider requirements

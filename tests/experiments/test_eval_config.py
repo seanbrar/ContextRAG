@@ -9,7 +9,7 @@ def test_load_eval_config_defaults(tmp_path):
     path.write_text("dataset: data/sample\n", encoding="utf-8")
     config = load_eval_config(path)
     assert config.dataset == "data/sample"
-    assert config.baseline == "router"
+    assert config.baseline == "uniform"
     assert config.k == 5
 
 

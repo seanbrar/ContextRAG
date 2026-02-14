@@ -11,7 +11,7 @@ RAG evaluation framework demonstrating that **length-based adaptive chunking doe
 
 > Does routing documents to different chunk sizes based on length improve RAG retrieval quality?
 
-**Hypothesis**: Short documents (< 1K tokens) should remain whole, while long documents (> 4K tokens) benefit from smaller chunks. A "router" that adapts chunk size to document length should outperform uniform chunking.
+**Hypothesis**: Short documents (<=3,500 tokens) should remain whole, medium documents (3,501-15,000) should use larger chunks, and long documents (>15,000) should use smaller chunks. A "router" that adapts chunk size to document length should outperform uniform chunking.
 
 ## Canonical Finding
 
@@ -213,6 +213,7 @@ Target: high test coverage with CI gate (`--cov-fail-under=95`).
 ## Docs
 
 - [docs/paper.md](docs/paper.md) - Full research methodology and results
+- [docs/preregistration.md](docs/preregistration.md) - Locked hypotheses, endpoints, and decision rules
 - [docs/matrix_eval_expanded_local.md](docs/matrix_eval_expanded_local.md) - Latest local matrix dashboard
 - [docs/matrix_eval_external_local.md](docs/matrix_eval_external_local.md) - External holdout matrix dashboard
 - [docs/paper_tables.md](docs/paper_tables.md) - Generated paper-ready tables

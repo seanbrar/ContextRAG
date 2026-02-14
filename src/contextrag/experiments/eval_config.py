@@ -7,7 +7,7 @@ import yaml
 @dataclass(frozen=True)
 class EvalConfig:
     dataset: str
-    baseline: str = "router"
+    baseline: str = "uniform"
     k: int = 5
     embed_provider: str | None = None
     embedding_model: str | None = None
@@ -62,7 +62,7 @@ def load_eval_config(path: Path) -> EvalConfig:
     if not isinstance(dataset, str) or not dataset.strip():
         errors.append("'dataset' must be a non-empty string.")
 
-    baseline = payload.get("baseline", "router")
+    baseline = payload.get("baseline", "uniform")
     if not isinstance(baseline, str):
         errors.append("'baseline' must be a string.")
     elif baseline not in ALLOWED_BASELINES:

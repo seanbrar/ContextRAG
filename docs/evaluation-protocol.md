@@ -2,6 +2,8 @@
 
 This document defines the evaluation procedure for ContextRAG runs.
 
+Preregistered analysis plan: `docs/preregistration.md`.
+
 ## Inputs
 
 Dataset layout:
@@ -104,3 +106,11 @@ Each run directory includes:
 - `per_query.jsonl` — per-query precision/recall and hits
 - `metadata.json` — dataset and run configuration
 - `manifest.json` — config hash, dataset fingerprint, dependency versions, system info
+
+## Preregistration Compliance
+
+When reporting benchmark claims, include:
+- primary endpoint outcome (`nDCG@k`)
+- corrected p-values (Holm-adjusted)
+- effect sizes and equivalence/non-inferiority outputs
+- any explicit deviations from `docs/preregistration.md`

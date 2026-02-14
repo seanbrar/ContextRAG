@@ -2,6 +2,8 @@
 
 This document describes how to reproduce ContextRAG evaluations and interpret artifacts.
 
+Analysis expectations are preregistered in `docs/preregistration.md`.
+
 ## Datasets
 
 The evaluation runner expects:
