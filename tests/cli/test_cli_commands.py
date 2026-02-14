@@ -255,3 +255,34 @@ def test_validate_dataset_command(tmp_path):
     result = runner.invoke(main, ["validate-dataset", "--dataset", str(dataset)])
     assert result.exit_code == 0
     assert "dataset_ok" in result.output
+
+
+def test_matrix_command(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_run_matrix(**kwargs):
+        captured.update(kwargs)
+        return {"rows": [1, 2], "comparisons": [1]}
+
+    monkeypatch.setattr("contextrag.cli.run_matrix", fake_run_matrix)
+    monkeypatch.setattr(
+        "contextrag.cli.load_config",
+        lambda: make_test_config(openai_api_key=None, openrouter_api_key=None, embed_provider="local"),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "matrix",
+            "--dataset",
+            str(tmp_path),
+            "--baselines",
+            "uniform,router",
+            "--k-values",
+            "3,5",
+        ],
+    )
+    assert result.exit_code == 0
+    assert captured["baselines"] == ["uniform", "router"]
+    assert captured["k_values"] == [3, 5]

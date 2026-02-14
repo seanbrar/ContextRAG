@@ -15,9 +15,14 @@ from contextrag.eval.compare import compare_runs
 from contextrag.eval.query_schema import load_and_validate_queries
 from contextrag.eval.runner import run_eval
 from contextrag.experiments.eval_config import load_eval_config
+from contextrag.experiments.matrix import run_matrix
 from contextrag.experiments.run_logger import write_run_artifacts
 
 TEXT_EXTENSIONS = (".md", ".txt")
+
+
+def _parse_csv_items(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 def _run_evaluation(
@@ -290,6 +295,77 @@ def validate_dataset(dataset_path: Path) -> None:
     file_count = sum(1 for path in documents_dir.glob("*") if path.is_file())
     click.echo(
         f"dataset_ok documents={file_count} queries={len(queries)} path={dataset_path}"
+    )
+
+
+@main.command()
+@click.option("--dataset", "dataset_path", required=True, type=click.Path(path_type=Path))
+@click.option("--baselines", default="uniform,router")
+@click.option("--k-values", default="3,5,10")
+@click.option(
+    "--run-root",
+    "run_root",
+    default=Path("runs/matrix"),
+    type=click.Path(path_type=Path),
+)
+@click.option(
+    "--persist-root",
+    "persist_root",
+    default=Path("runs/chroma-matrix"),
+    type=click.Path(path_type=Path),
+)
+@click.option("--embedding-model", "embedding_model")
+@click.option(
+    "--embed-provider",
+    "embed_provider",
+    type=click.Choice(["auto", "openrouter", "local"]),
+)
+def matrix(
+    dataset_path: Path,
+    baselines: str,
+    k_values: str,
+    run_root: Path,
+    persist_root: Path,
+    embedding_model: str | None,
+    embed_provider: str | None,
+) -> None:
+    """Run a baseline-by-k experiment matrix and write aggregate reports."""
+    baseline_list = _parse_csv_items(baselines)
+    if not baseline_list:
+        raise click.ClickException("--baselines must include at least one value.")
+    invalid_baselines = sorted(
+        baseline for baseline in baseline_list if baseline not in {"uniform", "adaptive", "router"}
+    )
+    if invalid_baselines:
+        joined = ", ".join(invalid_baselines)
+        raise click.ClickException(
+            f"Unsupported baseline(s): {joined}. Use uniform, adaptive, router."
+        )
+
+    try:
+        parsed_k_values = [int(item) for item in _parse_csv_items(k_values)]
+    except ValueError as exc:
+        raise click.ClickException("--k-values must be comma-separated integers.") from exc
+    if not parsed_k_values or any(k <= 0 for k in parsed_k_values):
+        raise click.ClickException("--k-values must include integers greater than 0.")
+
+    config = load_config()
+    resolved_provider = config.resolve_embed_provider(embed_provider)
+    config.require_embed_provider(resolved_provider, embed_provider, click.ClickException)
+
+    summary = run_matrix(
+        dataset_path=dataset_path,
+        baselines=baseline_list,
+        k_values=parsed_k_values,
+        run_root=run_root,
+        persist_root=persist_root,
+        embed_provider=embed_provider,
+        embedding_model=embedding_model,
+    )
+    click.echo(
+        f"matrix_done runs={len(summary['rows'])} "
+        f"comparisons={len(summary['comparisons'])} "
+        f"summary={run_root / 'matrix_summary.json'}"
     )
 
 
