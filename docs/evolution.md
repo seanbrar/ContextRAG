@@ -63,7 +63,7 @@ This pivot required proper evaluation infrastructure:
 With proper infrastructure, we tested the adaptive chunking hypothesis with reproducible CLI configs:
 
 ```yaml
-# experiments/cost_comparison_openai_small.yaml
+# experiments/cost_comparison_openrouter_openai_small.yaml
 dataset: data/eval-mixed
 baseline: uniform
 k: 5
