@@ -6,6 +6,9 @@ import json
 from pathlib import Path
 from typing import Any
 
+from contextrag.eval.stats import (bootstrap_mean_ci, mean,
+                                   paired_randomization_p_value)
+
 PER_QUERY_METRIC_FIELDS = (
     "precision_at_k",
     "recall_at_k",
@@ -102,6 +105,7 @@ def compare_runs(run_a: Path, run_b: Path) -> dict[str, Any]:
     changed_unique_retrieved = 0
     changed_metrics = 0
     metric_delta_totals = {metric: 0.0 for metric in PER_QUERY_METRIC_FIELDS}
+    per_metric_deltas = {metric: [] for metric in PER_QUERY_METRIC_FIELDS}
 
     for key in common_keys:
         row_a = keyed_a[key]
@@ -125,6 +129,7 @@ def compare_runs(run_a: Path, run_b: Path) -> dict[str, Any]:
         }
         for metric, delta in deltas.items():
             metric_delta_totals[metric] += delta
+            per_metric_deltas[metric].append(delta)
         metric_changed = any(delta != 0 for delta in deltas.values())
         if metric_changed:
             changed_metrics += 1
@@ -148,6 +153,17 @@ def compare_runs(run_a: Path, run_b: Path) -> dict[str, Any]:
     summary_metric_deltas = {
         metric: float(summary_b.get(metric, 0.0)) - float(summary_a.get(metric, 0.0))
         for metric in SUMMARY_METRIC_FIELDS
+    }
+    inference = {
+        metric: {
+            "mean_delta": mean(per_metric_deltas[metric]),
+            "ci95": list(bootstrap_mean_ci(per_metric_deltas[metric], confidence=0.95)),
+            "paired_randomization_p_value": paired_randomization_p_value(
+                per_metric_deltas[metric]
+            ),
+            "n_pairs": len(per_metric_deltas[metric]),
+        }
+        for metric in PER_QUERY_METRIC_FIELDS
     }
 
     return {
@@ -175,6 +191,7 @@ def compare_runs(run_a: Path, run_b: Path) -> dict[str, Any]:
         },
         "summary_metric_deltas": summary_metric_deltas,
         "average_per_query_metric_deltas": avg_metric_deltas,
+        "inference": inference,
         "queries_only_in_run_a": only_in_a,
         "queries_only_in_run_b": only_in_b,
         "per_query_deltas": per_query_deltas,

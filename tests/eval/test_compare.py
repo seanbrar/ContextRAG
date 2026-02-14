@@ -89,3 +89,6 @@ def test_compare_runs_detects_retrieval_changes(tmp_path):
     assert comparison["counts"]["retrieved_ids_changed"] == 1
     assert comparison["counts"]["metric_values_changed"] == 1
     assert comparison["summary_metric_deltas"]["hit_at_1"] == 0.5
+    assert "inference" in comparison
+    assert "precision_at_k" in comparison["inference"]
+    assert comparison["inference"]["precision_at_k"]["n_pairs"] == 1
