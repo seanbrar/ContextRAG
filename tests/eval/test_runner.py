@@ -155,6 +155,12 @@ def test_run_eval_with_fake_vector_db(monkeypatch, tmp_path):
     assert summary["total_queries"] == 2
     assert summary["precision_at_k"] == 1.0
     assert summary["recall_at_k"] == 1.0
+    assert summary["hit_at_k"] == 1.0
+    assert summary["hit_at_1"] == 1.0
+    assert summary["mrr_at_k"] == 1.0
+    assert summary["ndcg_at_k"] == 1.0
+    assert summary["unique_doc_ratio_at_k"] == 1.0
+    assert "retrieved_ids_unique" in results["per_query"][0]
 
 
 def test_run_eval_missing_inputs(tmp_path):

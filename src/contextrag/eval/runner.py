@@ -15,7 +15,10 @@ from contextrag.core.constants import (LONG_CHUNK_TOKENS, MEDIUM_CHUNK_TOKENS,
                                        TOKENIZER_NAME, UNIFORM_CHUNK_TOKENS)
 from contextrag.core.costs import get_embedding_cost_per_million
 from contextrag.core.tokenizer import get_encoding
-from contextrag.eval.metrics import precision_at_k, recall_at_k
+from contextrag.eval.metrics import (hit_at_k, ndcg_at_k, precision_at_k,
+                                     recall_at_k, reciprocal_rank_at_k,
+                                     unique_doc_ratio_at_k,
+                                     unique_preserve_order)
 
 
 def _load_queries(path: Path) -> list[dict[str, Any]]:
@@ -208,6 +211,11 @@ def run_eval(
 
     precision_scores: list[float] = []
     recall_scores: list[float] = []
+    hit_scores: list[float] = []
+    hit_at_1_scores: list[float] = []
+    reciprocal_ranks: list[float] = []
+    ndcg_scores: list[float] = []
+    unique_doc_ratios: list[float] = []
     query_latencies: list[float] = []
     per_query: list[dict[str, Any]] = []
 
@@ -223,19 +231,36 @@ def run_eval(
 
         retrieved_chunk_ids = results.get("ids", [[]])[0]
         retrieved_ids = [chunk_to_doc.get(item, item) for item in retrieved_chunk_ids]
+        unique_retrieved_ids = unique_preserve_order(retrieved_ids, k)
 
         precision = precision_at_k(retrieved_ids, relevant_ids, k)
         recall = recall_at_k(retrieved_ids, relevant_ids, k)
+        hit = hit_at_k(retrieved_ids, relevant_ids, k)
+        hit_at_1 = hit_at_k(retrieved_ids, relevant_ids, 1)
+        reciprocal_rank = reciprocal_rank_at_k(unique_retrieved_ids, relevant_ids, k)
+        ndcg = ndcg_at_k(unique_retrieved_ids, relevant_ids, k)
+        unique_doc_ratio = unique_doc_ratio_at_k(retrieved_ids, k)
         precision_scores.append(precision)
         recall_scores.append(recall)
+        hit_scores.append(hit)
+        hit_at_1_scores.append(hit_at_1)
+        reciprocal_ranks.append(reciprocal_rank)
+        ndcg_scores.append(ndcg)
+        unique_doc_ratios.append(unique_doc_ratio)
 
         per_query.append({
             "query": query_text,
             "relevant_ids": relevant_ids,
             "retrieved_ids": retrieved_ids,
+            "retrieved_ids_unique": unique_retrieved_ids,
             "retrieved_chunk_ids": retrieved_chunk_ids,
             "precision_at_k": precision,
             "recall_at_k": recall,
+            "hit_at_k": hit,
+            "hit_at_1": hit_at_1,
+            "reciprocal_rank_at_k": reciprocal_rank,
+            "ndcg_at_k": ndcg,
+            "unique_doc_ratio_at_k": unique_doc_ratio,
             "latency_ms": round(query_latency * 1000, 2),
         })
 
@@ -247,6 +272,13 @@ def run_eval(
     avg_query_latency = sum(query_latencies) / len(query_latencies) if query_latencies else 0.0
     avg_precision = sum(precision_scores) / len(precision_scores) if precision_scores else 0.0
     avg_recall = sum(recall_scores) / len(recall_scores) if recall_scores else 0.0
+    avg_hit_at_k = sum(hit_scores) / len(hit_scores) if hit_scores else 0.0
+    avg_hit_at_1 = sum(hit_at_1_scores) / len(hit_at_1_scores) if hit_at_1_scores else 0.0
+    avg_mrr_at_k = sum(reciprocal_ranks) / len(reciprocal_ranks) if reciprocal_ranks else 0.0
+    avg_ndcg_at_k = sum(ndcg_scores) / len(ndcg_scores) if ndcg_scores else 0.0
+    avg_unique_doc_ratio = (
+        sum(unique_doc_ratios) / len(unique_doc_ratios) if unique_doc_ratios else 0.0
+    )
 
     summary = {
         "timestamp": int(time.time()),
@@ -256,6 +288,11 @@ def run_eval(
         "indexed_chunks": len(documents),
         "precision_at_k": avg_precision,
         "recall_at_k": avg_recall,
+        "hit_at_k": avg_hit_at_k,
+        "hit_at_1": avg_hit_at_1,
+        "mrr_at_k": avg_mrr_at_k,
+        "ndcg_at_k": avg_ndcg_at_k,
+        "unique_doc_ratio_at_k": avg_unique_doc_ratio,
         "embedding_provider": resolved_provider,
         "embedding_model": resolved_model,
         "chunking": {
