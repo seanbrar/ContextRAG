@@ -1,0 +1,7 @@
+dataset: data/eval-expanded
+baseline: uniform
+k: 5
+embed_provider: local
+output: runs/eval_expanded_uniform_local.json
+persist: runs/chroma-expanded-uniform-local
+run_dir: runs/eval_expanded_uniform_local

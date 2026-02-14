@@ -37,6 +37,23 @@ Validation rules:
 4. Compute precision@k and recall@k from `relevant_ids`.
 5. Log timing, token counts, and run metadata.
 
+## Annotation Protocol (v2)
+
+The expanded benchmark (`data/eval-expanded`) uses a two-shape relevance schema:
+- `relevant_ids` for binary relevance
+- `relevant` for graded relevance (`id`, `score`)
+
+Scoring rubric for `score`:
+- `2.0`: Primary source for the query intent
+- `1.0`: Supporting/secondary relevant source
+
+Curation rules:
+1. Keep query wording answerable from corpus text only.
+2. Prefer at least 2 relevant documents for cross-document questions.
+3. Avoid near-duplicate queries that differ only by punctuation or tense.
+4. Require unique relevant ids per query.
+5. When uncertain, default to binary (`relevant_ids`) instead of forcing a graded label.
+
 ## Configuration
 
 The CLI accepts:

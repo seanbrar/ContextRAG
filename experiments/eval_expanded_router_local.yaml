@@ -1,0 +1,7 @@
+dataset: data/eval-expanded
+baseline: router
+k: 5
+embed_provider: local
+output: runs/eval_expanded_router_local.json
+persist: runs/chroma-expanded-router-local
+run_dir: runs/eval_expanded_router_local
