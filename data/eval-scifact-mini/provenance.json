@@ -1,0 +1,25 @@
+{
+  "source": "BEIR SciFact",
+  "source_url": "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/scifact.zip",
+  "query_split": "test",
+  "query_limit": 40,
+  "negative_docs": 180,
+  "seed": 42,
+  "selected_queries": 40,
+  "selected_documents": 220,
+  "annotation_protocol_version": 1,
+  "annotation_rounds": {
+    "annotator_a": "data/eval-scifact-mini/annotations/annotator_a.jsonl",
+    "annotator_b": "data/eval-scifact-mini/annotations/annotator_b.jsonl",
+    "agreement_report": "data/eval-scifact-mini/annotations/agreement.json"
+  },
+  "agreement_metrics": {
+    "queries_compared": 40,
+    "mean_jaccard_relevant_ids": 0.9917,
+    "macro_precision": 1.0,
+    "macro_recall": 0.9917,
+    "macro_f1": 0.995,
+    "cohen_kappa_binary_relevance": 0.9884
+  },
+  "adjudication_status": "pending_adjudication"
+}

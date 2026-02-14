@@ -1,0 +1,8 @@
+dataset: data/eval-scifact-mini
+baseline: router
+k: 5
+retrieval_mode: dense
+embed_provider: local
+output: runs/eval_scifact_router_local.json
+persist: runs/chroma-scifact-router-local
+run_dir: runs/eval_scifact_router_local

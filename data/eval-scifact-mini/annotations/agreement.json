@@ -1,0 +1,13 @@
+{
+  "round_a": "data/eval-scifact-mini/annotations/annotator_a.jsonl",
+  "round_b": "data/eval-scifact-mini/annotations/annotator_b.jsonl",
+  "documents_dir": "data/eval-scifact-mini/documents",
+  "metrics": {
+    "queries_compared": 40,
+    "mean_jaccard_relevant_ids": 0.9917,
+    "macro_precision": 1.0,
+    "macro_recall": 0.9917,
+    "macro_f1": 0.995,
+    "cohen_kappa_binary_relevance": 0.9884
+  }
+}

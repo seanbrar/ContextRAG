@@ -1,4 +1,4 @@
-.PHONY: install test test-cov lint typecheck format clean build all repro-local reviewer-bundle baseline-study
+.PHONY: install test test-cov lint typecheck format clean build all repro-local reviewer-bundle baseline-study artifact-eval
 
 # Development setup
 install:
@@ -54,3 +54,7 @@ reviewer-bundle:
 # Run expanded baseline matrix (chunk-size sweep, overlap, semantic, bm25/hybrid/rerank)
 baseline-study:
 	uv run python scripts/build_baseline_study.py
+
+# Rebuild artifacts and verify checksum manifest
+artifact-eval:
+	uv run contextrag artifact-eval

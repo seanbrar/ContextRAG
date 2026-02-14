@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import click
@@ -19,10 +22,41 @@ from contextrag.experiments.matrix import run_matrix
 from contextrag.experiments.run_logger import write_run_artifacts
 
 TEXT_EXTENSIONS = (".md", ".txt")
+ARTIFACT_CHECKSUMS_PATH = Path("docs/artifact_checksums.json")
+ARTIFACT_FILES = [
+    Path("runs/reviewer_bundle/matrix_eval_expanded_local/matrix_summary.json"),
+    Path("runs/reviewer_bundle/matrix_eval_external_local/matrix_summary.json"),
+    Path("docs/matrix_eval_expanded_local.md"),
+    Path("docs/matrix_eval_external_local.md"),
+    Path("docs/paper_tables.md"),
+    Path("docs/reviewer_bundle.md"),
+    Path("runs/baseline_study/baseline_study_summary.json"),
+    Path("docs/baseline_study.md"),
+]
 
 
 def _parse_csv_items(value: str) -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def _sha256_file(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            chunk = handle.read(1024 * 1024)
+            if not chunk:
+                break
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def _compute_artifact_checksums(paths: list[Path]) -> dict[str, str]:
+    checksums: dict[str, str] = {}
+    for path in paths:
+        if not path.exists():
+            raise click.ClickException(f"Missing artifact for checksum verification: {path}")
+        checksums[str(path)] = _sha256_file(path)
+    return checksums
 
 
 def _run_evaluation(
@@ -463,6 +497,75 @@ def matrix(
         f"matrix_done runs={len(summary['rows'])} "
         f"comparisons={len(summary['comparisons'])} "
         f"summary={run_root / 'matrix_summary.json'}"
+    )
+
+
+@main.command("artifact-eval")
+@click.option(
+    "--update-checksums",
+    is_flag=True,
+    help="Recompute and store checksums after rebuilding artifacts.",
+)
+@click.option(
+    "--skip-rebuild",
+    is_flag=True,
+    help="Skip rebuilding and verify/write checksums from existing artifacts only.",
+)
+def artifact_eval(update_checksums: bool, skip_rebuild: bool) -> None:
+    """Rebuild reviewer artifacts and verify deterministic checksums."""
+    if not skip_rebuild:
+        subprocess.run(
+            [sys.executable, "scripts/build_reviewer_bundle.py"],
+            check=True,
+        )
+        subprocess.run(
+            [sys.executable, "scripts/build_baseline_study.py"],
+            check=True,
+        )
+
+    current = _compute_artifact_checksums(ARTIFACT_FILES)
+    payload = {
+        "schema_version": 1,
+        "files": current,
+    }
+
+    if update_checksums or not ARTIFACT_CHECKSUMS_PATH.exists():
+        ARTIFACT_CHECKSUMS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        ARTIFACT_CHECKSUMS_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        click.echo(
+            "artifact_eval_ok "
+            f"checksums_written={ARTIFACT_CHECKSUMS_PATH} "
+            f"files={len(current)}"
+        )
+        return
+
+    expected = json.loads(ARTIFACT_CHECKSUMS_PATH.read_text(encoding="utf-8"))
+    expected_files = expected.get("files", {}) if isinstance(expected, dict) else {}
+    if not isinstance(expected_files, dict):
+        raise click.ClickException(
+            f"Invalid checksum file format: {ARTIFACT_CHECKSUMS_PATH}"
+        )
+
+    mismatches: list[str] = []
+    for path_str, digest in current.items():
+        expected_digest = expected_files.get(path_str)
+        if expected_digest != digest:
+            mismatches.append(path_str)
+    missing_paths = sorted(set(expected_files) - set(current))
+    mismatches.extend(missing_paths)
+
+    if mismatches:
+        joined = ", ".join(mismatches)
+        raise click.ClickException(
+            "artifact checksum mismatch for: "
+            f"{joined}. Run 'contextrag artifact-eval --update-checksums' "
+            "if the change is intentional."
+        )
+
+    click.echo(
+        "artifact_eval_ok "
+        f"checksums_verified={len(current)} "
+        f"source={ARTIFACT_CHECKSUMS_PATH}"
     )
 
 

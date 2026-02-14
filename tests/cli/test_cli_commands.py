@@ -545,6 +545,46 @@ def test_matrix_command_rejects_non_positive_k_values(tmp_path):
     assert "--k-values must include integers greater than 0" in result.output
 
 
+def test_artifact_eval_updates_checksums(monkeypatch, tmp_path):
+    artifact_a = tmp_path / "a.json"
+    artifact_b = tmp_path / "b.md"
+    artifact_a.write_text("{}", encoding="utf-8")
+    artifact_b.write_text("report", encoding="utf-8")
+    checksums_path = tmp_path / "checksums.json"
+
+    monkeypatch.setattr("contextrag.cli.ARTIFACT_FILES", [artifact_a, artifact_b])
+    monkeypatch.setattr("contextrag.cli.ARTIFACT_CHECKSUMS_PATH", checksums_path)
+    monkeypatch.setattr("contextrag.cli.subprocess.run", lambda *args, **kwargs: None)
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["artifact-eval", "--update-checksums"])
+    assert result.exit_code == 0
+    assert checksums_path.exists()
+    payload = json.loads(checksums_path.read_text(encoding="utf-8"))
+    assert "files" in payload
+    assert len(payload["files"]) == 2
+
+
+def test_artifact_eval_detects_checksum_mismatch(monkeypatch, tmp_path):
+    artifact_a = tmp_path / "a.json"
+    artifact_a.write_text("{}", encoding="utf-8")
+    checksums_path = tmp_path / "checksums.json"
+
+    monkeypatch.setattr("contextrag.cli.ARTIFACT_FILES", [artifact_a])
+    monkeypatch.setattr("contextrag.cli.ARTIFACT_CHECKSUMS_PATH", checksums_path)
+    monkeypatch.setattr("contextrag.cli.subprocess.run", lambda *args, **kwargs: None)
+
+    checksums_path.write_text(
+        json.dumps({"schema_version": 1, "files": {str(artifact_a): "bad"}}),
+        encoding="utf-8",
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["artifact-eval"])
+    assert result.exit_code != 0
+    assert "artifact checksum mismatch" in result.output
+
+
 def test_index_command_without_chunk_words_indexes_full_documents(monkeypatch, tmp_path):
     input_dir = tmp_path / "input"
     input_dir.mkdir()

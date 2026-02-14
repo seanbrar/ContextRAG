@@ -6,6 +6,7 @@
 !data/eval-mixed/**
 !data/eval-expanded/**
 !data/eval-external/**
+!data/eval-scifact-mini/**
 **/__pycache__/
 /.pytest_cache/
 /.ruff_cache/
@@ -17,3 +18,4 @@
 .env
 .coverage
 !README.md
+!docs/artifact_checksums.json

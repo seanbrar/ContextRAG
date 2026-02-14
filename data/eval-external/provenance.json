@@ -1,0 +1,8 @@
+{
+  "dataset": "eval-external",
+  "source_documents": "RFC texts from rfc-editor.org",
+  "query_builder_script": "scripts/build_eval_external.py",
+  "annotation_protocol_version": 1,
+  "annotation_status": "single_round_plus_curated_extensions",
+  "adjudication_status": "pending_dual_round_rollout"
+}

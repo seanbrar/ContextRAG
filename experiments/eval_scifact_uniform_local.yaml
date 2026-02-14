@@ -1,0 +1,9 @@
+dataset: data/eval-scifact-mini
+baseline: uniform
+k: 5
+retrieval_mode: dense
+embed_provider: local
+uniform_chunk_tokens: 1000
+output: runs/eval_scifact_uniform_local.json
+persist: runs/chroma-scifact-uniform-local
+run_dir: runs/eval_scifact_uniform_local

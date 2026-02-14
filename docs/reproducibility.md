@@ -26,6 +26,13 @@ Included datasets:
 - `data/eval-mixed` — mixed corpus used in the main evaluation (larger)
 - `data/eval-expanded` — expanded mixed corpus with multi-relevance and hard negatives
 - `data/eval-external` — external RFC holdout split for transfer checks
+- `data/eval-scifact-mini` — public BEIR SciFact slice for non-RFC transfer checks
+
+To rebuild the SciFact slice:
+
+```bash
+python3 scripts/build_eval_scifact_mini.py
+```
 
 ## Offline Demo (Deterministic)
 

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 from typing import Any
@@ -51,30 +52,33 @@ def _render(rows: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def main() -> None:
+def main(force_run: bool = False) -> None:
     RUN_ROOT.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, Any]] = []
 
     for scenario, config_path in SCENARIOS:
         config = load_eval_config(ROOT / config_path)
-        results = run_eval(
-            dataset_path=ROOT / config.dataset,
-            baseline=config.baseline,
-            k=config.k,
-            persist_path=config.persist,
-            embed_provider=config.embed_provider,
-            embedding_model=config.embedding_model,
-            retrieval_mode=config.retrieval_mode,
-            uniform_chunk_tokens=config.uniform_chunk_tokens,
-            chunk_overlap_tokens=config.chunk_overlap_tokens,
-            retrieval_candidates=config.retrieval_candidates,
-        )
-
         output_path = ROOT / config.output
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
-
         run_dir = ROOT / (config.run_dir or f"runs/{scenario}")
+
+        if output_path.exists() and not force_run:
+            results = json.loads(output_path.read_text(encoding="utf-8"))
+        else:
+            results = run_eval(
+                dataset_path=ROOT / config.dataset,
+                baseline=config.baseline,
+                k=config.k,
+                persist_path=config.persist,
+                embed_provider=config.embed_provider,
+                embedding_model=config.embedding_model,
+                retrieval_mode=config.retrieval_mode,
+                uniform_chunk_tokens=config.uniform_chunk_tokens,
+                chunk_overlap_tokens=config.chunk_overlap_tokens,
+                retrieval_candidates=config.retrieval_candidates,
+            )
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
+
         write_run_artifacts(
             run_dir=run_dir,
             results=results,
@@ -118,4 +122,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--force-run",
+        action="store_true",
+        help="Re-run all scenarios instead of reusing existing run JSON outputs.",
+    )
+    args = parser.parse_args()
+    main(force_run=args.force_run)

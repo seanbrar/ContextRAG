@@ -114,6 +114,24 @@ Outputs:
 - `runs/baseline_study/baseline_study_summary.json`
 - `docs/baseline_study.md`
 
+## Artifact Evaluation Mode
+
+```bash
+make artifact-eval
+```
+
+Rebuilds reviewer + baseline-study artifacts and verifies them against
+`docs/artifact_checksums.json`.
+
+## Public Benchmark Slice
+
+`data/eval-scifact-mini` provides a non-RFC, non-literary benchmark slice built
+from BEIR SciFact (40 queries, 220 docs).
+
+```bash
+uv run contextrag validate-dataset --dataset data/eval-scifact-mini
+```
+
 ## Dev Helpers
 
 ```bash
@@ -231,6 +249,7 @@ Target: high test coverage with CI gate (`--cov-fail-under=95`).
 
 - [docs/paper.md](docs/paper.md) - Full research methodology and results
 - [docs/preregistration.md](docs/preregistration.md) - Locked hypotheses, endpoints, and decision rules
+- [docs/annotation_protocol.md](docs/annotation_protocol.md) - Dual-annotation and agreement workflow
 - [docs/matrix_eval_expanded_local.md](docs/matrix_eval_expanded_local.md) - Latest local matrix dashboard
 - [docs/matrix_eval_external_local.md](docs/matrix_eval_external_local.md) - External holdout matrix dashboard
 - [docs/baseline_study.md](docs/baseline_study.md) - Expanded baseline fairness study

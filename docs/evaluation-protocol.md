@@ -3,6 +3,7 @@
 This document defines the evaluation procedure for ContextRAG runs.
 
 Preregistered analysis plan: `docs/preregistration.md`.
+Annotation process: `docs/annotation_protocol.md`.
 
 ## Inputs
 
