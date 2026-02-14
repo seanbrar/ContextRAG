@@ -47,8 +47,9 @@ def test_chunk_document(monkeypatch):
 
 def test_load_queries_skips_blank_lines(tmp_path):
     path = tmp_path / "queries.jsonl"
-    path.write_text("\n" + json.dumps({"query": "q"}) + "\n", encoding="utf-8")
-    assert runner._load_queries(path) == [{"query": "q"}]
+    payload = {"query": "q", "relevant_ids": ["doc"]}
+    path.write_text("\n" + json.dumps(payload) + "\n", encoding="utf-8")
+    assert runner._load_queries(path) == [payload]
 
 
 def test_build_index_inputs_uniform(monkeypatch, tmp_path):

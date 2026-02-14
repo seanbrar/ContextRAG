@@ -18,6 +18,17 @@ Each line in `queries.jsonl` is:
 {"query": "...", "relevant_ids": ["doc_id_1", "doc_id_2"]}
 ```
 
+Optional schema v2 shape with graded relevance:
+
+```
+{"query": "...", "relevant": [{"id": "doc_id_1", "score": 2.0}, {"id": "doc_id_2", "score": 1.0}]}
+```
+
+Validation rules:
+- `query` must be non-empty text
+- `relevant_ids` (or `relevant[].id`) must be non-empty, unique ids
+- optional scores must be numeric and `> 0`
+
 ## Procedure
 
 1. Load documents and (optionally) apply routing-based chunking.
@@ -36,6 +47,12 @@ The CLI accepts:
 - `--embed-provider` (`auto`, `openai`, `openrouter`, `local`)
 - `--embedding-model` (optional override)
 - `--run-dir` (artifact output)
+
+Dataset schema can be validated explicitly:
+
+```bash
+uv run contextrag validate-dataset --dataset data/eval-mixed
+```
 
 Configs can be supplied with `--config` (YAML), see `experiments/`.
 

@@ -239,3 +239,19 @@ def test_compare_command_writes_output(tmp_path):
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["counts"]["queries_compared"] == 1
     assert payload["counts"]["retrieved_ids_changed"] == 1
+
+
+def test_validate_dataset_command(tmp_path):
+    dataset = tmp_path / "dataset"
+    docs = dataset / "documents"
+    docs.mkdir(parents=True)
+    (docs / "doc1.txt").write_text("content", encoding="utf-8")
+    (dataset / "queries.jsonl").write_text(
+        json.dumps({"query": "q1", "relevant_ids": ["doc1"]}) + "\n",
+        encoding="utf-8",
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["validate-dataset", "--dataset", str(dataset)])
+    assert result.exit_code == 0
+    assert "dataset_ok" in result.output

@@ -12,6 +12,7 @@ from contextrag.config import load_config
 from contextrag.core.io import iter_files
 from contextrag.core.text import chunk_text_by_words
 from contextrag.eval.compare import compare_runs
+from contextrag.eval.query_schema import load_and_validate_queries
 from contextrag.eval.runner import run_eval
 from contextrag.experiments.eval_config import load_eval_config
 from contextrag.experiments.run_logger import write_run_artifacts
@@ -266,6 +267,29 @@ def compare(run_a: Path, run_b: Path, output_path: Path) -> None:
         f"compared={counts['queries_compared']} "
         f"retrieved_changed={counts['retrieved_ids_changed']} "
         f"metrics_changed={counts['metric_values_changed']}"
+    )
+
+
+@main.command("validate-dataset")
+@click.option(
+    "--dataset",
+    "dataset_path",
+    required=True,
+    type=click.Path(path_type=Path),
+)
+def validate_dataset(dataset_path: Path) -> None:
+    """Validate dataset structure and query schema."""
+    documents_dir = dataset_path / "documents"
+    queries_path = dataset_path / "queries.jsonl"
+    if not documents_dir.exists():
+        raise click.ClickException(f"Missing documents directory: {documents_dir}")
+    if not queries_path.exists():
+        raise click.ClickException(f"Missing queries file: {queries_path}")
+
+    queries = load_and_validate_queries(queries_path)
+    file_count = sum(1 for path in documents_dir.glob("*") if path.is_file())
+    click.echo(
+        f"dataset_ok documents={file_count} queries={len(queries)} path={dataset_path}"
     )
 
 

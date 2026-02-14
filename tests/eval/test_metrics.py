@@ -48,6 +48,16 @@ def test_ndcg_at_k_binary():
     assert ndcg_at_k(["a"], [], 1) == 0.0
 
 
+def test_ndcg_at_k_graded():
+    score = ndcg_at_k(
+        ["doc_a", "doc_b"],
+        ["doc_a", "doc_b"],
+        2,
+        {"doc_a": 1.0, "doc_b": 3.0},
+    )
+    assert score < 1.0
+
+
 def test_unique_doc_ratio_at_k():
     assert unique_doc_ratio_at_k(["a", "a", "a", "b"], 4) == 0.5
     assert unique_doc_ratio_at_k(["a"], 0) == 0.0

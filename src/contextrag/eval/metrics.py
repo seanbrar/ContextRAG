@@ -46,8 +46,13 @@ def reciprocal_rank_at_k(retrieved_ids: list[str], relevant_ids: list[str], k: i
     return 0.0
 
 
-def ndcg_at_k(retrieved_ids: list[str], relevant_ids: list[str], k: int) -> float:
-    """Compute nDCG@k with binary relevance labels."""
+def ndcg_at_k(
+    retrieved_ids: list[str],
+    relevant_ids: list[str],
+    k: int,
+    relevance_scores: dict[str, float] | None = None,
+) -> float:
+    """Compute nDCG@k with binary or graded relevance labels."""
     if k <= 0 or not relevant_ids:
         return 0.0
 
@@ -55,12 +60,20 @@ def ndcg_at_k(retrieved_ids: list[str], relevant_ids: list[str], k: int) -> floa
     dcg = 0.0
     for rank, doc_id in enumerate(retrieved_ids[:k], start=1):
         if doc_id in relevant:
-            dcg += 1.0 / math.log2(rank + 1)
+            gain = relevance_scores.get(doc_id, 1.0) if relevance_scores else 1.0
+            dcg += gain / math.log2(rank + 1)
 
-    ideal_hits = min(k, len(relevant))
-    if ideal_hits == 0:
+    if relevance_scores:
+        sorted_gains = sorted(relevance_scores.values(), reverse=True)[:k]
+    else:
+        sorted_gains = [1.0] * min(k, len(relevant))
+    if not sorted_gains:
         return 0.0
-    idcg = sum(1.0 / math.log2(rank + 1) for rank in range(1, ideal_hits + 1))
+
+    idcg = sum(
+        gain / math.log2(rank + 1)
+        for rank, gain in enumerate(sorted_gains, start=1)
+    )
     if idcg == 0:
         return 0.0
     return dcg / idcg

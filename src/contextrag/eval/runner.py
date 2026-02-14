@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import time
 from pathlib import Path
 from typing import Any
@@ -15,6 +14,7 @@ from contextrag.core.constants import (LONG_CHUNK_TOKENS, MEDIUM_CHUNK_TOKENS,
                                        TOKENIZER_NAME, UNIFORM_CHUNK_TOKENS)
 from contextrag.core.costs import get_embedding_cost_per_million
 from contextrag.core.tokenizer import get_encoding
+from contextrag.eval.query_schema import load_and_validate_queries
 from contextrag.eval.metrics import (hit_at_k, ndcg_at_k, precision_at_k,
                                      recall_at_k, reciprocal_rank_at_k,
                                      unique_doc_ratio_at_k,
@@ -23,12 +23,7 @@ from contextrag.eval.metrics import (hit_at_k, ndcg_at_k, precision_at_k,
 
 def _load_queries(path: Path) -> list[dict[str, Any]]:
     """Load queries from JSONL file."""
-    queries: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            if line.strip():
-                queries.append(json.loads(line))
-    return queries
+    return load_and_validate_queries(path)
 
 
 def _build_index_inputs(
@@ -222,6 +217,7 @@ def run_eval(
     for entry in queries:
         query_text = entry["query"]
         relevant_ids = entry.get("relevant_ids", [])
+        relevant_scores = entry.get("relevant_scores")
         total_query_tokens += len(encoding.encode(query_text))
 
         query_start = time.time()
@@ -238,7 +234,7 @@ def run_eval(
         hit = hit_at_k(retrieved_ids, relevant_ids, k)
         hit_at_1 = hit_at_k(retrieved_ids, relevant_ids, 1)
         reciprocal_rank = reciprocal_rank_at_k(unique_retrieved_ids, relevant_ids, k)
-        ndcg = ndcg_at_k(unique_retrieved_ids, relevant_ids, k)
+        ndcg = ndcg_at_k(unique_retrieved_ids, relevant_ids, k, relevant_scores)
         unique_doc_ratio = unique_doc_ratio_at_k(retrieved_ids, k)
         precision_scores.append(precision)
         recall_scores.append(recall)
@@ -251,6 +247,7 @@ def run_eval(
         per_query.append({
             "query": query_text,
             "relevant_ids": relevant_ids,
+            **({"relevant_scores": relevant_scores} if relevant_scores else {}),
             "retrieved_ids": retrieved_ids,
             "retrieved_ids_unique": unique_retrieved_ids,
             "retrieved_chunk_ids": retrieved_chunk_ids,
