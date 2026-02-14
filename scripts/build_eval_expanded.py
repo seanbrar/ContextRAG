@@ -260,6 +260,95 @@ MULTI_QUERIES = [
     },
 ]
 
+HARD_NEGATIVE_QUERIES = [
+    {
+        "query": "Which RFC defines HTTP/2 binary framing and stream behavior, not HTTP/1.1 text-message syntax?",
+        "relevant": [
+            {"id": "rfc9113", "score": 2.0},
+            {"id": "rfc9112", "score": 1.0},
+        ],
+    },
+    {
+        "query": "Which RFC standardizes TLS 1.3 handshake and key schedule details, not HTTP semantics?",
+        "relevant": [
+            {"id": "rfc8446", "score": 2.0},
+            {"id": "rfc9110", "score": 1.0},
+        ],
+    },
+    {
+        "query": "Which literary text centers on a narrator confined to a room, not a detective investigation?",
+        "relevant": [
+            {"id": "the_yellow_wallpaper", "score": 2.0},
+            {"id": "a_scandal_in_bohemia", "score": 0.5},
+        ],
+    },
+    {
+        "query": "Which RFC is the primary source for internet email header fields like From, To, and Date rather than HTTP header semantics?",
+        "relevant": [
+            {"id": "rfc5322", "score": 2.0},
+            {"id": "rfc822", "score": 1.5},
+            {"id": "rfc9110", "score": 0.5},
+        ],
+    },
+    {
+        "query": "Which document is a US Civil War speech, not prose fiction or internet standards text?",
+        "relevant": [
+            {"id": "gettysburg_address", "score": 2.0},
+            {"id": "the_gift_of_the_magi", "score": 0.5},
+        ],
+    },
+    {
+        "query": "Which RFC obsoletes RFC 822 for Internet Message Format definitions?",
+        "relevant": [
+            {"id": "rfc5322", "score": 2.0},
+            {"id": "rfc822", "score": 1.0},
+        ],
+    },
+    {
+        "query": "Which story focuses on revenge and immurement rather than gift exchange in poverty?",
+        "relevant": [
+            {"id": "the_cask_of_amontillado", "score": 2.0},
+            {"id": "the_gift_of_the_magi", "score": 0.5},
+        ],
+    },
+    {
+        "query": "Which RFC defines YANG Schema Item Identifiers (SIDs), not TLS cipher suites?",
+        "relevant": [
+            {"id": "rfc9595", "score": 2.0},
+            {"id": "rfc8446", "score": 0.5},
+        ],
+    },
+    {
+        "query": "Which RFC defines HTTP semantics and content negotiation, not wire framing details?",
+        "relevant": [
+            {"id": "rfc9110", "score": 2.0},
+            {"id": "rfc9112", "score": 1.0},
+            {"id": "rfc9113", "score": 1.0},
+        ],
+    },
+    {
+        "query": "Which RFC defines HTTP/1.1 message parsing and connection management rather than HTTP/2 stream multiplexing?",
+        "relevant": [
+            {"id": "rfc9112", "score": 2.0},
+            {"id": "rfc9113", "score": 0.5},
+        ],
+    },
+    {
+        "query": "Which literary work opens with the line about Sherlock Holmes and \"THE woman\"?",
+        "relevant": [
+            {"id": "a_scandal_in_bohemia", "score": 2.0},
+        ],
+    },
+    {
+        "query": "Which RFC covers TLS record protection and cryptographic key schedule, not message-header ABNF?",
+        "relevant": [
+            {"id": "rfc8446", "score": 2.0},
+            {"id": "rfc5322", "score": 0.5},
+            {"id": "rfc822", "score": 0.5},
+        ],
+    },
+]
+
 
 def _read_source_queries() -> list[dict[str, object]]:
     queries_path = SOURCE / "queries.jsonl"
@@ -287,11 +376,35 @@ def main() -> None:
     queries = _read_source_queries()
     for item in MULTI_QUERIES:
         queries.append(item)
+    for item in HARD_NEGATIVE_QUERIES:
+        queries.append(item)
 
     queries_path = TARGET / "queries.jsonl"
     with queries_path.open("w", encoding="utf-8") as handle:
         for row in queries:
             handle.write(json.dumps(row, ensure_ascii=True) + "\n")
+
+    readme = (
+        "Expanded mixed-corpus benchmark for ContextRAG.\n\n"
+        "Contents:\n"
+        "- `documents/`: copied from `data/eval-mixed/documents`\n"
+        f"- `queries.jsonl`: {len(queries)} total queries\n"
+        "- 60 legacy single-label queries (`relevant_ids`)\n"
+        f"- {len(MULTI_QUERIES)} multi-label/graded synthesis queries (`relevant`)\n"
+        f"- {len(HARD_NEGATIVE_QUERIES)} hard-negative contrastive queries (`relevant`)\n\n"
+        "Schema:\n"
+        "- Legacy line shape: `{\"query\": \"...\", \"relevant_ids\": [\"doc1\", ...]}`\n"
+        "- v2 line shape: `{\"query\": \"...\", \"relevant\": [{\"id\": \"doc1\", \"score\": 2.0}, ...]}`\n\n"
+        "Rebuild command:\n\n"
+        "```bash\n"
+        "python3 scripts/build_eval_expanded.py\n"
+        "```\n\n"
+        "Validation:\n\n"
+        "```bash\n"
+        "uv run contextrag validate-dataset --dataset data/eval-expanded\n"
+        "```\n"
+    )
+    (TARGET / "README.md").write_text(readme, encoding="utf-8")
 
     print(f"Wrote {len(queries)} queries to {queries_path}")
 

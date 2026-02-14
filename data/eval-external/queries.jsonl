@@ -1,0 +1,36 @@
+{"query": "Which RFC defines the requirement keywords MUST, SHOULD, and MAY for standards documents?", "relevant_ids": ["rfc2119"]}
+{"query": "Which RFC defines generic URI components such as scheme, authority, path, query, and fragment?", "relevant_ids": ["rfc3986"]}
+{"query": "Which RFC defines HTTP state management with Cookie and Set-Cookie headers?", "relevant_ids": ["rfc6265"]}
+{"query": "Which RFC defines OAuth 2.0 Bearer Token usage in HTTP Authorization headers?", "relevant_ids": ["rfc6750"]}
+{"query": "Which RFC defines HTTP/1.1 message syntax and routing rules?", "relevant_ids": ["rfc7230"]}
+{"query": "Which RFC defines HTTP/1.1 method semantics and status codes?", "relevant_ids": ["rfc7231"]}
+{"query": "Which RFC defines HTTP/2 framing, streams, and multiplexing?", "relevant_ids": ["rfc7540"]}
+{"query": "Which RFC defines JSON syntax and interoperability constraints?", "relevant_ids": ["rfc8259"]}
+{"query": "Which RFC defines bootstrapping WebSockets with extended CONNECT over HTTP/2?", "relevant_ids": ["rfc8441"]}
+{"query": "Which RFC defines HTTP/3 over QUIC and obsoletes RFC 7540?", "relevant_ids": ["rfc9114"]}
+{"query": "Which RFC focuses on Set-Cookie attributes like Secure, HttpOnly, and SameSite rather than bearer tokens?", "relevant_ids": ["rfc6265"]}
+{"query": "Which RFC defines bearer-token error codes such as invalid_token and insufficient_scope?", "relevant_ids": ["rfc6750"]}
+{"query": "Which RFC defines request-target forms such as origin-form and absolute-form?", "relevant_ids": ["rfc7230"]}
+{"query": "Which RFC is the primary source for semantics of GET, HEAD, POST, PUT, and DELETE?", "relevant_ids": ["rfc7231"]}
+{"query": "Which RFC introduces HPACK for HTTP header compression?", "relevant_ids": ["rfc7540"]}
+{"query": "Which RFC defines JSON number grammar and parser behavior?", "relevant_ids": ["rfc8259"]}
+{"query": "Which RFC adds the :protocol pseudo-header for WebSockets over HTTP/2?", "relevant_ids": ["rfc8441"]}
+{"query": "Which RFC maps HTTP semantics to QUIC transport behavior for HTTP/3?", "relevant_ids": ["rfc9114"]}
+{"query": "Which RFC should be cited for user-agent cookie storage and return behavior?", "relevant_ids": ["rfc6265"]}
+{"query": "Which RFC defines URI normalization and relative reference resolution?", "relevant_ids": ["rfc3986"]}
+{"query": "Which RFCs define HTTP protocol evolution from HTTP/1.1 text messaging to HTTP/2 and HTTP/3?", "relevant": [{"id": "rfc7230", "score": 1.5}, {"id": "rfc7231", "score": 1.0}, {"id": "rfc7540", "score": 1.5}, {"id": "rfc9114", "score": 2.0}]}
+{"query": "Which RFCs should be consulted for HTTP authentication and session-state mechanisms?", "relevant": [{"id": "rfc6750", "score": 2.0}, {"id": "rfc6265", "score": 2.0}, {"id": "rfc7231", "score": 1.0}]}
+{"query": "Which RFCs are most relevant for URI and API identifier syntax used on the web?", "relevant": [{"id": "rfc3986", "score": 2.0}, {"id": "rfc6750", "score": 1.0}, {"id": "rfc7231", "score": 1.0}]}
+{"query": "Which RFCs define HTTP semantics versus wire-format and framing details?", "relevant": [{"id": "rfc7231", "score": 2.0}, {"id": "rfc7230", "score": 1.5}, {"id": "rfc7540", "score": 1.0}, {"id": "rfc9114", "score": 1.0}]}
+{"query": "Which RFCs are likely to contain ABNF-like grammar rules for internet syntax?", "relevant": [{"id": "rfc3986", "score": 2.0}, {"id": "rfc7230", "score": 1.5}, {"id": "rfc7231", "score": 1.0}, {"id": "rfc8259", "score": 1.0}]}
+{"query": "Which RFCs cover transition to binary or QUIC-based HTTP transport compared with HTTP/1.1?", "relevant": [{"id": "rfc7540", "score": 2.0}, {"id": "rfc9114", "score": 2.0}, {"id": "rfc8441", "score": 1.0}]}
+{"query": "Which RFCs define pseudo-header behavior in modern HTTP versions?", "relevant": [{"id": "rfc7540", "score": 2.0}, {"id": "rfc8441", "score": 1.5}, {"id": "rfc9114", "score": 1.0}]}
+{"query": "Which RFCs are concise standards guidance documents rather than full protocol suites?", "relevant": [{"id": "rfc2119", "score": 2.0}, {"id": "rfc8441", "score": 1.0}]}
+{"query": "Which RFCs are about data representation or identifier syntax rather than transport framing?", "relevant": [{"id": "rfc3986", "score": 2.0}, {"id": "rfc8259", "score": 2.0}, {"id": "rfc6265", "score": 1.0}]}
+{"query": "Which RFCs should be prioritized for connection management and routing behavior in HTTP?", "relevant": [{"id": "rfc7230", "score": 2.0}, {"id": "rfc7540", "score": 1.0}, {"id": "rfc9114", "score": 1.0}]}
+{"query": "Which RFCs include notable security considerations for authentication tokens or cookies?", "relevant": [{"id": "rfc6750", "score": 2.0}, {"id": "rfc6265", "score": 1.5}, {"id": "rfc9114", "score": 1.0}]}
+{"query": "Which RFCs define keyword-style compliance language and normative requirements?", "relevant": [{"id": "rfc2119", "score": 2.0}, {"id": "rfc7230", "score": 1.0}, {"id": "rfc7231", "score": 1.0}, {"id": "rfc7540", "score": 1.0}, {"id": "rfc9114", "score": 1.0}]}
+{"query": "Which RFCs define WebSocket bootstrapping over HTTP/2 and the HTTP/2 context it depends on?", "relevant": [{"id": "rfc8441", "score": 2.0}, {"id": "rfc7540", "score": 1.5}]}
+{"query": "Which RFCs are strongest sources for HTTP status-code semantics and interoperability expectations?", "relevant": [{"id": "rfc7231", "score": 2.0}, {"id": "rfc9114", "score": 1.0}, {"id": "rfc7540", "score": 1.0}]}
+{"query": "Which RFCs are easy hard negatives for JSON parsing tasks because they focus on HTTP transport?", "relevant": [{"id": "rfc8259", "score": 2.0}, {"id": "rfc7230", "score": 0.5}, {"id": "rfc7540", "score": 0.5}]}
+{"query": "Which RFCs are easy hard negatives for cookie queries because they describe authentication bearer tokens?", "relevant": [{"id": "rfc6265", "score": 2.0}, {"id": "rfc6750", "score": 1.5}]}

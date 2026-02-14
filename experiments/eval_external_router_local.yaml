@@ -1,0 +1,7 @@
+dataset: data/eval-external
+baseline: router
+k: 5
+embed_provider: local
+output: runs/eval_external_router_local.json
+persist: runs/chroma-external-router-local
+run_dir: runs/eval_external_router_local

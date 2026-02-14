@@ -2,9 +2,10 @@ Expanded mixed-corpus benchmark for ContextRAG.
 
 Contents:
 - `documents/`: copied from `data/eval-mixed/documents`
-- `queries.jsonl`: 88 total queries
-  - 60 legacy single-label queries (`relevant_ids`)
-  - 28 multi-label/graded queries (`relevant`)
+- `queries.jsonl`: 100 total queries
+- 60 legacy single-label queries (`relevant_ids`)
+- 28 multi-label/graded synthesis queries (`relevant`)
+- 12 hard-negative contrastive queries (`relevant`)
 
 Schema:
 - Legacy line shape: `{"query": "...", "relevant_ids": ["doc1", ...]}`

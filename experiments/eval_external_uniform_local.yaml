@@ -1,0 +1,7 @@
+dataset: data/eval-external
+baseline: uniform
+k: 5
+embed_provider: local
+output: runs/eval_external_uniform_local.json
+persist: runs/chroma-external-uniform-local
+run_dir: runs/eval_external_uniform_local

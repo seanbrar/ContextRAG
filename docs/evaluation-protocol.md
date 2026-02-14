@@ -43,6 +43,9 @@ The expanded benchmark (`data/eval-expanded`) uses a two-shape relevance schema:
 - `relevant_ids` for binary relevance
 - `relevant` for graded relevance (`id`, `score`)
 
+External holdout split (`data/eval-external`) follows the same schema and is
+used to test whether conclusions transfer beyond the original mixed corpus.
+
 Scoring rubric for `score`:
 - `2.0`: Primary source for the query intent
 - `1.0`: Supporting/secondary relevant source
@@ -53,6 +56,13 @@ Curation rules:
 3. Avoid near-duplicate queries that differ only by punctuation or tense.
 4. Require unique relevant ids per query.
 5. When uncertain, default to binary (`relevant_ids`) instead of forcing a graded label.
+
+Hard-negative curation rules:
+1. Include contrastive wording (`not X`, `rather than Y`) for a subset of queries.
+2. Keep hard negatives topically close to positives (e.g., HTTP semantics vs framing RFCs).
+3. Use low-but-positive graded relevance (`0 < score < 1`) only when a document is
+   intentionally near-miss context, not a true answer source.
+4. Preserve at least one clearly primary source (`score >= 1`) per query.
 
 ## Configuration
 
@@ -69,6 +79,8 @@ Dataset schema can be validated explicitly:
 
 ```bash
 uv run contextrag validate-dataset --dataset data/eval-mixed
+uv run contextrag validate-dataset --dataset data/eval-expanded
+uv run contextrag validate-dataset --dataset data/eval-external
 ```
 
 Configs can be supplied with `--config` (YAML), see `experiments/`.
