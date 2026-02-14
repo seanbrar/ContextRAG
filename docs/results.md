@@ -7,7 +7,7 @@ This document summarizes evaluation methodology and results for ContextRAG.
 **Adaptive length-based chunking does not outperform uniform chunking in the evaluated setup.**
 
 Across committed runs, the router strategy never beats the uniform baseline:
-- mixed corpus (hosted OpenAI embeddings): identical precision/recall
+- mixed corpus (hosted `text-embedding-3-small`): identical precision/recall
 - RFC-only corpus (hosted OpenRouter embeddings): identical precision/recall
 - expanded local matrix (`k={3,5,10}`): router underperforms on all tested `k`
 - external local holdout (`k={3,5,10}`): router ties or underperforms uniform
@@ -27,7 +27,7 @@ For the mixed-corpus experiment committed in this repository, three repeated `k=
 - Router: length-based chunking (short/medium/long)
 
 **Embedding providers**:
-- Mixed corpus: OpenAI (`text-embedding-3-small`)
+- Mixed corpus: hosted `text-embedding-3-small`
 - RFC-only corpus: OpenRouter (`qwen/qwen3-embedding-8b`)
 - Expanded/external matrices: local MiniLM (`sentence-transformers/all-MiniLM-L6-v2`)
 
@@ -38,7 +38,7 @@ For the mixed-corpus experiment committed in this repository, three repeated `k=
 ## Mixed Corpus Evaluation (Primary)
 
 **Dataset composition**: 12 documents (3 short stories, 1 novella excerpt, 8 RFCs)
-**Embedding provider**: OpenAI (`text-embedding-3-small`)
+**Embedding provider**: hosted `text-embedding-3-small`
 **Total queries**: 60
 **Total source tokens**: 493,423
 **Runs**: 3 repeated runs (identical aggregate precision/recall)

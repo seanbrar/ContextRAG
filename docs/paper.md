@@ -34,7 +34,7 @@ The uniform baseline uses 1,000-token chunks for all documents regardless of len
 
 ### Infrastructure
 
-- **Provider-agnostic embeddings**: OpenAI, OpenRouter, or local models with automatic provider selection
+- **Provider-agnostic embeddings**: OpenRouter or local models with automatic provider selection
 - **Vector store**: ChromaDB with batched indexing for large corpora
 - **Evaluation framework**: YAML-driven configs, efficiency metrics, artifact logging
 

@@ -199,7 +199,7 @@ def test_eval_command_dry_run_does_not_execute_eval(monkeypatch, tmp_path):
     monkeypatch.setattr("contextrag.cli.run_eval", fake_run_eval)
     monkeypatch.setattr(
         "contextrag.cli.load_config",
-        lambda: make_test_config(openrouter_api_key=None, openai_api_key="ok", embed_provider="openai"),
+        lambda: make_test_config(openrouter_api_key=None, openai_api_key="ok", embed_provider="local"),
     )
 
     runner = CliRunner()
@@ -212,13 +212,13 @@ def test_eval_command_dry_run_does_not_execute_eval(monkeypatch, tmp_path):
             "--output",
             str(output_path),
             "--embed-provider",
-            "openai",
+            "local",
             "--dry-run",
         ],
     )
     assert result.exit_code == 0
     assert "eval_dry_run_ok" in result.output
-    assert "embed_provider=openai" in result.output
+    assert "embed_provider=local" in result.output
     assert called["run_eval"] == 0
 
 

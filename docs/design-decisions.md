@@ -30,7 +30,6 @@ This document explains key engineering decisions in ContextRAG and their rationa
 ```
 Auto provider selection with explicit overrides:
 - OpenRouter when `OPENROUTER_API_KEY` is present
-- OpenAI when explicitly selected with `OPENAI_API_KEY`
 - Local fallback for offline/default operation
 ```
 `chromaroute` handles provider routing and failure fallback.

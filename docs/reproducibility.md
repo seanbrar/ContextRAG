@@ -50,6 +50,11 @@ For larger evals with saved artifacts:
 uv run contextrag eval --config experiments/eval_rfc.yaml --run-dir runs/eval_rfc
 ```
 
+Embedding-provider note:
+- Embeddings support `openrouter` and `local` providers.
+- OpenAI model families can be selected through OpenRouter model IDs
+  (for example, `openai/text-embedding-3-small`).
+
 ## Matrix Runs (Recommended)
 
 Run a baseline × k matrix with local embeddings:

@@ -2,7 +2,7 @@ EMBEDDING_COSTS_PER_MILLION: dict[str, float] = {
     # OpenRouter models
     "qwen/qwen3-embedding-8b": 0.01,
     "thenlper/gte-base": 0.005,
-    # OpenAI models (direct or via OpenRouter)
+    # OpenAI model families addressable via OpenRouter model IDs
     "text-embedding-3-small": 0.02,
     "text-embedding-3-large": 0.13,
     "text-embedding-ada-002": 0.10,

@@ -71,9 +71,13 @@ The CLI accepts:
 - `--dataset` (required)
 - `--baseline` (`uniform` or `router`)
 - `--k` (top-k)
-- `--embed-provider` (`auto`, `openai`, `openrouter`, `local`)
+- `--embed-provider` (`auto`, `openrouter`, `local`)
 - `--embedding-model` (optional override)
 - `--run-dir` (artifact output)
+
+Note: direct OpenAI embedding provider selection is intentionally unsupported in
+ContextRAG's embedding path. OpenAI embedding models can still be addressed via
+OpenRouter model IDs (for example, `openai/text-embedding-3-small`).
 
 Dataset schema can be validated explicitly:
 

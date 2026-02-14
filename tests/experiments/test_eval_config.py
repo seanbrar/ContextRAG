@@ -13,11 +13,11 @@ def test_load_eval_config_defaults(tmp_path):
     assert config.k == 5
 
 
-def test_load_eval_config_accepts_openai_provider(tmp_path):
+def test_load_eval_config_rejects_openai_provider(tmp_path):
     path = tmp_path / "config.yml"
     path.write_text("dataset: data/sample\nembed_provider: openai\n", encoding="utf-8")
-    config = load_eval_config(path)
-    assert config.embed_provider == "openai"
+    with pytest.raises(ValueError, match="embed_provider"):
+        load_eval_config(path)
 
 
 def test_load_eval_config_requires_dataset(tmp_path):

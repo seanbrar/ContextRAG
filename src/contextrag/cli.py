@@ -110,7 +110,7 @@ def main() -> None:
 @click.option(
     "--embed-provider",
     "embed_provider",
-    type=click.Choice(["auto", "openai", "openrouter", "local"]),
+    type=click.Choice(["auto", "openrouter", "local"]),
 )
 @click.option("--dry-run", is_flag=True, help="Validate inputs/config and exit.")
 def eval(
@@ -335,7 +335,7 @@ def validate_dataset(dataset_path: Path) -> None:
 @click.option(
     "--embed-provider",
     "embed_provider",
-    type=click.Choice(["auto", "openai", "openrouter", "local"]),
+    type=click.Choice(["auto", "openrouter", "local"]),
 )
 def matrix(
     dataset_path: Path,
@@ -397,7 +397,7 @@ def db() -> None:
 @click.option("--collection", default="contextrag")
 @click.option("--persist", "persist_path")
 @click.option("--embedding-model", "embedding_model")
-@click.option("--embed-provider", type=click.Choice(["auto", "openai", "openrouter", "local"]))
+@click.option("--embed-provider", type=click.Choice(["auto", "openrouter", "local"]))
 @click.option("--chunk-words", type=int)
 @click.option("--chunk-overlap", type=int, default=50)
 def db_index(

@@ -29,7 +29,7 @@ Mixed-corpus hosted run slice:
 
 Scope of this claim:
 
-- Mixed corpus (`data/eval-mixed`): OpenAI `text-embedding-3-small`, `k=5`, 3 repeated runs
+- Mixed corpus (`data/eval-mixed`): hosted `text-embedding-3-small`, `k=5`, 3 repeated runs
 - RFC corpus (`data/demo`): OpenRouter `qwen/qwen3-embedding-8b`, `k=5`, uniform vs router
 - External holdout (`data/eval-external`): local MiniLM matrix, `k={3,5,10}`
 - Cost/quality side study: OpenAI `text-embedding-3-small` vs `text-embedding-3-large` (uniform baseline)
@@ -160,7 +160,7 @@ Set environment variables or use `.env`:
 ```bash
 # Embeddings (via chromaroute)
 OPENROUTER_API_KEY=sk-or-...        # For hosted embeddings
-EMBED_PROVIDER=auto                  # auto | openai | openrouter | local
+EMBED_PROVIDER=auto                  # auto | openrouter | local
 OPENROUTER_EMBEDDINGS_MODEL=openai/text-embedding-3-small
 LOCAL_EMBEDDINGS_MODEL=sentence-transformers/all-MiniLM-L6-v2
 
@@ -169,6 +169,10 @@ OPENAI_API_KEY=sk-...               # For OpenAI chat
 OPENAI_CHAT_MODEL=gpt-4o-mini
 CONTEXTRAG_CHAT_PROVIDER=auto       # auto | openai | openrouter
 ```
+
+Note: direct `embed_provider=openai` is intentionally unsupported for embeddings.
+Use OpenAI embedding models through OpenRouter model IDs (for example,
+`openai/text-embedding-3-small`).
 
 ## Historical Context
 

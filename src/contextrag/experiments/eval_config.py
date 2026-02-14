@@ -29,7 +29,7 @@ ALLOWED_KEYS = {
 }
 
 ALLOWED_BASELINES = {"uniform", "adaptive", "router"}
-ALLOWED_EMBED_PROVIDERS = {"auto", "openai", "openrouter", "local"}
+ALLOWED_EMBED_PROVIDERS = {"auto", "openrouter", "local"}
 CURRENT_SCHEMA_VERSION = 1
 
 

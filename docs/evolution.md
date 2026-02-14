@@ -67,8 +67,8 @@ With proper infrastructure, we tested the adaptive chunking hypothesis with repr
 dataset: data/eval-mixed
 baseline: uniform
 k: 5
-embed_provider: openai
-embedding_model: text-embedding-3-small
+embed_provider: openrouter
+embedding_model: openai/text-embedding-3-small
 
 # router baseline (same dataset/model)
 baseline: router
@@ -79,7 +79,7 @@ baseline: router
 **No win for routing.** Precision@5 and Recall@5 were identical on the hosted mixed-corpus slice, and later expanded local-matrix runs showed uniform outperforming router.
 
 This held across:
-- Mixed-corpus runs with OpenAI `text-embedding-3-small`
+- Mixed-corpus runs with OpenAI-family embedding model `text-embedding-3-small`
 - RFC-only runs with OpenRouter `qwen/qwen3-embedding-8b`
 - Multiple repeated runs on the mixed corpus
 

@@ -83,13 +83,6 @@ class Config:
                 )
             raise error_cls("OPENROUTER_API_KEY is required for OpenRouter embeddings.")
 
-        if resolved_provider == "openai" and not self.openai_api_key:
-            if explicit_provider == "openai":
-                raise error_cls(
-                    "OPENAI_API_KEY is required when "
-                    "--embed-provider openai is selected."
-                )
-            raise error_cls("OPENAI_API_KEY is required for OpenAI embeddings.")
 
 
 def load_config() -> Config:

@@ -1,8 +1,8 @@
 dataset: data/eval-mixed
 baseline: uniform
 k: 5
-embed_provider: openai
-embedding_model: text-embedding-3-small
+embed_provider: openrouter
+embedding_model: openai/text-embedding-3-small
 output: runs/cost_comparison/openai_small.json
 persist: runs/cost_comparison/chroma-openai-small
 run_dir: runs/cost_comparison/openai_small
