@@ -97,3 +97,5 @@ def test_compare_runs_detects_retrieval_changes(tmp_path):
     assert "cliffs_delta" in comparison["inference"]["precision_at_k"]
     assert comparison["primary_endpoint"]["name"] == "ndcg_at_k"
     assert "equivalent_within_margin" in comparison["inference"]["ndcg_at_k"]
+    assert "tost" in comparison["inference"]["ndcg_at_k"]
+    assert comparison["preregistration"]["equivalence_method"] == "TOST"

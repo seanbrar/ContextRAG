@@ -7,10 +7,9 @@ from pathlib import Path
 from typing import Any, cast
 
 from contextrag.eval.stats import (bootstrap_mean_ci, cliffs_delta_from_deltas,
-                                   cohen_d_from_deltas,
-                                   equivalence_and_noninferiority,
-                                   holm_bonferroni_adjust, mean,
-                                   paired_randomization_p_value)
+                                   cohen_d_from_deltas, holm_bonferroni_adjust,
+                                   mean, paired_randomization_p_value,
+                                   tost_paired)
 
 PER_QUERY_METRIC_FIELDS = (
     "precision_at_k",
@@ -34,6 +33,8 @@ SUMMARY_METRIC_FIELDS = (
 
 PRIMARY_ENDPOINT = "ndcg_at_k"
 EQUIVALENCE_MARGIN = 0.02
+TOST_ALPHA = 0.05
+PREREGISTRATION_PATH = "docs/preregistration.md"
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -191,13 +192,15 @@ def compare_runs(run_a: Path, run_b: Path) -> dict[str, Any]:
         endpoint = inference[PRIMARY_ENDPOINT]
         ci95 = endpoint["ci95"]
         endpoint["equivalence_margin"] = EQUIVALENCE_MARGIN
-        endpoint.update(
-            equivalence_and_noninferiority(
-                ci_low=float(ci95[0]),
-                ci_high=float(ci95[1]),
-                margin=EQUIVALENCE_MARGIN,
-            )
+        tost = tost_paired(
+            deltas=per_metric_deltas[PRIMARY_ENDPOINT],
+            margin=EQUIVALENCE_MARGIN,
+            alpha=TOST_ALPHA,
         )
+        endpoint["tost"] = tost
+        endpoint["equivalent_within_margin"] = bool(tost["equivalent"])
+        endpoint["non_inferior_within_margin"] = bool(tost["non_inferior"])
+        endpoint["superior_to_zero"] = float(ci95[0]) > 0.0
 
     primary_endpoint = inference.get(PRIMARY_ENDPOINT, {})
 
@@ -231,7 +234,16 @@ def compare_runs(run_a: Path, run_b: Path) -> dict[str, Any]:
         "primary_endpoint": {
             "name": PRIMARY_ENDPOINT,
             "equivalence_margin": EQUIVALENCE_MARGIN,
+            "tost_alpha": TOST_ALPHA,
             "result": primary_endpoint,
+        },
+        "preregistration": {
+            "path": PREREGISTRATION_PATH,
+            "primary_endpoint": PRIMARY_ENDPOINT,
+            "equivalence_method": "TOST",
+            "equivalence_margin": EQUIVALENCE_MARGIN,
+            "multiple_testing": "Holm-Bonferroni",
+            "deviations": [],
         },
         "inference": inference,
         "queries_only_in_run_a": only_in_a,

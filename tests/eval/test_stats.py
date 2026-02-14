@@ -2,7 +2,7 @@ from contextrag.eval.stats import (bootstrap_mean_ci, cliffs_delta_from_deltas,
                                    cohen_d_from_deltas,
                                    equivalence_and_noninferiority,
                                    holm_bonferroni_adjust, mean,
-                                   paired_randomization_p_value,
+                                   paired_randomization_p_value, tost_paired,
                                    standard_deviation)
 
 
@@ -48,3 +48,16 @@ def test_equivalence_and_noninferiority():
     assert result["equivalent_within_margin"] is True
     assert result["non_inferior_within_margin"] is True
     assert result["superior_to_zero"] is False
+
+
+def test_tost_paired_equivalent_case():
+    result = tost_paired([0.0, 0.005, -0.004, 0.002], margin=0.02, alpha=0.05)
+    assert result["n_pairs"] == 4
+    assert result["equivalent"] is True
+    assert result["non_inferior"] is True
+
+
+def test_tost_paired_non_equivalent_case():
+    result = tost_paired([0.06, 0.05, 0.04, 0.03], margin=0.02, alpha=0.05)
+    assert result["equivalent"] is False
+    assert result["non_inferior"] is True
