@@ -73,12 +73,11 @@ Embedding-provider note:
 
 ## Matrix Runs (Recommended)
 
-Run a baseline × k matrix with local embeddings:
+Run the claim-aligned matrix with local embeddings:
 
 ```bash
-uv run contextrag matrix \
+uv run contextrag core matrix \
   --dataset data/eval-expanded \
-  --baselines uniform,router \
   --k-values 3,5,10 \
   --embed-provider local \
   --run-root runs/matrix_eval_expanded_local
@@ -113,16 +112,8 @@ This regenerates:
 
 ## Exploratory Extensions
 
-Expanded baseline study:
-
-Run the broader baseline suite:
-
-```bash
-make baseline-study
-```
-
-This includes chunk-size sweep, overlap, semantic chunking, BM25, hybrid, and
-dense-rerank retrieval on `data/eval-expanded`.
+See `docs/exploratory.md` for baseline sweeps, alternate retrieval modes, and
+public transfer-slice workflows.
 
 ## Artifacts
 

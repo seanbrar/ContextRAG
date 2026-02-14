@@ -76,8 +76,13 @@ Output: `runs/demo_eval.json` with precision/recall metrics.
 uv run contextrag validate-dataset --dataset data/eval-expanded
 uv run contextrag validate-dataset --dataset data/eval-external
 
-# 2) Run local matrix (uniform/router × k={3,5,10})
-make repro-local
+# 2) Run core local matrix (uniform/router × k={3,5,10}, dense retrieval)
+uv run contextrag core matrix \
+  --dataset data/eval-expanded \
+  --k-values 3,5,10 \
+  --embed-provider local \
+  --run-root runs/matrix_eval_expanded_local \
+  --persist-root runs/chroma-matrix-eval-expanded-local
 
 # 3) Compare any two runs (example: uniform vs router at k=5)
 uv run contextrag compare \
@@ -109,39 +114,10 @@ This one command regenerates:
 - `docs/paper_tables.md` (paper-ready aggregate + inference tables)
 - `docs/reviewer_bundle.md` (review checklist/report index)
 
-## Exploratory: Expanded Baseline Study
+## Exploratory Extensions
 
-```bash
-make baseline-study
-```
-
-Runs exploratory variants on `data/eval-expanded`:
-- uniform chunk-size sweep (`512`, `1000`, `2000`)
-- overlap/no-overlap variants
-- semantic chunking baseline
-- lexical (`bm25`), hybrid, and dense-rerank retrieval modes
-
-Outputs:
-- `runs/baseline_study/baseline_study_summary.json`
-- `docs/baseline_study.md`
-
-## Artifact Evaluation Mode
-
-```bash
-make artifact-eval
-```
-
-Rebuilds reviewer + baseline-study artifacts and verifies them against
-`docs/artifact_checksums.json`.
-
-## Exploratory: Public Benchmark Slice
-
-`data/eval-scifact-mini` provides a non-RFC, non-literary transfer slice built
-from BEIR SciFact (40 queries, 220 docs).
-
-```bash
-uv run contextrag validate-dataset --dataset data/eval-scifact-mini
-```
+Exploratory commands and datasets are documented in
+[`docs/exploratory.md`](docs/exploratory.md).
 
 ## Dev Helpers
 
@@ -157,6 +133,8 @@ make all
 
 | Command | Description |
 |---------|-------------|
+| `contextrag core eval` | Claim-aligned single eval (`uniform/router + dense`, core datasets) |
+| `contextrag core matrix` | Claim-aligned matrix (`uniform/router × k`, dense, core datasets) |
 | `contextrag eval` | Core evaluation (`uniform/router + dense`) with optional exploratory modes |
 | `contextrag demo` | Offline evaluation with local embeddings |
 | `contextrag matrix` | Run matrix experiments (core and exploratory) |
@@ -167,21 +145,16 @@ make all
 | `contextrag db index` | Build vector index from documents |
 | `contextrag db query` | Query the vector index |
 
-### Example: Full Evaluation
+### Example: Core Evaluation
 
 ```bash
-# With OpenRouter embeddings
-export OPENROUTER_API_KEY=sk-or-...
-uv run contextrag eval \
-    --dataset data/demo \
+# Core eval path (recommended)
+uv run contextrag core eval \
+    --dataset data/eval-expanded \
     --baseline uniform \
     --k 5 \
-    --output runs/eval.json
-
-# Baseline options: uniform, adaptive, router, semantic
-# Retrieval modes: dense, bm25, hybrid, dense-rerank
-# See all options:
-uv run contextrag eval --help
+    --embed-provider local \
+    --output runs/core_eval_uniform_k5.json
 ```
 
 ### Example: Build and Query Index

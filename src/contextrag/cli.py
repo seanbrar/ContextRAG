@@ -22,6 +22,9 @@ from contextrag.experiments.matrix import run_matrix
 from contextrag.experiments.run_logger import write_run_artifacts
 
 TEXT_EXTENSIONS = (".md", ".txt")
+CORE_DATASET_OPTIONS = ("data/eval-expanded", "data/eval-external")
+CORE_BASELINES = ("uniform", "router")
+CORE_RETRIEVAL_MODE = "dense"
 ARTIFACT_CHECKSUMS_PATH = Path("docs/artifact_checksums.json")
 ARTIFACT_FILES = [
     Path("runs/reviewer_bundle/matrix_eval_expanded_local/matrix_summary.json"),
@@ -37,6 +40,20 @@ ARTIFACT_FILES = [
 
 def _parse_csv_items(value: str) -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def _is_core_dataset(dataset_path: Path) -> bool:
+    dataset_name = dataset_path.name
+    dataset_posix = dataset_path.as_posix().rstrip("/")
+    return dataset_name in {"eval-expanded", "eval-external"} or dataset_posix in CORE_DATASET_OPTIONS
+
+
+def _is_core_matrix_configuration(*, baselines: list[str], retrieval_mode: str) -> bool:
+    return (
+        retrieval_mode == CORE_RETRIEVAL_MODE
+        and len(baselines) == len(CORE_BASELINES)
+        and set(baselines) == set(CORE_BASELINES)
+    )
 
 
 def _sha256_file(path: Path) -> str:
@@ -135,6 +152,7 @@ def main() -> None:
     modes are available as exploratory extensions.
 
     Primary commands:
+      core    Claim-aligned workflows (recommended)
       eval    Run retrieval evaluation
       demo    Run offline demo with local embeddings
       doctor  Check configuration health
@@ -242,6 +260,17 @@ def eval(
         config.require_embed_provider(resolved_provider, embed_provider, click.ClickException)
         resolved_model = embedding_model or config.embed.resolve_model(resolved_provider)
 
+    if baseline not in CORE_BASELINES or retrieval_mode != CORE_RETRIEVAL_MODE:
+        click.echo(
+            "note: exploratory eval configuration selected. "
+            "Use 'contextrag core eval' for claim-aligned runs."
+        )
+    elif not _is_core_dataset(dataset_path):
+        click.echo(
+            "note: non-core dataset selected. "
+            "Use data/eval-expanded or data/eval-external for canonical claims."
+        )
+
     if dry_run:
         click.echo("eval_dry_run_ok")
         click.echo(f"dataset={dataset_path}")
@@ -274,6 +303,159 @@ def eval(
         chunk_overlap_tokens=chunk_overlap_tokens,
         retrieval_candidates=retrieval_candidates,
         config_path=config_path,
+    )
+
+
+@main.group()
+def core() -> None:
+    """Core claim-aligned workflows (recommended interface)."""
+
+
+@core.command("eval")
+@click.option(
+    "--dataset",
+    "dataset_name",
+    required=True,
+    type=click.Choice(CORE_DATASET_OPTIONS),
+    help="Core datasets only.",
+)
+@click.option(
+    "--baseline",
+    type=click.Choice(list(CORE_BASELINES)),
+    default="uniform",
+    show_default=True,
+)
+@click.option("--k", "top_k", type=int, default=5, show_default=True)
+@click.option("--output", "output_path", required=True, type=click.Path(path_type=Path))
+@click.option("--run-dir", "run_dir", type=click.Path(path_type=Path))
+@click.option("--persist", "persist_path")
+@click.option("--embedding-model", "embedding_model")
+@click.option(
+    "--embed-provider",
+    "embed_provider",
+    default="local",
+    show_default=True,
+    type=click.Choice(["auto", "openrouter", "local"]),
+)
+@click.option("--dry-run", is_flag=True, help="Validate inputs/config and exit.")
+def core_eval(
+    dataset_name: str,
+    baseline: str,
+    top_k: int,
+    output_path: Path,
+    run_dir: Path | None,
+    persist_path: str | None,
+    embedding_model: str | None,
+    embed_provider: str,
+    dry_run: bool,
+) -> None:
+    """Run a claim-aligned evaluation: uniform/router + dense retrieval."""
+    if top_k <= 0:
+        raise click.ClickException("--k must be > 0.")
+
+    dataset_path = Path(dataset_name)
+    config = load_config()
+    resolved_provider = config.resolve_embed_provider(embed_provider)
+    config.require_embed_provider(resolved_provider, embed_provider, click.ClickException)
+    resolved_model = embedding_model or config.embed.resolve_model(resolved_provider)
+
+    if dry_run:
+        click.echo("core_eval_dry_run_ok")
+        click.echo(f"dataset={dataset_path}")
+        click.echo(f"baseline={baseline}")
+        click.echo(f"k={top_k}")
+        click.echo(f"retrieval_mode={CORE_RETRIEVAL_MODE}")
+        click.echo(f"embed_provider={resolved_provider}")
+        click.echo(f"embedding_model={resolved_model}")
+        click.echo(f"output={output_path}")
+        click.echo(f"run_dir={run_dir}")
+        click.echo(f"persist={persist_path}")
+        return
+
+    _run_evaluation(
+        dataset_path=dataset_path,
+        baseline=baseline,
+        top_k=top_k,
+        output_path=output_path,
+        persist_path=persist_path,
+        embed_provider=embed_provider,
+        embedding_model=embedding_model,
+        run_dir=run_dir,
+        retrieval_mode=CORE_RETRIEVAL_MODE,
+        uniform_chunk_tokens=None,
+        chunk_overlap_tokens=0,
+        retrieval_candidates=50,
+    )
+
+
+@core.command("matrix")
+@click.option(
+    "--dataset",
+    "dataset_name",
+    required=True,
+    type=click.Choice(CORE_DATASET_OPTIONS),
+    help="Core datasets only.",
+)
+@click.option("--k-values", default="3,5,10", show_default=True)
+@click.option(
+    "--run-root",
+    "run_root",
+    default=Path("runs/matrix_core"),
+    show_default=True,
+    type=click.Path(path_type=Path),
+)
+@click.option(
+    "--persist-root",
+    "persist_root",
+    default=Path("runs/chroma-matrix-core"),
+    show_default=True,
+    type=click.Path(path_type=Path),
+)
+@click.option("--embedding-model", "embedding_model")
+@click.option(
+    "--embed-provider",
+    "embed_provider",
+    default="local",
+    show_default=True,
+    type=click.Choice(["auto", "openrouter", "local"]),
+)
+def core_matrix(
+    dataset_name: str,
+    k_values: str,
+    run_root: Path,
+    persist_root: Path,
+    embedding_model: str | None,
+    embed_provider: str,
+) -> None:
+    """Run a claim-aligned matrix: baselines=uniform/router, retrieval=dense."""
+    try:
+        parsed_k_values = [int(item) for item in _parse_csv_items(k_values)]
+    except ValueError as exc:
+        raise click.ClickException("--k-values must be comma-separated integers.") from exc
+    if not parsed_k_values or any(k <= 0 for k in parsed_k_values):
+        raise click.ClickException("--k-values must include integers greater than 0.")
+
+    config = load_config()
+    resolved_provider = config.resolve_embed_provider(embed_provider)
+    config.require_embed_provider(resolved_provider, embed_provider, click.ClickException)
+
+    summary = run_matrix(
+        dataset_path=Path(dataset_name),
+        baselines=list(CORE_BASELINES),
+        k_values=parsed_k_values,
+        run_root=run_root,
+        persist_root=persist_root,
+        retrieval_mode=CORE_RETRIEVAL_MODE,
+        uniform_chunk_tokens=None,
+        chunk_overlap_tokens=0,
+        retrieval_candidates=50,
+        embed_provider=embed_provider,
+        embedding_model=embedding_model,
+    )
+    click.echo(
+        f"core_matrix_done runs={len(summary['rows'])} "
+        f"comparisons={len(summary['comparisons'])} "
+        f"summary={run_root / 'matrix_summary.json'}"
     )
 
 
@@ -493,6 +675,17 @@ def matrix(
         config = load_config()
         resolved_provider = config.resolve_embed_provider(embed_provider)
         config.require_embed_provider(resolved_provider, embed_provider, click.ClickException)
+
+    if not _is_core_matrix_configuration(baselines=baseline_list, retrieval_mode=retrieval_mode):
+        click.echo(
+            "note: exploratory matrix configuration selected. "
+            "Use 'contextrag core matrix' for claim-aligned runs."
+        )
+    elif not _is_core_dataset(dataset_path):
+        click.echo(
+            "note: non-core dataset selected. "
+            "Use data/eval-expanded or data/eval-external for canonical claims."
+        )
 
     summary = run_matrix(
         dataset_path=dataset_path,
