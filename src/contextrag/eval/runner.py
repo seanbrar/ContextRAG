@@ -294,9 +294,16 @@ def run_eval(
     )
     build_duration = time.time() - build_start
 
-    lexical_index_start = time.time()
-    lexical_index = build_lexical_index(documents=documents, ids=ids)
-    lexical_index_duration = time.time() - lexical_index_start
+    lexical_index = None
+    lexical_index_duration = 0.0
+    if retrieval_mode in {"bm25", "hybrid", "dense-rerank"}:
+        lexical_index_start = time.time()
+        lexical_index = build_lexical_index(
+            documents=documents,
+            ids=ids,
+            include_token_sets=retrieval_mode == "dense-rerank",
+        )
+        lexical_index_duration = time.time() - lexical_index_start
 
     vector_store: VectorStore | None = None
     cfg: Config | None = None
@@ -352,9 +359,11 @@ def run_eval(
             dense_results = vector_store.query(query_texts=[query_text], n_results=k)
             retrieved_chunk_ids = dense_results.get("ids", [[]])[0]
         elif retrieval_mode == "bm25":
+            assert lexical_index is not None
             retrieved_chunk_ids = rank_bm25(lexical_index, query_text, k)
         elif retrieval_mode == "hybrid":
             assert vector_store is not None
+            assert lexical_index is not None
             dense_results = vector_store.query(
                 query_texts=[query_text],
                 n_results=candidate_count,
@@ -364,6 +373,7 @@ def run_eval(
             retrieved_chunk_ids = rank_hybrid_rrf(dense_ids, lexical_ids, k)
         else:
             assert vector_store is not None
+            assert lexical_index is not None
             dense_results = vector_store.query(
                 query_texts=[query_text],
                 n_results=candidate_count,

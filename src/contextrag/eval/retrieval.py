@@ -21,16 +21,22 @@ class LexicalIndex:
     doc_lengths: list[int]
     document_frequency: dict[str, int]
     avg_doc_length: float
+    postings: dict[str, list[int]]
     token_sets: dict[str, set[str]]
 
 
-def build_lexical_index(documents: list[str], ids: list[str]) -> LexicalIndex:
+def build_lexical_index(
+    documents: list[str],
+    ids: list[str],
+    include_token_sets: bool = True,
+) -> LexicalIndex:
     term_frequencies: list[dict[str, int]] = []
     doc_lengths: list[int] = []
     document_frequency: dict[str, int] = {}
-    token_sets: dict[str, set[str]] = {}
+    postings: dict[str, list[int]] = {}
+    token_sets: dict[str, set[str]] = {} if include_token_sets else {}
 
-    for doc_id, content in zip(ids, documents, strict=True):
+    for doc_idx, (doc_id, content) in enumerate(zip(ids, documents, strict=True)):
         tokens = tokenize_for_lexical(content)
         tf: dict[str, int] = {}
         for token in tokens:
@@ -38,9 +44,11 @@ def build_lexical_index(documents: list[str], ids: list[str]) -> LexicalIndex:
         term_frequencies.append(tf)
         doc_lengths.append(len(tokens))
         unique_tokens = set(tokens)
-        token_sets[doc_id] = unique_tokens
+        if include_token_sets:
+            token_sets[doc_id] = unique_tokens
         for token in unique_tokens:
             document_frequency[token] = document_frequency.get(token, 0) + 1
+            postings.setdefault(token, []).append(doc_idx)
 
     avg_doc_length = sum(doc_lengths) / len(doc_lengths) if doc_lengths else 0.0
     return LexicalIndex(
@@ -49,6 +57,7 @@ def build_lexical_index(documents: list[str], ids: list[str]) -> LexicalIndex:
         doc_lengths=doc_lengths,
         document_frequency=document_frequency,
         avg_doc_length=avg_doc_length,
+        postings=postings,
         token_sets=token_sets,
     )
 
@@ -84,11 +93,23 @@ def _bm25_score(
 
 def rank_bm25(index: LexicalIndex, query: str, n_results: int) -> list[str]:
     query_tokens = tokenize_for_lexical(query)
-    scored: list[tuple[str, float]] = []
+    if n_results <= 0:
+        return []
+    if not query_tokens:
+        return index.ids[:n_results]
+
+    candidate_indices: set[int] = set()
+    for token in set(query_tokens):
+        candidate_indices.update(index.postings.get(token, []))
+
+    if not candidate_indices:
+        return index.ids[:n_results]
+
+    scored: list[tuple[int, float]] = []
     n_docs = len(index.ids)
-    for doc_id, tf, doc_len in zip(
-        index.ids, index.term_frequencies, index.doc_lengths, strict=True
-    ):
+    for doc_idx in candidate_indices:
+        tf = index.term_frequencies[doc_idx]
+        doc_len = index.doc_lengths[doc_idx]
         score = _bm25_score(
             query_tokens=query_tokens,
             term_frequency=tf,
@@ -97,9 +118,20 @@ def rank_bm25(index: LexicalIndex, query: str, n_results: int) -> list[str]:
             document_frequency=index.document_frequency,
             avg_doc_length=index.avg_doc_length,
         )
-        scored.append((doc_id, score))
+        scored.append((doc_idx, score))
     scored.sort(key=lambda item: item[1], reverse=True)
-    return [doc_id for doc_id, _ in scored[:n_results]]
+
+    ranked_doc_indices = [doc_idx for doc_idx, _ in scored]
+    if len(ranked_doc_indices) < n_results:
+        seen = set(ranked_doc_indices)
+        for doc_idx in range(n_docs):
+            if doc_idx in seen:
+                continue
+            ranked_doc_indices.append(doc_idx)
+            if len(ranked_doc_indices) >= n_results:
+                break
+
+    return [index.ids[doc_idx] for doc_idx in ranked_doc_indices[:n_results]]
 
 
 def rank_hybrid_rrf(

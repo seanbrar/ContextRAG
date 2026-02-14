@@ -302,3 +302,58 @@ def test_run_eval_dense_rerank_mode(monkeypatch, tmp_path):
     )
     assert results["summary"]["retrieval_mode"] == "dense-rerank"
     assert results["per_query"][0]["retrieved_ids"][0] == "doc1"
+
+
+def test_run_eval_dense_mode_skips_lexical_index(monkeypatch, tmp_path):
+    documents_dir = tmp_path / "documents"
+    documents_dir.mkdir()
+    (documents_dir / "doc1.md").write_text("http semantics methods", encoding="utf-8")
+    (tmp_path / "queries.jsonl").write_text(
+        json.dumps({"query": "http methods", "relevant_ids": ["doc1"]}),
+        encoding="utf-8",
+    )
+
+    class FakeVectorDB:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def add_documents(self, documents, ids):
+            pass
+
+        def query(self, query_texts, n_results):
+            return {"ids": [["doc1::chunk0"]]}
+
+    config = Config(
+        embed=EmbedConfig(
+            openrouter_api_key=None,
+            openrouter_base_url="https://openrouter.ai/api/v1",
+            openrouter_embeddings_model="qwen/qwen3-embedding-8b",
+            openrouter_referer=None,
+            openrouter_title=None,
+            openrouter_provider_json=None,
+            local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
+            embed_provider="local",
+        ),
+        openai_api_key=None,
+        openai_chat_model="gpt-4o-mini",
+        openrouter_chat_model="mistralai/devstral-2512:free",
+        chat_provider="openai",
+    )
+
+    monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)
+    monkeypatch.setattr(runner, "load_config", lambda: config)
+    monkeypatch.setattr(runner, "get_encoding", lambda name=None: DummyEncoding())
+    monkeypatch.setattr(tokenizer, "get_encoding", lambda name=None: DummyEncoding())
+    monkeypatch.setattr(
+        runner,
+        "build_lexical_index",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not be called")),
+    )
+
+    results = runner.run_eval(
+        dataset_path=tmp_path,
+        baseline="uniform",
+        k=1,
+        retrieval_mode="dense",
+    )
+    assert results["summary"]["retrieval_mode"] == "dense"

@@ -130,8 +130,9 @@ def _run_evaluation(
 def main() -> None:
     """ContextRAG - RAG evaluation framework.
 
-    Evaluate retrieval-augmented generation strategies with comprehensive
-    metrics for accuracy, efficiency, and cost.
+    Evaluate chunking strategies with a focused core claim:
+    uniform vs router on dense retrieval. Other baselines and retrieval
+    modes are available as exploratory extensions.
 
     Primary commands:
       eval    Run retrieval evaluation
@@ -147,12 +148,17 @@ def main() -> None:
 @main.command()
 @click.option("--config", "config_path", type=click.Path(path_type=Path))
 @click.option("--dataset", "dataset_path", type=click.Path(path_type=Path))
-@click.option("--baseline", type=click.Choice(["uniform", "adaptive", "router", "semantic"]))
+@click.option(
+    "--baseline",
+    type=click.Choice(["uniform", "adaptive", "router", "semantic"]),
+    help="Baseline strategy (core claim uses uniform/router).",
+)
 @click.option("--k", "top_k", type=int)
 @click.option(
     "--retrieval-mode",
     "retrieval_mode",
     type=click.Choice(["dense", "bm25", "hybrid", "dense-rerank"]),
+    help="Retrieval mode (core claim uses dense).",
 )
 @click.option("--output", "output_path", type=click.Path(path_type=Path))
 @click.option("--run-dir", "run_dir", type=click.Path(path_type=Path))
@@ -185,7 +191,7 @@ def eval(
 ) -> None:
     """Run retrieval evaluation.
 
-    Evaluate RAG retrieval strategies with uniform or adaptive chunking.
+    Run one evaluation configuration and write summary + per-query metrics.
     Use --config for reproducible experiments via YAML configuration.
 
     Examples:
@@ -405,13 +411,18 @@ def validate_dataset(dataset_path: Path) -> None:
 
 @main.command()
 @click.option("--dataset", "dataset_path", required=True, type=click.Path(path_type=Path))
-@click.option("--baselines", default="uniform,router")
+@click.option(
+    "--baselines",
+    default="uniform,router",
+    help="Comma-separated baselines (core matrix uses uniform,router).",
+)
 @click.option("--k-values", default="3,5,10")
 @click.option(
     "--retrieval-mode",
     "retrieval_mode",
     default="dense",
     type=click.Choice(["dense", "bm25", "hybrid", "dense-rerank"]),
+    help="Retrieval mode (core matrix uses dense).",
 )
 @click.option("--uniform-chunk-tokens", "uniform_chunk_tokens", type=int)
 @click.option("--chunk-overlap-tokens", "chunk_overlap_tokens", type=int, default=0)
@@ -447,7 +458,10 @@ def matrix(
     embedding_model: str | None,
     embed_provider: str | None,
 ) -> None:
-    """Run a baseline-by-k experiment matrix and write aggregate reports."""
+    """Run a baseline-by-k experiment matrix and write aggregate reports.
+
+    Core review mode is uniform/router on dense retrieval.
+    """
     baseline_list = _parse_csv_items(baselines)
     if not baseline_list:
         raise click.ClickException("--baselines must include at least one value.")

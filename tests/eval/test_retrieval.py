@@ -11,6 +11,22 @@ def test_rank_bm25_prefers_matching_document():
     assert ranked[0] == "doc_http"
 
 
+def test_rank_bm25_falls_back_to_input_order_when_no_query_matches():
+    docs = ["http semantics methods", "tls handshake key schedule"]
+    ids = ["doc_http", "doc_tls"]
+    index = build_lexical_index(documents=docs, ids=ids)
+    ranked = rank_bm25(index, "completely unrelated query", n_results=2)
+    assert ranked == ids
+
+
+def test_build_lexical_index_can_skip_token_sets():
+    docs = ["http semantics methods", "tls handshake key schedule"]
+    ids = ["doc_http", "doc_tls"]
+    index = build_lexical_index(documents=docs, ids=ids, include_token_sets=False)
+    assert index.token_sets == {}
+    assert "http" in index.postings
+
+
 def test_rank_hybrid_rrf_combines_sources():
     ranked = rank_hybrid_rrf(
         dense_ids=["a", "b", "c"],

@@ -4,6 +4,13 @@ This document describes how to reproduce ContextRAG evaluations and interpret ar
 
 Analysis expectations are preregistered in `docs/preregistration.md`.
 
+Core claim boundary:
+- Compare `uniform` vs `router`
+- Use `retrieval_mode=dense`
+- Use `data/eval-expanded` and `data/eval-external`
+
+Other baselines/retrieval modes are exploratory extensions.
+
 ## Datasets
 
 The evaluation runner expects:
@@ -104,7 +111,9 @@ This regenerates:
 - markdown dashboards under `docs/`
 - paper-ready tables at `docs/paper_tables.md`
 
-## Expanded Baseline Study
+## Exploratory Extensions
+
+Expanded baseline study:
 
 Run the broader baseline suite:
 

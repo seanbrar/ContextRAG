@@ -7,6 +7,17 @@
 
 RAG evaluation framework demonstrating that **length-based adaptive chunking does not outperform uniform chunking on the committed benchmarks**.
 
+## Project Scope
+
+Core scope (recommended for review/research claims):
+- `uniform` vs `router` chunking
+- dense retrieval (`retrieval_mode=dense`)
+- datasets: `data/eval-expanded`, `data/eval-external`
+
+Exploratory scope (kept for follow-up research, not canonical claims):
+- semantic chunking, overlap sweeps, BM25/hybrid/rerank retrieval
+- public transfer slice `data/eval-scifact-mini`
+
 ## The Research Question
 
 > Does routing documents to different chunk sizes based on length improve RAG retrieval quality?
@@ -98,13 +109,13 @@ This one command regenerates:
 - `docs/paper_tables.md` (paper-ready aggregate + inference tables)
 - `docs/reviewer_bundle.md` (review checklist/report index)
 
-## Expanded Baseline Study
+## Exploratory: Expanded Baseline Study
 
 ```bash
 make baseline-study
 ```
 
-Runs a broader fairness slice on `data/eval-expanded`:
+Runs exploratory variants on `data/eval-expanded`:
 - uniform chunk-size sweep (`512`, `1000`, `2000`)
 - overlap/no-overlap variants
 - semantic chunking baseline
@@ -123,9 +134,9 @@ make artifact-eval
 Rebuilds reviewer + baseline-study artifacts and verifies them against
 `docs/artifact_checksums.json`.
 
-## Public Benchmark Slice
+## Exploratory: Public Benchmark Slice
 
-`data/eval-scifact-mini` provides a non-RFC, non-literary benchmark slice built
+`data/eval-scifact-mini` provides a non-RFC, non-literary transfer slice built
 from BEIR SciFact (40 queries, 220 docs).
 
 ```bash
@@ -146,11 +157,12 @@ make all
 
 | Command | Description |
 |---------|-------------|
-| `contextrag eval` | Full evaluation with configurable providers |
+| `contextrag eval` | Core evaluation (`uniform/router + dense`) with optional exploratory modes |
 | `contextrag demo` | Offline evaluation with local embeddings |
-| `contextrag matrix` | Run baseline × k experiment matrix with aggregate reports |
+| `contextrag matrix` | Run matrix experiments (core and exploratory) |
 | `contextrag compare` | Compare two run directories with per-query deltas + inference |
 | `contextrag validate-dataset` | Validate dataset/query schema before eval |
+| `contextrag artifact-eval` | Rebuild/verify committed artifact checksums |
 | `contextrag doctor` | Check configuration health |
 | `contextrag db index` | Build vector index from documents |
 | `contextrag db query` | Query the vector index |
