@@ -52,6 +52,33 @@ uv run contextrag demo
 
 Output: `runs/demo_eval.json` with precision/recall metrics.
 
+## Reproduce Core Study
+
+```bash
+# 1) Validate datasets
+uv run contextrag validate-dataset --dataset data/eval-expanded
+
+# 2) Run local matrix (uniform/router × k={3,5,10})
+make repro-local
+
+# 3) Compare any two runs (example: uniform vs router at k=5)
+uv run contextrag compare \
+  --run-a runs/matrix_eval_expanded_local/uniform_k5 \
+  --run-b runs/matrix_eval_expanded_local/router_k5 \
+  --output runs/matrix_eval_expanded_local/comparisons/uniform_vs_router_k5_manual.json
+
+# 4) Render a reviewer-friendly report
+python3 scripts/render_matrix_report.py \
+  --input runs/matrix_eval_expanded_local/matrix_summary.json \
+  --output docs/matrix_eval_expanded_local.md
+```
+
+Primary artifacts:
+- `runs/matrix_eval_expanded_local/matrix_summary.json`
+- `runs/matrix_eval_expanded_local/matrix_summary.md`
+- `runs/matrix_eval_expanded_local/comparisons/*.json`
+- `docs/matrix_eval_expanded_local.md`
+
 ## Dev Helpers
 
 ```bash
@@ -68,6 +95,9 @@ make all
 |---------|-------------|
 | `contextrag eval` | Full evaluation with configurable providers |
 | `contextrag demo` | Offline evaluation with local embeddings |
+| `contextrag matrix` | Run baseline × k experiment matrix with aggregate reports |
+| `contextrag compare` | Compare two run directories with per-query deltas + inference |
+| `contextrag validate-dataset` | Validate dataset/query schema before eval |
 | `contextrag doctor` | Check configuration health |
 | `contextrag db index` | Build vector index from documents |
 | `contextrag db query` | Query the vector index |
@@ -160,6 +190,7 @@ Target: 95% coverage maintained.
 ## Docs
 
 - [docs/paper.md](docs/paper.md) - Full research methodology and results
+- [docs/matrix_eval_expanded_local.md](docs/matrix_eval_expanded_local.md) - Latest local matrix dashboard
 - [docs/evolution.md](docs/evolution.md) - Project history 2022–2025
 - [docs/design-decisions.md](docs/design-decisions.md) - Architecture rationale
 

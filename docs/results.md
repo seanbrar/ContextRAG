@@ -123,6 +123,34 @@ This negative result is itself valuable:
 
 ---
 
+## Expanded Matrix Evaluation (Local, v2 Dataset)
+
+To stress-test the methodology with multi-relevance labels, we ran:
+- Dataset: `data/eval-expanded` (88 queries, including graded relevance)
+- Provider: local MiniLM (`sentence-transformers/all-MiniLM-L6-v2`)
+- Matrix: `uniform` vs `router` across `k={3,5,10}`
+
+### Aggregate Metrics
+
+| Baseline | k | Precision@k | Recall@k | Hit@1 | MRR@k | nDCG@k |
+| --- | --- | --- | --- | --- | --- | --- |
+| Uniform | 3 | 0.352 | 0.743 | 0.784 | 0.839 | 0.780 |
+| Router | 3 | 0.330 | 0.674 | 0.705 | 0.765 | 0.707 |
+| Uniform | 5 | 0.252 | 0.853 | 0.784 | 0.866 | 0.820 |
+| Router | 5 | 0.241 | 0.796 | 0.705 | 0.798 | 0.755 |
+| Uniform | 10 | 0.153 | 0.912 | 0.784 | 0.866 | 0.847 |
+| Router | 10 | 0.150 | 0.878 | 0.705 | 0.808 | 0.795 |
+
+### Interpretation
+
+1. Router did not outperform uniform on any tested `k` value in this local matrix.
+2. The direction of effect was consistent across precision, recall, Hit@1, MRR, and nDCG.
+3. This run demonstrates a broader, more sensitive evaluation setup than the original single-label `k=5` slice.
+
+Full local dashboard: `docs/matrix_eval_expanded_local.md`
+
+---
+
 ## Embedding Cost Comparison
 
 The evaluation framework tracks embedding costs to inform provider selection decisions.

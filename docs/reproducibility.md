@@ -66,6 +66,14 @@ This writes:
 - `matrix_summary.json` and `matrix_summary.md`
 - per-`k` uniform-vs-router comparisons under `comparisons/`
 
+Optional dashboard rendering:
+
+```bash
+python3 scripts/render_matrix_report.py \
+  --input runs/matrix_eval_expanded_local/matrix_summary.json \
+  --output docs/matrix_eval_expanded_local.md
+```
+
 ## Artifacts
 
 Each run directory contains:

@@ -75,9 +75,10 @@ This negative result is itself informative:
 
 ## Limitations
 
-- Dataset size (12 documents) limits statistical power
-- Thresholds not tuned; based on historical model constraints
-- Single embedding model tested (text-embedding-3-small)
+- Primary mixed-corpus result is still a narrow 12-document corpus
+- Length thresholds are heuristic, not learned
+- Hosted-provider reproducibility can drift over time
+- Expanded local matrix (`data/eval-expanded`) improves metric sensitivity, but remains corpus-specific
 
 ## Future Directions
 
