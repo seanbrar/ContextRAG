@@ -5,7 +5,7 @@
 [![Python 3.11-3.12](https://img.shields.io/badge/python-3.11--3.12-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-RAG evaluation framework demonstrating that **adaptive chunking does not improve retrieval accuracy**.
+RAG evaluation framework demonstrating that **length-based adaptive chunking does not improve retrieval accuracy on this benchmark setup**.
 
 ## The Research Question
 
@@ -15,18 +15,22 @@ RAG evaluation framework demonstrating that **adaptive chunking does not improve
 
 ## The Finding
 
-**No.** Rigorous evaluation found identical precision@5 and recall@5 across strategies:
+**No (in the evaluated setup).** Committed mixed-corpus runs show identical precision@5 and recall@5 across strategies:
 
 | Strategy | Precision@5 | Recall@5 |
 |----------|-------------|----------|
 | Uniform chunking | 0.197 | 0.983 |
 | Adaptive router | 0.197 | 0.983 |
 
-The null result held across multiple embedding models (OpenAI text-embedding-3-small, Qwen3-embedding-8b, local MiniLM) and k values (3, 5, 10).
+Scope of this claim:
+
+- Mixed corpus (`data/eval-mixed`): OpenAI `text-embedding-3-small`, `k=5`, 3 repeated runs
+- RFC corpus (`data/demo`): OpenRouter `qwen/qwen3-embedding-8b`, `k=5`, uniform vs router
+- Cost/quality side study: OpenAI `text-embedding-3-small` vs `text-embedding-3-large` (uniform baseline)
 
 ## Why This Matters
 
-Modern embedding models are **remarkably robust** to chunking strategy. This finding simplifies RAG system design:
+Within this evaluation scope, routing by document length did not outperform uniform chunking. This finding simplifies RAG system design:
 
 - **Use uniform chunking** - simpler, no routing logic needed
 - **Skip adaptive complexity** - no accuracy benefit to justify the cost

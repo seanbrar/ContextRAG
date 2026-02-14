@@ -4,11 +4,11 @@ This document summarizes evaluation methodology and results for ContextRAG.
 
 ## Primary Finding
 
-**Adaptive length-based chunking does not improve retrieval accuracy over uniform chunking.**
+**Adaptive length-based chunking does not improve retrieval accuracy over uniform chunking in the evaluated setup.**
 
 Across two datasets (homogeneous RFC corpus and heterogeneous mixed corpus), the router strategy achieves identical precision and recall to the uniform baseline. The router produces marginally fewer chunks (1.8% reduction on mixed corpus) but this efficiency gain does not translate to accuracy improvement.
 
-This negative result is reproducible and deterministic across multiple runs.
+For the mixed-corpus experiment committed in this repository, three repeated `k=5` runs produced identical aggregate precision/recall.
 
 ---
 
@@ -24,7 +24,7 @@ This negative result is reproducible and deterministic across multiple runs.
 - Mixed corpus: OpenAI (`text-embedding-3-small`)
 - RFC-only corpus: OpenRouter (`qwen/qwen3-embedding-8b`)
 
-**Determinism**: Results are deterministic given a fixed embedding model and index build. API providers may introduce nondeterminism depending on service updates.
+**Determinism**: Local embeddings are deterministic for a fixed model version. Hosted API providers can change behavior over time; repeated runs here were stable for aggregate precision/recall.
 
 **Artifacts**: Each run writes `summary.json`, `per_query.jsonl`, and `metadata.json` under `runs/{run_name}/`.
 
@@ -34,7 +34,7 @@ This negative result is reproducible and deterministic across multiple runs.
 **Embedding provider**: OpenAI (`text-embedding-3-small`)
 **Total queries**: 60
 **Total source tokens**: 493,423
-**Runs**: 3 (deterministic results)
+**Runs**: 3 repeated runs (identical aggregate precision/recall)
 
 ### Document Length Distribution
 
@@ -46,10 +46,10 @@ This negative result is reproducible and deterministic across multiple runs.
 
 ### Retrieval Accuracy
 
-| Baseline | Precision@5 | Recall@5 | Indexed Chunks | Variance |
+| Baseline | Precision@5 | Recall@5 | Indexed Chunks | Aggregate Variance |
 | -------- | ----------- | -------- | -------------- | -------- |
-| Uniform  | 0.197       | 0.983    | 499            | 0 (deterministic) |
-| Router   | 0.197       | 0.983    | 490            | 0 (deterministic) |
+| Uniform  | 0.197       | 0.983    | 499            | 0 across 3 runs |
+| Router   | 0.197       | 0.983    | 490            | 0 across 3 runs |
 
 ### Efficiency Comparison
 
@@ -65,7 +65,7 @@ This negative result is reproducible and deterministic across multiple runs.
 1. **Accuracy equivalence**: Both strategies retrieve the same relevant documents with identical precision and recall
 2. **Marginal efficiency gain**: Router produces 9 fewer chunks (1.8% reduction), insufficient to justify added complexity
 3. **No latency benefit**: Router is actually slightly slower due to classification overhead
-4. **Deterministic results**: Zero variance across 3 runs confirms this is not sampling noise
+4. **Stable aggregate outcome**: Precision/recall were unchanged across 3 repeated runs
 
 ---
 
@@ -100,7 +100,7 @@ Length-based routing would improve retrieval by:
 
 ### Observed Result
 
-**The hypothesis is not supported.** Retrieval accuracy is invariant to chunking strategy across both homogeneous and heterogeneous corpora.
+**The hypothesis is not supported in this benchmark setup.** Retrieval accuracy was unchanged between strategies on the evaluated corpora.
 
 ### Possible Explanations
 
@@ -114,6 +114,12 @@ This negative result is itself valuable:
 - **Simplicity wins**: Uniform chunking is simpler and equally effective
 - **Methodology demonstration**: Rigorous comparison with efficiency metrics and multiple runs
 - **Infrastructure reusability**: The evaluation framework can test other strategies
+
+### Scope Notes
+
+- Mixed-corpus queries currently use one relevant document id per query.
+- At `k=5`, precision therefore has a practical ceiling near `0.2`, which limits sensitivity.
+- This result should be interpreted as evidence for this dataset/protocol, not as a universal statement about all adaptive chunking methods.
 
 ---
 

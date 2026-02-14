@@ -1,16 +1,16 @@
 # Architecture
 
-ContextRAG is a pipeline for adaptive retrieval:
+ContextRAG is an evaluation pipeline for retrieval chunking strategies:
 
-1) Ingest: HTML/Markdown normalization and cleaning.
-2) Route: length-based classification (short/medium/long).
-3) Embed: provider-agnostic embeddings with optional chunking.
-4) Index: Chroma vector store for similarity search.
-5) Eval: reproducible benchmark runs with baselines and metadata.
+1) Load dataset (`documents/` + `queries.jsonl`).
+2) Apply chunking strategy (`uniform`, `adaptive`, or `router` alias).
+3) Build embeddings via `chromaroute` (OpenRouter/OpenAI/local depending on config).
+4) Index/query via ChromaDB.
+5) Compute retrieval metrics and write run artifacts.
 
-Core artifacts:
+Run artifacts (`--run-dir`) currently include:
 
-- `manifest.jsonl` for ingest metadata
-- `routing.jsonl` for routing decisions
-- `embeddings.jsonl` for cached embeddings
-- `runs/*` for eval output (summary, per-query, metadata)
+- `summary.json` (aggregate metrics, timing, efficiency, cost)
+- `per_query.jsonl` (per-query retrieved ids and metrics)
+- `metadata.json` (run configuration)
+- `manifest.json` (config hash, dataset fingerprint, environment versions/system info)

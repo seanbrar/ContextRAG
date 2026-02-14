@@ -60,17 +60,18 @@ This pivot required proper evaluation infrastructure:
 
 ### Rigorous Testing
 
-With proper infrastructure, we tested the adaptive chunking hypothesis:
+With proper infrastructure, we tested the adaptive chunking hypothesis with reproducible CLI configs:
 
 ```yaml
-# uniform.yml
+# experiments/cost_comparison_openai_small.yaml
+dataset: data/eval-mixed
 baseline: uniform
-chunk_words: 400
+k: 5
+embed_provider: openai
+embedding_model: text-embedding-3-small
 
-# router.yml  
+# router baseline (same dataset/model)
 baseline: router
-short_max: 500
-medium_max: 3500
 ```
 
 ### The Finding
@@ -78,9 +79,9 @@ medium_max: 3500
 **No difference.** Precision@5 and Recall@5 were identical across strategies.
 
 This held across:
-- Multiple embedding models (text-embedding-3-small, qwen3-embedding-8b, MiniLM)
-- Multiple k values (3, 5, 10)
-- Multiple runs
+- Mixed-corpus runs with OpenAI `text-embedding-3-small`
+- RFC-only runs with OpenRouter `qwen/qwen3-embedding-8b`
+- Multiple repeated runs on the mixed corpus
 
 ### Interpretation
 
