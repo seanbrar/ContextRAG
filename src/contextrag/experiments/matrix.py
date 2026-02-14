@@ -52,9 +52,7 @@ def run_matrix(
             combo = f"{baseline}_k{k}"
             run_dir = run_root / combo
             output_path = run_root / f"{combo}.json"
-            persist_path = str((persist_root / combo) if persist_root else None)
-            if persist_path == "None":
-                persist_path = None
+            persist_path: str | None = str(persist_root / combo) if persist_root else None
 
             results = run_eval(
                 dataset_path=dataset_path,

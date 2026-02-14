@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from contextrag.eval.stats import (bootstrap_mean_ci, mean,
                                    paired_randomization_p_value)
@@ -31,7 +31,10 @@ SUMMARY_METRIC_FIELDS = (
 
 
 def _load_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"Expected JSON object in {path}")
+    return cast(dict[str, Any], payload)
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -105,7 +108,9 @@ def compare_runs(run_a: Path, run_b: Path) -> dict[str, Any]:
     changed_unique_retrieved = 0
     changed_metrics = 0
     metric_delta_totals = {metric: 0.0 for metric in PER_QUERY_METRIC_FIELDS}
-    per_metric_deltas = {metric: [] for metric in PER_QUERY_METRIC_FIELDS}
+    per_metric_deltas: dict[str, list[float]] = {
+        metric: [] for metric in PER_QUERY_METRIC_FIELDS
+    }
 
     for key in common_keys:
         row_a = keyed_a[key]

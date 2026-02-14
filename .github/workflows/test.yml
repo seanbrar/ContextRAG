@@ -35,12 +35,18 @@ jobs:
         if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
         run: uv sync --all-extras
 
-      - name: Run tests
-        run: uv run pytest tests/ -v --ignore=tests/vector_db/ --cov=contextrag --cov-report=term-missing --cov-fail-under=95
+      - name: Lint
+        run: uv run ruff check src tests
 
-  vector-db:
+      - name: Typecheck
+        run: uv run mypy src/contextrag
+
+      - name: Run tests
+        run: uv run pytest tests/ -v --cov=contextrag --cov-report=term-missing --cov-fail-under=95
+
+  smoke-eval:
+    needs: test
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -65,5 +71,13 @@ jobs:
         if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
         run: uv sync --all-extras
 
-      - name: Run vector_db tests
-        run: uv run pytest tests/vector_db/ -v
+      - name: Validate datasets
+        run: |
+          uv run contextrag validate-dataset --dataset data/demo
+          uv run contextrag validate-dataset --dataset data/eval-expanded
+
+      - name: Run offline demo smoke
+        run: uv run contextrag demo --output runs/ci_demo.json --run-dir runs/ci_demo
+
+      - name: Run compare smoke
+        run: uv run contextrag compare --run-a runs/ci_demo --run-b runs/ci_demo --output runs/ci_compare.json
