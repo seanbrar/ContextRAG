@@ -48,6 +48,24 @@ For larger evals with saved artifacts:
 uv run contextrag eval --config experiments/eval_rfc.yaml --run-dir runs/eval_rfc
 ```
 
+## Matrix Runs (Recommended)
+
+Run a baseline × k matrix with local embeddings:
+
+```bash
+uv run contextrag matrix \
+  --dataset data/eval-expanded \
+  --baselines uniform,router \
+  --k-values 3,5,10 \
+  --embed-provider local \
+  --run-root runs/matrix_eval_expanded_local
+```
+
+This writes:
+- one run directory per `(baseline, k)` pair
+- `matrix_summary.json` and `matrix_summary.md`
+- per-`k` uniform-vs-router comparisons under `comparisons/`
+
 ## Artifacts
 
 Each run directory contains:
@@ -59,6 +77,12 @@ runs/{run_name}/
 ├── metadata.json    # dataset/config details
 └── manifest.json    # config hash, dataset fingerprint, versions, system info
 ```
+
+`manifest.json` includes:
+- `manifest_schema_version`
+- `git_commit` (when available)
+- dataset fingerprint (`sha256`, file count, byte count)
+- package/system versions
 
 The top-level output JSON (e.g., `runs/demo_eval.json`) matches the
 `summary.json` content and includes per-query records inline.

@@ -1,4 +1,4 @@
-.PHONY: install test test-cov lint typecheck format clean build all
+.PHONY: install test test-cov lint typecheck format clean build all repro-local
 
 # Development setup
 install:
@@ -36,3 +36,13 @@ build: clean
 
 # Run all checks (lint, typecheck, test)
 all: lint typecheck test
+
+# Reproducible local matrix run
+repro-local:
+	uv run contextrag matrix \
+		--dataset data/eval-expanded \
+		--baselines uniform,router \
+		--k-values 3,5,10 \
+		--embed-provider local \
+		--run-root runs/matrix_eval_expanded_local \
+		--persist-root runs/chroma-matrix-eval-expanded-local

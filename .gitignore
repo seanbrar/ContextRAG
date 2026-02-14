@@ -4,6 +4,7 @@
 **/*.md
 !docs/**/*.md
 !data/eval-mixed/**
+!data/eval-expanded/**
 **/__pycache__/
 /.pytest_cache/
 /.ruff_cache/

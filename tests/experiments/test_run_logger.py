@@ -45,6 +45,8 @@ def test_write_run_artifacts(tmp_path: Path) -> None:
     manifest_path = run_dir / "manifest.json"
     assert manifest_path.exists()
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["manifest_schema_version"] == 1
+    assert "git_commit" in manifest
     assert "config_hash" in manifest
     assert "dataset" in manifest
     assert manifest["dataset"]["status"] == "ok"

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import platform
+import subprocess
 import sys
 import time
 from importlib.metadata import PackageNotFoundError, version
@@ -68,6 +69,18 @@ def _system_info() -> dict[str, str]:
     }
 
 
+def _git_commit() -> str | None:
+    try:
+        output = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return None
+    return output.strip() or None
+
+
 def write_run_artifacts(
     run_dir: Path,
     results: dict[str, Any],
@@ -88,7 +101,9 @@ def write_run_artifacts(
     meta_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
 
     manifest = {
+        "manifest_schema_version": 1,
         "created_at": int(time.time()),
+        "git_commit": _git_commit(),
         "config": metadata,
         "config_hash": _hash_json(metadata),
         "dataset": _dataset_fingerprint(dataset_path),
