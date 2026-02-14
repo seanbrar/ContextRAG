@@ -19,3 +19,4 @@
 .coverage
 !README.md
 !docs/artifact_checksums.json
+!docs/preregistration_lock.json
