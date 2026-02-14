@@ -13,6 +13,13 @@ def test_load_eval_config_defaults(tmp_path):
     assert config.k == 5
 
 
+def test_load_eval_config_accepts_openai_provider(tmp_path):
+    path = tmp_path / "config.yml"
+    path.write_text("dataset: data/sample\nembed_provider: openai\n", encoding="utf-8")
+    config = load_eval_config(path)
+    assert config.embed_provider == "openai"
+
+
 def test_load_eval_config_requires_dataset(tmp_path):
     path = tmp_path / "config.yml"
     path.write_text("baseline: uniform\n", encoding="utf-8")
@@ -121,4 +128,3 @@ def test_load_eval_config_not_mapping(tmp_path):
     path.write_text("- item1\n- item2\n", encoding="utf-8")
     with pytest.raises(ValueError, match="must be a mapping"):
         load_eval_config(path)
-

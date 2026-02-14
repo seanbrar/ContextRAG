@@ -183,6 +183,98 @@ def test_eval_command_requires_output(monkeypatch, tmp_path):
     assert "--output is required" in result.output
 
 
+def test_eval_command_dry_run_does_not_execute_eval(monkeypatch, tmp_path):
+    dataset_dir = tmp_path / "dataset"
+    dataset_dir.mkdir()
+    (dataset_dir / "documents").mkdir()
+    (dataset_dir / "queries.jsonl").write_text("{}", encoding="utf-8")
+    output_path = tmp_path / "out.json"
+
+    called = {"run_eval": 0}
+
+    def fake_run_eval(**kwargs):
+        called["run_eval"] += 1
+        return {"summary": {"precision_at_k": 0.0, "recall_at_k": 0.0, "k": 5}}
+
+    monkeypatch.setattr("contextrag.cli.run_eval", fake_run_eval)
+    monkeypatch.setattr(
+        "contextrag.cli.load_config",
+        lambda: make_test_config(openrouter_api_key=None, openai_api_key="ok", embed_provider="openai"),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "eval",
+            "--dataset",
+            str(dataset_dir),
+            "--output",
+            str(output_path),
+            "--embed-provider",
+            "openai",
+            "--dry-run",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "eval_dry_run_ok" in result.output
+    assert "embed_provider=openai" in result.output
+    assert called["run_eval"] == 0
+
+
+def test_eval_command_dry_run_prints_config_path(monkeypatch, tmp_path):
+    dataset_dir = tmp_path / "dataset"
+    dataset_dir.mkdir()
+    (dataset_dir / "documents").mkdir()
+    (dataset_dir / "queries.jsonl").write_text("{}", encoding="utf-8")
+
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                f"dataset: {dataset_dir.as_posix()}",
+                "baseline: uniform",
+                "k: 3",
+                "embed_provider: local",
+                f"output: {(tmp_path / 'out.json').as_posix()}",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("contextrag.cli.load_config", lambda: make_test_config(embed_provider="local"))
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["eval", "--config", str(config_path), "--dry-run"])
+    assert result.exit_code == 0
+    assert f"config_path={config_path}" in result.output
+
+
+def test_demo_command_uses_local_provider(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_run_evaluation(**kwargs):
+        captured.update(kwargs)
+
+    monkeypatch.setattr("contextrag.cli._run_evaluation", fake_run_evaluation)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "demo",
+            "--dataset",
+            str(tmp_path / "dataset"),
+            "--output",
+            str(tmp_path / "demo.json"),
+            "--run-dir",
+            str(tmp_path / "run"),
+        ],
+    )
+    assert result.exit_code == 0
+    assert captured["embed_provider"] == "local"
+    assert captured["embedding_model"] is None
+
+
 def test_doctor_reports_status(monkeypatch):
     config = make_test_config(openai_api_key=None)
     monkeypatch.setattr("contextrag.cli.load_config", lambda: config)
@@ -257,6 +349,29 @@ def test_validate_dataset_command(tmp_path):
     assert "dataset_ok" in result.output
 
 
+def test_validate_dataset_missing_documents(tmp_path):
+    dataset = tmp_path / "dataset"
+    dataset.mkdir()
+    (dataset / "queries.jsonl").write_text("{}", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["validate-dataset", "--dataset", str(dataset)])
+    assert result.exit_code != 0
+    assert "Missing documents directory" in result.output
+
+
+def test_validate_dataset_missing_queries(tmp_path):
+    dataset = tmp_path / "dataset"
+    docs = dataset / "documents"
+    docs.mkdir(parents=True)
+    (docs / "doc1.txt").write_text("content", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(main, ["validate-dataset", "--dataset", str(dataset)])
+    assert result.exit_code != 0
+    assert "Missing queries file" in result.output
+
+
 def test_matrix_command(monkeypatch, tmp_path):
     captured = {}
 
@@ -286,3 +401,107 @@ def test_matrix_command(monkeypatch, tmp_path):
     assert result.exit_code == 0
     assert captured["baselines"] == ["uniform", "router"]
     assert captured["k_values"] == [3, 5]
+
+
+def test_matrix_command_rejects_empty_baselines(tmp_path):
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "matrix",
+            "--dataset",
+            str(tmp_path),
+            "--baselines",
+            ",",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "--baselines must include at least one value" in result.output
+
+
+def test_matrix_command_rejects_invalid_baselines(tmp_path):
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "matrix",
+            "--dataset",
+            str(tmp_path),
+            "--baselines",
+            "uniform,nope",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "Unsupported baseline" in result.output
+
+
+def test_matrix_command_rejects_non_integer_k_values(tmp_path):
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "matrix",
+            "--dataset",
+            str(tmp_path),
+            "--k-values",
+            "3,abc",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "--k-values must be comma-separated integers" in result.output
+
+
+def test_matrix_command_rejects_non_positive_k_values(tmp_path):
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "matrix",
+            "--dataset",
+            str(tmp_path),
+            "--k-values",
+            "0,5",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "--k-values must include integers greater than 0" in result.output
+
+
+def test_index_command_without_chunk_words_indexes_full_documents(monkeypatch, tmp_path):
+    input_dir = tmp_path / "input"
+    input_dir.mkdir()
+    (input_dir / "doc.md").write_text("one two three four five", encoding="utf-8")
+
+    class FakeVectorDB:
+        last_instance = None
+
+        def __init__(self, *args, **kwargs):
+            FakeVectorDB.last_instance = self
+            self.documents = []
+            self.ids = []
+
+        def add_documents(self, documents, ids):
+            self.documents = documents
+            self.ids = ids
+
+    monkeypatch.setattr("contextrag.cli.VectorStore", FakeVectorDB)
+    monkeypatch.setattr(
+        "contextrag.cli.load_config",
+        lambda: make_test_config(openrouter_api_key=None, openai_api_key=None, embed_provider="local"),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "db",
+            "index",
+            "--input",
+            str(input_dir),
+        ],
+    )
+    assert result.exit_code == 0
+    instance = FakeVectorDB.last_instance
+    assert instance is not None
+    assert instance.documents == ["one two three four five"]
+    assert instance.ids == ["doc"]

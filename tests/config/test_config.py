@@ -90,3 +90,18 @@ def test_require_embedding_provider_openrouter_implicit_error():
     config = _config(openai_key=None, openrouter_key=None)
     with pytest.raises(ValueError, match="OpenRouter embeddings"):
         config.require_embed_provider(resolved_provider="openrouter")
+
+
+def test_require_embedding_provider_openai_errors_when_explicit():
+    config = _config(openai_key=None, openrouter_key="ok")
+    with pytest.raises(ValueError, match="--embed-provider openai"):
+        config.require_embed_provider(
+            resolved_provider="openai",
+            explicit_provider="openai",
+        )
+
+
+def test_require_embedding_provider_openai_implicit_error():
+    config = _config(openai_key=None, openrouter_key="ok")
+    with pytest.raises(ValueError, match="OpenAI embeddings"):
+        config.require_embed_provider(resolved_provider="openai")

@@ -110,8 +110,9 @@ def main() -> None:
 @click.option(
     "--embed-provider",
     "embed_provider",
-    type=click.Choice(["auto", "openrouter", "local"]),
+    type=click.Choice(["auto", "openai", "openrouter", "local"]),
 )
+@click.option("--dry-run", is_flag=True, help="Validate inputs/config and exit.")
 def eval(
     config_path: Path | None,
     dataset_path: Path | None,
@@ -122,6 +123,7 @@ def eval(
     persist_path: str | None,
     embedding_model: str | None,
     embed_provider: str | None,
+    dry_run: bool,
 ) -> None:
     """Run retrieval evaluation.
 
@@ -156,6 +158,21 @@ def eval(
     config = load_config()
     resolved_provider = config.resolve_embed_provider(embed_provider)
     config.require_embed_provider(resolved_provider, embed_provider, click.ClickException)
+
+    if dry_run:
+        resolved_model = embedding_model or config.embed.resolve_model(resolved_provider)
+        click.echo("eval_dry_run_ok")
+        click.echo(f"dataset={dataset_path}")
+        click.echo(f"baseline={baseline}")
+        click.echo(f"k={top_k}")
+        click.echo(f"embed_provider={resolved_provider}")
+        click.echo(f"embedding_model={resolved_model}")
+        click.echo(f"output={output_path}")
+        click.echo(f"run_dir={run_dir}")
+        click.echo(f"persist={persist_path}")
+        if config_path:
+            click.echo(f"config_path={config_path}")
+        return
 
     _run_evaluation(
         dataset_path=dataset_path,
@@ -318,7 +335,7 @@ def validate_dataset(dataset_path: Path) -> None:
 @click.option(
     "--embed-provider",
     "embed_provider",
-    type=click.Choice(["auto", "openrouter", "local"]),
+    type=click.Choice(["auto", "openai", "openrouter", "local"]),
 )
 def matrix(
     dataset_path: Path,
@@ -380,7 +397,7 @@ def db() -> None:
 @click.option("--collection", default="contextrag")
 @click.option("--persist", "persist_path")
 @click.option("--embedding-model", "embedding_model")
-@click.option("--embed-provider", type=click.Choice(["auto", "openrouter", "local"]))
+@click.option("--embed-provider", type=click.Choice(["auto", "openai", "openrouter", "local"]))
 @click.option("--chunk-words", type=int)
 @click.option("--chunk-overlap", type=int, default=50)
 def db_index(

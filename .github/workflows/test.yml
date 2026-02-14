@@ -76,6 +76,16 @@ jobs:
           uv run contextrag validate-dataset --dataset data/demo
           uv run contextrag validate-dataset --dataset data/eval-expanded
 
+      - name: Dry-run all experiment configs
+        env:
+          OPENAI_API_KEY: ci-placeholder-openai
+          OPENROUTER_API_KEY: ci-placeholder-openrouter
+        run: |
+          for config in experiments/*.yaml; do
+            echo "Validating $config"
+            uv run contextrag eval --config "$config" --dry-run
+          done
+
       - name: Run offline demo smoke
         run: uv run contextrag demo --output runs/ci_demo.json --run-dir runs/ci_demo
 
