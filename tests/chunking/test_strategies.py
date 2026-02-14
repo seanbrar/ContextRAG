@@ -2,7 +2,7 @@ import pytest
 
 from contextrag.chunking.strategies import (_chunk_tokens, adaptive,
                                             get_strategy, list_strategies,
-                                            uniform)
+                                            semantic, uniform)
 from contextrag.core.tokenizer import get_encoding
 
 
@@ -19,6 +19,7 @@ def test_get_strategy_valid():
     assert get_strategy("uniform") == uniform
     assert get_strategy("adaptive") == adaptive
     assert get_strategy("router") == adaptive
+    assert get_strategy("semantic") == semantic
 
 
 def test_get_strategy_invalid():
@@ -31,7 +32,8 @@ def test_list_strategies():
     assert "uniform" in strategies
     assert "adaptive" in strategies
     assert "router" in strategies
-    assert len(strategies) == 3
+    assert "semantic" in strategies
+    assert len(strategies) == 4
 
 
 def test_uniform_strategy(encoding):

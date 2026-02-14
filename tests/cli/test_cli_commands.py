@@ -195,6 +195,45 @@ def test_eval_command_defaults_baseline_to_uniform(monkeypatch, tmp_path):
     assert called["baseline"] == "uniform"
 
 
+def test_eval_command_bm25_mode_skips_provider_validation(monkeypatch, tmp_path):
+    dataset_dir = tmp_path / "dataset"
+    dataset_dir.mkdir()
+    (dataset_dir / "documents").mkdir()
+    (dataset_dir / "queries.jsonl").write_text(
+        json.dumps({"query": "q", "relevant_ids": ["doc"]}),
+        encoding="utf-8",
+    )
+    output_path = tmp_path / "out.json"
+
+    called: dict[str, object] = {}
+
+    def fake_run_eval(**kwargs):
+        called.update(kwargs)
+        return {"summary": {"precision_at_k": 0.0, "recall_at_k": 0.0, "k": kwargs["k"]}}
+
+    monkeypatch.setattr("contextrag.cli.run_eval", fake_run_eval)
+    monkeypatch.setattr(
+        "contextrag.cli.load_config",
+        lambda: make_test_config(openrouter_api_key=None, openai_api_key=None, embed_provider="local"),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "eval",
+            "--dataset",
+            str(dataset_dir),
+            "--output",
+            str(output_path),
+            "--retrieval-mode",
+            "bm25",
+        ],
+    )
+    assert result.exit_code == 0
+    assert called["retrieval_mode"] == "bm25"
+
+
 def test_eval_command_requires_dataset(monkeypatch, tmp_path):
     output_path = tmp_path / "out.json"
 

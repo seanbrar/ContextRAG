@@ -1,0 +1,9 @@
+dataset: data/eval-expanded
+baseline: semantic
+k: 5
+retrieval_mode: dense
+embed_provider: local
+uniform_chunk_tokens: 1000
+output: runs/eval_expanded_semantic_local.json
+persist: runs/chroma-expanded-semantic-local
+run_dir: runs/eval_expanded_semantic_local

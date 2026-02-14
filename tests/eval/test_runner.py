@@ -227,3 +227,78 @@ def test_run_eval_costs_with_openrouter_provider(monkeypatch, tmp_path):
     cost = results["summary"]["cost"]
     assert cost["model_cost_per_million_tokens"] == 0.01
     assert cost["total_cost_usd"] is not None
+
+
+def test_run_eval_bm25_mode_without_vector_store(tmp_path):
+    documents_dir = tmp_path / "documents"
+    documents_dir.mkdir()
+    (documents_dir / "doc_http.md").write_text("http semantics methods", encoding="utf-8")
+    (documents_dir / "doc_tls.md").write_text("tls handshake key schedule", encoding="utf-8")
+    queries_path = tmp_path / "queries.jsonl"
+    queries_path.write_text(
+        json.dumps({"query": "http methods", "relevant_ids": ["doc_http"]}),
+        encoding="utf-8",
+    )
+
+    results = runner.run_eval(
+        dataset_path=tmp_path,
+        baseline="uniform",
+        k=1,
+        retrieval_mode="bm25",
+    )
+    summary = results["summary"]
+    assert summary["retrieval_mode"] == "bm25"
+    assert summary["embedding_provider"] == "none"
+    assert summary["cost"]["total_cost_usd"] == 0.0
+
+
+def test_run_eval_dense_rerank_mode(monkeypatch, tmp_path):
+    documents_dir = tmp_path / "documents"
+    documents_dir.mkdir()
+    (documents_dir / "doc1.md").write_text("http semantics methods", encoding="utf-8")
+    (documents_dir / "doc2.md").write_text("tls handshake key schedule", encoding="utf-8")
+    (tmp_path / "queries.jsonl").write_text(
+        json.dumps({"query": "http methods", "relevant_ids": ["doc1"]}),
+        encoding="utf-8",
+    )
+
+    class FakeVectorDB:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def add_documents(self, documents, ids):
+            pass
+
+        def query(self, query_texts, n_results):
+            return {"ids": [["doc2::chunk0", "doc1::chunk0"]]}
+
+    config = Config(
+        embed=EmbedConfig(
+            openrouter_api_key=None,
+            openrouter_base_url="https://openrouter.ai/api/v1",
+            openrouter_embeddings_model="qwen/qwen3-embedding-8b",
+            openrouter_referer=None,
+            openrouter_title=None,
+            openrouter_provider_json=None,
+            local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
+            embed_provider="local",
+        ),
+        openai_api_key=None,
+        openai_chat_model="gpt-4o-mini",
+        openrouter_chat_model="mistralai/devstral-2512:free",
+        chat_provider="openai",
+    )
+
+    monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)
+    monkeypatch.setattr(runner, "load_config", lambda: config)
+    monkeypatch.setattr(runner, "get_encoding", lambda name=None: DummyEncoding())
+    monkeypatch.setattr(tokenizer, "get_encoding", lambda name=None: DummyEncoding())
+
+    results = runner.run_eval(
+        dataset_path=tmp_path,
+        baseline="uniform",
+        k=1,
+        retrieval_mode="dense-rerank",
+    )
+    assert results["summary"]["retrieval_mode"] == "dense-rerank"
+    assert results["per_query"][0]["retrieved_ids"][0] == "doc1"

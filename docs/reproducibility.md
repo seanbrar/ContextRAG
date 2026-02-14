@@ -97,6 +97,17 @@ This regenerates:
 - markdown dashboards under `docs/`
 - paper-ready tables at `docs/paper_tables.md`
 
+## Expanded Baseline Study
+
+Run the broader baseline suite:
+
+```bash
+make baseline-study
+```
+
+This includes chunk-size sweep, overlap, semantic chunking, BM25, hybrid, and
+dense-rerank retrieval on `data/eval-expanded`.
+
 ## Artifacts
 
 Each run directory contains:

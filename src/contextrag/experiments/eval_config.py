@@ -9,8 +9,12 @@ class EvalConfig:
     dataset: str
     baseline: str = "uniform"
     k: int = 5
+    retrieval_mode: str = "dense"
     embed_provider: str | None = None
     embedding_model: str | None = None
+    uniform_chunk_tokens: int | None = None
+    chunk_overlap_tokens: int = 0
+    retrieval_candidates: int = 50
     output: str = "runs/eval.json"
     persist: str | None = None
     run_dir: str | None = None
@@ -21,14 +25,19 @@ ALLOWED_KEYS = {
     "dataset",
     "baseline",
     "k",
+    "retrieval_mode",
     "embed_provider",
     "embedding_model",
+    "uniform_chunk_tokens",
+    "chunk_overlap_tokens",
+    "retrieval_candidates",
     "output",
     "persist",
     "run_dir",
 }
 
-ALLOWED_BASELINES = {"uniform", "adaptive", "router"}
+ALLOWED_BASELINES = {"uniform", "adaptive", "router", "semantic"}
+ALLOWED_RETRIEVAL_MODES = {"dense", "bm25", "hybrid", "dense-rerank"}
 ALLOWED_EMBED_PROVIDERS = {"auto", "openrouter", "local"}
 CURRENT_SCHEMA_VERSION = 1
 
@@ -82,6 +91,15 @@ def load_eval_config(path: Path) -> EvalConfig:
             if k <= 0:
                 errors.append("'k' must be an integer greater than 0.")
 
+    retrieval_mode = payload.get("retrieval_mode", "dense")
+    if not isinstance(retrieval_mode, str):
+        errors.append("'retrieval_mode' must be a string.")
+    elif retrieval_mode not in ALLOWED_RETRIEVAL_MODES:
+        errors.append(
+            "'retrieval_mode' must be one of: "
+            f"{', '.join(sorted(ALLOWED_RETRIEVAL_MODES))}."
+        )
+
     embed_provider = payload.get("embed_provider")
     if embed_provider is not None:
         if not isinstance(embed_provider, str):
@@ -95,6 +113,43 @@ def load_eval_config(path: Path) -> EvalConfig:
     embedding_model = payload.get("embedding_model")
     if embedding_model is not None and not isinstance(embedding_model, str):
         errors.append("'embedding_model' must be a string.")
+
+    uniform_chunk_tokens = payload.get("uniform_chunk_tokens")
+    if uniform_chunk_tokens is not None:
+        if isinstance(uniform_chunk_tokens, bool):
+            errors.append("'uniform_chunk_tokens' must be an integer greater than 0.")
+        else:
+            try:
+                uniform_chunk_tokens = int(uniform_chunk_tokens)
+            except (TypeError, ValueError):
+                errors.append("'uniform_chunk_tokens' must be an integer greater than 0.")
+            else:
+                if uniform_chunk_tokens <= 0:
+                    errors.append("'uniform_chunk_tokens' must be an integer greater than 0.")
+
+    chunk_overlap_tokens = payload.get("chunk_overlap_tokens", 0)
+    if isinstance(chunk_overlap_tokens, bool):
+        errors.append("'chunk_overlap_tokens' must be an integer >= 0.")
+    else:
+        try:
+            chunk_overlap_tokens = int(chunk_overlap_tokens)
+        except (TypeError, ValueError):
+            errors.append("'chunk_overlap_tokens' must be an integer >= 0.")
+        else:
+            if chunk_overlap_tokens < 0:
+                errors.append("'chunk_overlap_tokens' must be an integer >= 0.")
+
+    retrieval_candidates = payload.get("retrieval_candidates", 50)
+    if isinstance(retrieval_candidates, bool):
+        errors.append("'retrieval_candidates' must be an integer greater than 0.")
+    else:
+        try:
+            retrieval_candidates = int(retrieval_candidates)
+        except (TypeError, ValueError):
+            errors.append("'retrieval_candidates' must be an integer greater than 0.")
+        else:
+            if retrieval_candidates <= 0:
+                errors.append("'retrieval_candidates' must be an integer greater than 0.")
 
     output = payload.get("output", "runs/eval.json")
     if output is not None and not isinstance(output, str):
@@ -117,8 +172,12 @@ def load_eval_config(path: Path) -> EvalConfig:
         dataset=dataset,
         baseline=baseline,
         k=k,
+        retrieval_mode=retrieval_mode,
         embed_provider=embed_provider,
         embedding_model=embedding_model,
+        uniform_chunk_tokens=uniform_chunk_tokens,
+        chunk_overlap_tokens=chunk_overlap_tokens,
+        retrieval_candidates=retrieval_candidates,
         output=output,
         persist=persist,
         run_dir=run_dir,

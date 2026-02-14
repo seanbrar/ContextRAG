@@ -20,13 +20,15 @@ def _write_markdown_summary(
     lines = [
         "# Matrix Summary",
         "",
-        "| Baseline | k | Precision@k | Recall@k | Hit@1 | MRR@k | nDCG@k |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
+        "| Baseline | Retrieval | Chunk | Overlap | k | Precision@k | Recall@k | Hit@1 | MRR@k | nDCG@k |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for row in rows:
         lines.append(
             "| "
-            f"{row['baseline']} | {row['k']} | "
+            f"{row['baseline']} | {row.get('retrieval_mode', 'dense')} | "
+            f"{row.get('uniform_chunk_tokens', 0)} | {row.get('chunk_overlap_tokens', 0)} | "
+            f"{row['k']} | "
             f"{row['precision_at_k']:.3f} | {row['recall_at_k']:.3f} | "
             f"{row['hit_at_1']:.3f} | {row['mrr_at_k']:.3f} | {row['ndcg_at_k']:.3f} |"
         )
@@ -73,6 +75,10 @@ def run_matrix(
     k_values: list[int],
     run_root: Path,
     persist_root: Path | None = None,
+    retrieval_mode: str = "dense",
+    uniform_chunk_tokens: int | None = None,
+    chunk_overlap_tokens: int = 0,
+    retrieval_candidates: int = 50,
     embed_provider: str | None = None,
     embedding_model: str | None = None,
 ) -> dict[str, Any]:
@@ -98,6 +104,10 @@ def run_matrix(
                 persist_path=persist_path,
                 embed_provider=embed_provider,
                 embedding_model=embedding_model,
+                retrieval_mode=retrieval_mode,
+                uniform_chunk_tokens=uniform_chunk_tokens,
+                chunk_overlap_tokens=chunk_overlap_tokens,
+                retrieval_candidates=retrieval_candidates,
             )
 
             output_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
@@ -110,6 +120,10 @@ def run_matrix(
                     "k": k,
                     "embed_provider": embed_provider,
                     "embedding_model": embedding_model,
+                    "retrieval_mode": retrieval_mode,
+                    "uniform_chunk_tokens": uniform_chunk_tokens,
+                    "chunk_overlap_tokens": chunk_overlap_tokens,
+                    "retrieval_candidates": retrieval_candidates,
                     "output": str(output_path),
                     "persist": persist_path,
                     "matrix_run_root": str(run_root),
@@ -127,6 +141,16 @@ def run_matrix(
                     "hit_at_1": float(summary.get("hit_at_1", 0.0)),
                     "mrr_at_k": float(summary.get("mrr_at_k", 0.0)),
                     "ndcg_at_k": float(summary.get("ndcg_at_k", 0.0)),
+                    "retrieval_mode": str(summary.get("retrieval_mode", retrieval_mode)),
+                    "uniform_chunk_tokens": int(
+                        summary.get("chunking", {}).get(
+                            "uniform_chunk_tokens",
+                            uniform_chunk_tokens or 0,
+                        )
+                    ),
+                    "chunk_overlap_tokens": int(
+                        summary.get("chunking", {}).get("chunk_overlap_tokens", chunk_overlap_tokens)
+                    ),
                     "run_dir": str(run_dir),
                 }
             )
@@ -160,6 +184,10 @@ def run_matrix(
         "k_values": k_values,
         "embed_provider": embed_provider,
         "embedding_model": embedding_model,
+        "retrieval_mode": retrieval_mode,
+        "uniform_chunk_tokens": uniform_chunk_tokens,
+        "chunk_overlap_tokens": chunk_overlap_tokens,
+        "retrieval_candidates": retrieval_candidates,
         "rows": rows,
         "comparisons": comparisons,
     }

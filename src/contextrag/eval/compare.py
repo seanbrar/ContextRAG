@@ -168,17 +168,17 @@ def compare_runs(run_a: Path, run_b: Path) -> dict[str, Any]:
     inference: dict[str, dict[str, Any]] = {}
     raw_p_values: dict[str, float] = {}
     for metric in PER_QUERY_METRIC_FIELDS:
-        deltas = per_metric_deltas[metric]
-        ci_low, ci_high = bootstrap_mean_ci(deltas, confidence=0.95)
-        p_value = paired_randomization_p_value(deltas)
+        metric_deltas = per_metric_deltas[metric]
+        ci_low, ci_high = bootstrap_mean_ci(metric_deltas, confidence=0.95)
+        p_value = paired_randomization_p_value(metric_deltas)
         raw_p_values[metric] = p_value
         inference[metric] = {
-            "mean_delta": mean(deltas),
+            "mean_delta": mean(metric_deltas),
             "ci95": [ci_low, ci_high],
             "paired_randomization_p_value": p_value,
-            "cohen_d": cohen_d_from_deltas(deltas),
-            "cliffs_delta": cliffs_delta_from_deltas(deltas),
-            "n_pairs": len(deltas),
+            "cohen_d": cohen_d_from_deltas(metric_deltas),
+            "cliffs_delta": cliffs_delta_from_deltas(metric_deltas),
+            "n_pairs": len(metric_deltas),
         }
 
     adjusted = holm_bonferroni_adjust(raw_p_values)
@@ -206,12 +206,14 @@ def compare_runs(run_a: Path, run_b: Path) -> dict[str, Any]:
         "run_b": str(run_b),
         "summary_a": {
             "baseline": summary_a.get("baseline"),
+            "retrieval_mode": summary_a.get("retrieval_mode", "dense"),
             "k": summary_a.get("k"),
             "embedding_provider": summary_a.get("embedding_provider"),
             "embedding_model": summary_a.get("embedding_model"),
         },
         "summary_b": {
             "baseline": summary_b.get("baseline"),
+            "retrieval_mode": summary_b.get("retrieval_mode", "dense"),
             "k": summary_b.get("k"),
             "embedding_provider": summary_b.get("embedding_provider"),
             "embedding_model": summary_b.get("embedding_model"),

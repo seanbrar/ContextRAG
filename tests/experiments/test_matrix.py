@@ -12,6 +12,10 @@ def test_run_matrix_writes_summary_and_comparisons(monkeypatch, tmp_path: Path):
         embed_provider=None,
         embedding_model=None,
         config=None,
+        retrieval_mode="dense",
+        uniform_chunk_tokens=None,
+        chunk_overlap_tokens=0,
+        retrieval_candidates=50,
     ):
         precision = 0.1 if baseline == "uniform" else 0.2
         return {
@@ -101,6 +105,10 @@ def test_run_matrix_without_router_skips_comparison(monkeypatch, tmp_path: Path)
         embed_provider=None,
         embedding_model=None,
         config=None,
+        retrieval_mode="dense",
+        uniform_chunk_tokens=None,
+        chunk_overlap_tokens=0,
+        retrieval_candidates=50,
     ):
         return {
             "summary": {

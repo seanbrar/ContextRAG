@@ -11,6 +11,9 @@ def test_load_eval_config_defaults(tmp_path):
     assert config.dataset == "data/sample"
     assert config.baseline == "uniform"
     assert config.k == 5
+    assert config.retrieval_mode == "dense"
+    assert config.chunk_overlap_tokens == 0
+    assert config.retrieval_candidates == 50
 
 
 def test_load_eval_config_rejects_openai_provider(tmp_path):
@@ -45,6 +48,13 @@ def test_load_eval_config_validates_embed_provider(tmp_path):
     path = tmp_path / "config.yml"
     path.write_text("dataset: data/sample\nembed_provider: nope\n", encoding="utf-8")
     with pytest.raises(ValueError, match="embed_provider"):
+        load_eval_config(path)
+
+
+def test_load_eval_config_validates_retrieval_mode(tmp_path):
+    path = tmp_path / "config.yml"
+    path.write_text("dataset: data/sample\nretrieval_mode: nope\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="retrieval_mode"):
         load_eval_config(path)
 
 

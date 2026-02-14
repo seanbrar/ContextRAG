@@ -111,11 +111,22 @@ def adaptive(content: str, encoding: Encoding) -> ChunkResult:
         return ChunkResult(chunks=chunks, source_tokens=token_count, category="long")
 
 
+def semantic(content: str, encoding: Encoding) -> ChunkResult:
+    """Semantic chunking placeholder.
+
+    The evaluation runner provides sentence-aware semantic chunking with optional
+    overlap and configurable chunk-size overrides. This strategy keeps the
+    registry compatible with the `semantic` baseline.
+    """
+    return uniform(content, encoding)
+
+
 # Strategy registry - easy to extend with new strategies
 _STRATEGIES: dict[str, ChunkingStrategy] = {
     "uniform": uniform,
     "adaptive": adaptive,
     "router": adaptive,  # Alias for backwards compatibility
+    "semantic": semantic,
 }
 
 

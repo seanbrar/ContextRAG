@@ -1,0 +1,10 @@
+dataset: data/eval-expanded
+baseline: uniform
+k: 5
+retrieval_mode: dense-rerank
+embed_provider: local
+uniform_chunk_tokens: 1000
+retrieval_candidates: 50
+output: runs/eval_expanded_dense_rerank_uniform_local.json
+persist: runs/chroma-expanded-dense-rerank-uniform-local
+run_dir: runs/eval_expanded_dense_rerank_uniform_local

@@ -1,0 +1,10 @@
+dataset: data/eval-expanded
+baseline: uniform
+k: 5
+retrieval_mode: dense
+embed_provider: local
+uniform_chunk_tokens: 1000
+chunk_overlap_tokens: 200
+output: runs/eval_expanded_uniform_overlap_local.json
+persist: runs/chroma-expanded-uniform-overlap-local
+run_dir: runs/eval_expanded_uniform_overlap_local

@@ -98,6 +98,22 @@ This one command regenerates:
 - `docs/paper_tables.md` (paper-ready aggregate + inference tables)
 - `docs/reviewer_bundle.md` (review checklist/report index)
 
+## Expanded Baseline Study
+
+```bash
+make baseline-study
+```
+
+Runs a broader fairness slice on `data/eval-expanded`:
+- uniform chunk-size sweep (`512`, `1000`, `2000`)
+- overlap/no-overlap variants
+- semantic chunking baseline
+- lexical (`bm25`), hybrid, and dense-rerank retrieval modes
+
+Outputs:
+- `runs/baseline_study/baseline_study_summary.json`
+- `docs/baseline_study.md`
+
 ## Dev Helpers
 
 ```bash
@@ -132,7 +148,8 @@ uv run contextrag eval \
     --k 5 \
     --output runs/eval.json
 
-# Baseline options: uniform, adaptive, router
+# Baseline options: uniform, adaptive, router, semantic
+# Retrieval modes: dense, bm25, hybrid, dense-rerank
 # See all options:
 uv run contextrag eval --help
 ```
@@ -216,6 +233,7 @@ Target: high test coverage with CI gate (`--cov-fail-under=95`).
 - [docs/preregistration.md](docs/preregistration.md) - Locked hypotheses, endpoints, and decision rules
 - [docs/matrix_eval_expanded_local.md](docs/matrix_eval_expanded_local.md) - Latest local matrix dashboard
 - [docs/matrix_eval_external_local.md](docs/matrix_eval_external_local.md) - External holdout matrix dashboard
+- [docs/baseline_study.md](docs/baseline_study.md) - Expanded baseline fairness study
 - [docs/paper_tables.md](docs/paper_tables.md) - Generated paper-ready tables
 - [docs/reviewer_bundle.md](docs/reviewer_bundle.md) - Reviewer-oriented artifact index
 - [docs/evolution.md](docs/evolution.md) - Project history 2022–2025

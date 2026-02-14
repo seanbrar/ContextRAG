@@ -35,6 +35,10 @@ def _run_evaluation(
     embed_provider: str | None,
     embedding_model: str | None,
     run_dir: Path | None,
+    retrieval_mode: str,
+    uniform_chunk_tokens: int | None,
+    chunk_overlap_tokens: int,
+    retrieval_candidates: int,
     config_path: Path | None = None,
 ) -> None:
     """Run evaluation and write output artifacts."""
@@ -45,6 +49,10 @@ def _run_evaluation(
         persist_path=persist_path,
         embed_provider=embed_provider,
         embedding_model=embedding_model,
+        retrieval_mode=retrieval_mode,
+        uniform_chunk_tokens=uniform_chunk_tokens,
+        chunk_overlap_tokens=chunk_overlap_tokens,
+        retrieval_candidates=retrieval_candidates,
     )
 
     if config_path:
@@ -58,8 +66,12 @@ def _run_evaluation(
             "dataset": str(dataset_path),
             "baseline": baseline,
             "k": top_k,
+            "retrieval_mode": retrieval_mode,
             "embed_provider": embed_provider,
             "embedding_model": embedding_model,
+            "uniform_chunk_tokens": uniform_chunk_tokens,
+            "chunk_overlap_tokens": chunk_overlap_tokens,
+            "retrieval_candidates": retrieval_candidates,
             "output": str(output_path),
             "persist": persist_path,
         }
@@ -101,8 +113,13 @@ def main() -> None:
 @main.command()
 @click.option("--config", "config_path", type=click.Path(path_type=Path))
 @click.option("--dataset", "dataset_path", type=click.Path(path_type=Path))
-@click.option("--baseline", type=click.Choice(["uniform", "adaptive", "router"]))
+@click.option("--baseline", type=click.Choice(["uniform", "adaptive", "router", "semantic"]))
 @click.option("--k", "top_k", type=int)
+@click.option(
+    "--retrieval-mode",
+    "retrieval_mode",
+    type=click.Choice(["dense", "bm25", "hybrid", "dense-rerank"]),
+)
 @click.option("--output", "output_path", type=click.Path(path_type=Path))
 @click.option("--run-dir", "run_dir", type=click.Path(path_type=Path))
 @click.option("--persist", "persist_path")
@@ -112,17 +129,24 @@ def main() -> None:
     "embed_provider",
     type=click.Choice(["auto", "openrouter", "local"]),
 )
+@click.option("--uniform-chunk-tokens", "uniform_chunk_tokens", type=int)
+@click.option("--chunk-overlap-tokens", "chunk_overlap_tokens", type=int)
+@click.option("--retrieval-candidates", "retrieval_candidates", type=int)
 @click.option("--dry-run", is_flag=True, help="Validate inputs/config and exit.")
 def eval(
     config_path: Path | None,
     dataset_path: Path | None,
     baseline: str | None,
     top_k: int | None,
+    retrieval_mode: str | None,
     output_path: Path | None,
     run_dir: Path | None,
     persist_path: str | None,
     embedding_model: str | None,
     embed_provider: str | None,
+    uniform_chunk_tokens: int | None,
+    chunk_overlap_tokens: int | None,
+    retrieval_candidates: int | None,
     dry_run: bool,
 ) -> None:
     """Run retrieval evaluation.
@@ -140,8 +164,15 @@ def eval(
         dataset_path = dataset_path or Path(eval_config.dataset)
         baseline = baseline or eval_config.baseline
         top_k = top_k or eval_config.k
+        retrieval_mode = retrieval_mode or eval_config.retrieval_mode
         embed_provider = embed_provider or eval_config.embed_provider
         embedding_model = embedding_model or eval_config.embedding_model
+        if uniform_chunk_tokens is None:
+            uniform_chunk_tokens = eval_config.uniform_chunk_tokens
+        if chunk_overlap_tokens is None:
+            chunk_overlap_tokens = eval_config.chunk_overlap_tokens
+        if retrieval_candidates is None:
+            retrieval_candidates = eval_config.retrieval_candidates
         persist_path = persist_path or eval_config.persist
         output_path = output_path or Path(eval_config.output)
         run_dir = run_dir or (Path(eval_config.run_dir) if eval_config.run_dir else None)
@@ -153,20 +184,35 @@ def eval(
 
     baseline = baseline or "uniform"
     top_k = top_k or 5
+    retrieval_mode = retrieval_mode or "dense"
+    chunk_overlap_tokens = chunk_overlap_tokens if chunk_overlap_tokens is not None else 0
+    retrieval_candidates = retrieval_candidates or 50
+    if chunk_overlap_tokens < 0:
+        raise click.ClickException("--chunk-overlap-tokens must be >= 0.")
+    if retrieval_candidates <= 0:
+        raise click.ClickException("--retrieval-candidates must be > 0.")
+    if uniform_chunk_tokens is not None and uniform_chunk_tokens <= 0:
+        raise click.ClickException("--uniform-chunk-tokens must be > 0.")
 
-    # Validate provider requirements
     config = load_config()
-    resolved_provider = config.resolve_embed_provider(embed_provider)
-    config.require_embed_provider(resolved_provider, embed_provider, click.ClickException)
+    resolved_provider = "none"
+    resolved_model = "none"
+    if retrieval_mode != "bm25":
+        resolved_provider = config.resolve_embed_provider(embed_provider)
+        config.require_embed_provider(resolved_provider, embed_provider, click.ClickException)
+        resolved_model = embedding_model or config.embed.resolve_model(resolved_provider)
 
     if dry_run:
-        resolved_model = embedding_model or config.embed.resolve_model(resolved_provider)
         click.echo("eval_dry_run_ok")
         click.echo(f"dataset={dataset_path}")
         click.echo(f"baseline={baseline}")
         click.echo(f"k={top_k}")
+        click.echo(f"retrieval_mode={retrieval_mode}")
         click.echo(f"embed_provider={resolved_provider}")
         click.echo(f"embedding_model={resolved_model}")
+        click.echo(f"uniform_chunk_tokens={uniform_chunk_tokens}")
+        click.echo(f"chunk_overlap_tokens={chunk_overlap_tokens}")
+        click.echo(f"retrieval_candidates={retrieval_candidates}")
         click.echo(f"output={output_path}")
         click.echo(f"run_dir={run_dir}")
         click.echo(f"persist={persist_path}")
@@ -183,6 +229,10 @@ def eval(
         embed_provider=embed_provider,
         embedding_model=embedding_model,
         run_dir=run_dir,
+        retrieval_mode=retrieval_mode,
+        uniform_chunk_tokens=uniform_chunk_tokens,
+        chunk_overlap_tokens=chunk_overlap_tokens,
+        retrieval_candidates=retrieval_candidates,
         config_path=config_path,
     )
 
@@ -194,7 +244,7 @@ def eval(
     default=Path("data/demo"),
     type=click.Path(path_type=Path),
 )
-@click.option("--baseline", type=click.Choice(["uniform", "adaptive", "router"]), default="uniform")
+@click.option("--baseline", type=click.Choice(["uniform", "adaptive", "router", "semantic"]), default="uniform")
 @click.option("--k", "top_k", type=int, default=5)
 @click.option(
     "--output",
@@ -229,6 +279,10 @@ def demo(
         embed_provider="local",
         embedding_model=None,
         run_dir=run_dir,
+        retrieval_mode="dense",
+        uniform_chunk_tokens=None,
+        chunk_overlap_tokens=0,
+        retrieval_candidates=50,
     )
 
 
@@ -320,6 +374,15 @@ def validate_dataset(dataset_path: Path) -> None:
 @click.option("--baselines", default="uniform,router")
 @click.option("--k-values", default="3,5,10")
 @click.option(
+    "--retrieval-mode",
+    "retrieval_mode",
+    default="dense",
+    type=click.Choice(["dense", "bm25", "hybrid", "dense-rerank"]),
+)
+@click.option("--uniform-chunk-tokens", "uniform_chunk_tokens", type=int)
+@click.option("--chunk-overlap-tokens", "chunk_overlap_tokens", type=int, default=0)
+@click.option("--retrieval-candidates", "retrieval_candidates", type=int, default=50)
+@click.option(
     "--run-root",
     "run_root",
     default=Path("runs/matrix"),
@@ -341,6 +404,10 @@ def matrix(
     dataset_path: Path,
     baselines: str,
     k_values: str,
+    retrieval_mode: str,
+    uniform_chunk_tokens: int | None,
+    chunk_overlap_tokens: int,
+    retrieval_candidates: int,
     run_root: Path,
     persist_root: Path,
     embedding_model: str | None,
@@ -351,12 +418,14 @@ def matrix(
     if not baseline_list:
         raise click.ClickException("--baselines must include at least one value.")
     invalid_baselines = sorted(
-        baseline for baseline in baseline_list if baseline not in {"uniform", "adaptive", "router"}
+        baseline
+        for baseline in baseline_list
+        if baseline not in {"uniform", "adaptive", "router", "semantic"}
     )
     if invalid_baselines:
         joined = ", ".join(invalid_baselines)
         raise click.ClickException(
-            f"Unsupported baseline(s): {joined}. Use uniform, adaptive, router."
+            f"Unsupported baseline(s): {joined}. Use uniform, adaptive, router, semantic."
         )
 
     try:
@@ -365,10 +434,17 @@ def matrix(
         raise click.ClickException("--k-values must be comma-separated integers.") from exc
     if not parsed_k_values or any(k <= 0 for k in parsed_k_values):
         raise click.ClickException("--k-values must include integers greater than 0.")
+    if chunk_overlap_tokens < 0:
+        raise click.ClickException("--chunk-overlap-tokens must be >= 0.")
+    if retrieval_candidates <= 0:
+        raise click.ClickException("--retrieval-candidates must be > 0.")
+    if uniform_chunk_tokens is not None and uniform_chunk_tokens <= 0:
+        raise click.ClickException("--uniform-chunk-tokens must be > 0.")
 
-    config = load_config()
-    resolved_provider = config.resolve_embed_provider(embed_provider)
-    config.require_embed_provider(resolved_provider, embed_provider, click.ClickException)
+    if retrieval_mode != "bm25":
+        config = load_config()
+        resolved_provider = config.resolve_embed_provider(embed_provider)
+        config.require_embed_provider(resolved_provider, embed_provider, click.ClickException)
 
     summary = run_matrix(
         dataset_path=dataset_path,
@@ -376,6 +452,10 @@ def matrix(
         k_values=parsed_k_values,
         run_root=run_root,
         persist_root=persist_root,
+        retrieval_mode=retrieval_mode,
+        uniform_chunk_tokens=uniform_chunk_tokens,
+        chunk_overlap_tokens=chunk_overlap_tokens,
+        retrieval_candidates=retrieval_candidates,
         embed_provider=embed_provider,
         embedding_model=embedding_model,
     )

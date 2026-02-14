@@ -71,10 +71,14 @@ Hard-negative curation rules:
 The CLI accepts:
 
 - `--dataset` (required)
-- `--baseline` (`uniform` or `router`)
+- `--baseline` (`uniform`, `router`, `adaptive`, `semantic`)
+- `--retrieval-mode` (`dense`, `bm25`, `hybrid`, `dense-rerank`)
 - `--k` (top-k)
 - `--embed-provider` (`auto`, `openrouter`, `local`)
 - `--embedding-model` (optional override)
+- `--uniform-chunk-tokens` (optional chunk-size override)
+- `--chunk-overlap-tokens` (optional overlap)
+- `--retrieval-candidates` (candidate pool for hybrid/rerank)
 - `--run-dir` (artifact output)
 
 Note: direct OpenAI embedding provider selection is intentionally unsupported in

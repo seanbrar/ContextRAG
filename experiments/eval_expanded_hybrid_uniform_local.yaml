@@ -1,0 +1,10 @@
+dataset: data/eval-expanded
+baseline: uniform
+k: 5
+retrieval_mode: hybrid
+embed_provider: local
+uniform_chunk_tokens: 1000
+retrieval_candidates: 50
+output: runs/eval_expanded_hybrid_uniform_local.json
+persist: runs/chroma-expanded-hybrid-uniform-local
+run_dir: runs/eval_expanded_hybrid_uniform_local

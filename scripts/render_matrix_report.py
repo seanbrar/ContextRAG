@@ -30,13 +30,16 @@ def _render(payload: dict[str, Any]) -> str:
         "",
         "## Aggregate Metrics",
         "",
-        "| Baseline | k | Precision@k | Recall@k | Hit@1 | MRR@k | nDCG@k |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
+        "| Baseline | Retrieval | Chunk | Overlap | k | Precision@k | Recall@k | Hit@1 | MRR@k | nDCG@k |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for row in rows:
         lines.append(
             "| "
-            f"{row['baseline']} | {row['k']} | "
+            f"{row['baseline']} | {row.get('retrieval_mode', payload.get('retrieval_mode', 'dense'))} | "
+            f"{row.get('uniform_chunk_tokens', payload.get('uniform_chunk_tokens', 0))} | "
+            f"{row.get('chunk_overlap_tokens', payload.get('chunk_overlap_tokens', 0))} | "
+            f"{row['k']} | "
             f"{row['precision_at_k']:.3f} | {row['recall_at_k']:.3f} | "
             f"{row['hit_at_1']:.3f} | {row['mrr_at_k']:.3f} | {row['ndcg_at_k']:.3f} |"
         )

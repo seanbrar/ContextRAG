@@ -1,0 +1,9 @@
+dataset: data/eval-expanded
+baseline: uniform
+k: 5
+retrieval_mode: dense
+embed_provider: local
+uniform_chunk_tokens: 2000
+output: runs/eval_expanded_uniform_2000_local.json
+persist: runs/chroma-expanded-uniform-2000-local
+run_dir: runs/eval_expanded_uniform_2000_local

@@ -1,0 +1,7 @@
+dataset: data/eval-expanded
+baseline: uniform
+k: 5
+retrieval_mode: bm25
+uniform_chunk_tokens: 1000
+output: runs/eval_expanded_bm25_uniform.json
+run_dir: runs/eval_expanded_bm25_uniform
