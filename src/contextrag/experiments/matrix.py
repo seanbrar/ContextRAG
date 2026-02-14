@@ -36,8 +36,8 @@ def _write_markdown_summary(
             "",
             "## Uniform vs Router Inference",
             "",
-            "| k | Metric | Mean Delta (router-uniform) | 95% CI | p-value |",
-            "| --- | --- | --- | --- | --- |",
+            "| k | Metric | Mean Delta (router-uniform) | 95% CI | p (raw) | p (Holm) | Cohen's d |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
         ]
     )
     metrics = [
@@ -59,7 +59,9 @@ def _write_markdown_summary(
                 f"{comparison['k']} | {label} | "
                 f"{values.get('mean_delta', 0.0):.3f} | "
                 f"[{ci[0]:.3f}, {ci[1]:.3f}] | "
-                f"{values.get('paired_randomization_p_value', 1.0):.4f} |"
+                f"{values.get('paired_randomization_p_value', 1.0):.4f} | "
+                f"{values.get('holm_adjusted_p_value', 1.0):.4f} | "
+                f"{values.get('cohen_d', 0.0):.3f} |"
             )
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

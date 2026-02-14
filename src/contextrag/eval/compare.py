@@ -6,7 +6,10 @@ import json
 from pathlib import Path
 from typing import Any, cast
 
-from contextrag.eval.stats import (bootstrap_mean_ci, mean,
+from contextrag.eval.stats import (bootstrap_mean_ci, cliffs_delta_from_deltas,
+                                   cohen_d_from_deltas,
+                                   equivalence_and_noninferiority,
+                                   holm_bonferroni_adjust, mean,
                                    paired_randomization_p_value)
 
 PER_QUERY_METRIC_FIELDS = (
@@ -28,6 +31,9 @@ SUMMARY_METRIC_FIELDS = (
     "ndcg_at_k",
     "unique_doc_ratio_at_k",
 )
+
+PRIMARY_ENDPOINT = "ndcg_at_k"
+EQUIVALENCE_MARGIN = 0.02
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -159,17 +165,41 @@ def compare_runs(run_a: Path, run_b: Path) -> dict[str, Any]:
         metric: float(summary_b.get(metric, 0.0)) - float(summary_a.get(metric, 0.0))
         for metric in SUMMARY_METRIC_FIELDS
     }
-    inference = {
-        metric: {
-            "mean_delta": mean(per_metric_deltas[metric]),
-            "ci95": list(bootstrap_mean_ci(per_metric_deltas[metric], confidence=0.95)),
-            "paired_randomization_p_value": paired_randomization_p_value(
-                per_metric_deltas[metric]
-            ),
-            "n_pairs": len(per_metric_deltas[metric]),
+    inference: dict[str, dict[str, Any]] = {}
+    raw_p_values: dict[str, float] = {}
+    for metric in PER_QUERY_METRIC_FIELDS:
+        deltas = per_metric_deltas[metric]
+        ci_low, ci_high = bootstrap_mean_ci(deltas, confidence=0.95)
+        p_value = paired_randomization_p_value(deltas)
+        raw_p_values[metric] = p_value
+        inference[metric] = {
+            "mean_delta": mean(deltas),
+            "ci95": [ci_low, ci_high],
+            "paired_randomization_p_value": p_value,
+            "cohen_d": cohen_d_from_deltas(deltas),
+            "cliffs_delta": cliffs_delta_from_deltas(deltas),
+            "n_pairs": len(deltas),
         }
-        for metric in PER_QUERY_METRIC_FIELDS
-    }
+
+    adjusted = holm_bonferroni_adjust(raw_p_values)
+    for metric, values in inference.items():
+        adjusted_p = adjusted.get(metric, 1.0)
+        values["holm_adjusted_p_value"] = adjusted_p
+        values["holm_reject_alpha_0_05"] = adjusted_p < 0.05
+
+    if PRIMARY_ENDPOINT in inference:
+        endpoint = inference[PRIMARY_ENDPOINT]
+        ci95 = endpoint["ci95"]
+        endpoint["equivalence_margin"] = EQUIVALENCE_MARGIN
+        endpoint.update(
+            equivalence_and_noninferiority(
+                ci_low=float(ci95[0]),
+                ci_high=float(ci95[1]),
+                margin=EQUIVALENCE_MARGIN,
+            )
+        )
+
+    primary_endpoint = inference.get(PRIMARY_ENDPOINT, {})
 
     return {
         "run_a": str(run_a),
@@ -196,6 +226,11 @@ def compare_runs(run_a: Path, run_b: Path) -> dict[str, Any]:
         },
         "summary_metric_deltas": summary_metric_deltas,
         "average_per_query_metric_deltas": avg_metric_deltas,
+        "primary_endpoint": {
+            "name": PRIMARY_ENDPOINT,
+            "equivalence_margin": EQUIVALENCE_MARGIN,
+            "result": primary_endpoint,
+        },
         "inference": inference,
         "queries_only_in_run_a": only_in_a,
         "queries_only_in_run_b": only_in_b,

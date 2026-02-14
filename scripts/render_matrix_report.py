@@ -67,8 +67,8 @@ def _render(payload: dict[str, Any]) -> str:
             "",
             "## Uniform vs Router (Inference)",
             "",
-            "| k | Metric | Mean Delta (router-uniform) | 95% CI | p-value |",
-            "| --- | --- | --- | --- | --- |",
+            "| k | Metric | Mean Delta (router-uniform) | 95% CI | p (raw) | p (Holm) | Cohen's d | Cliff's delta |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- |",
         ]
     )
     metrics = [
@@ -90,8 +90,31 @@ def _render(payload: dict[str, Any]) -> str:
                 f"{comparison['k']} | {label} | "
                 f"{item.get('mean_delta', 0.0):.3f} | "
                 f"[{ci[0]:.3f}, {ci[1]:.3f}] | "
-                f"{item.get('paired_randomization_p_value', 1.0):.4f} |"
+                f"{item.get('paired_randomization_p_value', 1.0):.4f} | "
+                f"{item.get('holm_adjusted_p_value', 1.0):.4f} | "
+                f"{item.get('cohen_d', 0.0):.3f} | "
+                f"{item.get('cliffs_delta', 0.0):.3f} |"
             )
+
+    lines.extend(
+        [
+            "",
+            "## Primary Endpoint (nDCG@k)",
+            "",
+            "| k | Margin | Equivalent | Non-inferior | Superior |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+    )
+    for comparison in comparisons:
+        endpoint = comparison.get("inference", {}).get("ndcg_at_k", {})
+        margin = endpoint.get("equivalence_margin", payload.get("equivalence_margin", 0.02))
+        lines.append(
+            "| "
+            f"{comparison['k']} | {margin:.3f} | "
+            f"{str(endpoint.get('equivalent_within_margin', False)).lower()} | "
+            f"{str(endpoint.get('non_inferior_within_margin', False)).lower()} | "
+            f"{str(endpoint.get('superior_to_zero', False)).lower()} |"
+        )
     lines.append("")
     return "\n".join(lines)
 

@@ -92,3 +92,8 @@ def test_compare_runs_detects_retrieval_changes(tmp_path):
     assert "inference" in comparison
     assert "precision_at_k" in comparison["inference"]
     assert comparison["inference"]["precision_at_k"]["n_pairs"] == 1
+    assert "holm_adjusted_p_value" in comparison["inference"]["precision_at_k"]
+    assert "cohen_d" in comparison["inference"]["precision_at_k"]
+    assert "cliffs_delta" in comparison["inference"]["precision_at_k"]
+    assert comparison["primary_endpoint"]["name"] == "ndcg_at_k"
+    assert "equivalent_within_margin" in comparison["inference"]["ndcg_at_k"]
