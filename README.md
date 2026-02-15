@@ -5,56 +5,7 @@
 [![Python 3.11-3.12](https://img.shields.io/badge/python-3.11--3.12-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-RAG evaluation framework demonstrating that **length-based adaptive chunking does not outperform uniform chunking on the committed benchmarks**.
-
-## Project Scope
-
-Core scope (recommended for review/research claims):
-- `uniform` vs `router` chunking
-- dense retrieval (`retrieval_mode=dense`)
-- datasets: `data/eval-expanded`, `data/eval-external`, `data/eval-scifact-mini`
-
-Exploratory scope (kept for follow-up research, not canonical claims):
-- semantic chunking, overlap sweeps, BM25/hybrid/rerank retrieval
-- hosted cost/quality provider sweeps
-
-## The Research Question
-
-> Does routing documents to different chunk sizes based on length improve RAG retrieval quality?
-
-**Hypothesis**: Short documents (<=3,500 tokens) should remain whole, medium documents (3,501-15,000) should use larger chunks, and long documents (>15,000) should use smaller chunks. A "router" that adapts chunk size to document length should outperform uniform chunking.
-
-## Canonical Finding
-
-Across all committed evaluations, length-based routing **never beats** uniform chunking:
-
-- Mixed corpus + hosted embeddings: **tie** (identical precision@5 and recall@5)
-- Core local matrices (`k={3,5,10}`): router is **worse or ties**
-
-Mixed-corpus hosted run slice:
-
-| Strategy | Precision@5 | Recall@5 |
-|----------|-------------|----------|
-| Uniform chunking | 0.197 | 0.983 |
-| Adaptive router | 0.197 | 0.983 |
-
-Scope of this claim:
-
-- Mixed corpus (`data/eval-mixed`): hosted `text-embedding-3-small`, `k=5`, 3 repeated runs
-- Expanded mixed (`data/eval-expanded`): local MiniLM matrix, `k={3,5,10}`
-- External RFC holdout (`data/eval-external`): local MiniLM matrix, `k={3,5,10}`
-- Public SciFact transfer slice (`data/eval-scifact-mini`): local MiniLM matrix, `k={3,5,10}`
-- Cost/quality side study: OpenAI `text-embedding-3-small` vs `text-embedding-3-large` (uniform baseline)
-
-## Why This Matters
-
-Within this evaluation scope, routing by document length did not outperform uniform chunking (and sometimes underperformed it). This finding simplifies RAG system design:
-
-- **Use uniform chunking** - simpler baseline with equal or better observed quality
-- **Skip adaptive complexity** - no accuracy benefit to justify the cost
-- **Focus elsewhere** - retrieval improvements likely come from better embeddings or reranking, not chunk routing
-
-For full methodology, see [docs/paper.md](docs/paper.md).
+RAG evaluation framework for comparing chunking strategies.
 
 ## Quickstart
 
@@ -70,129 +21,81 @@ uv run contextrag demo
 
 Output: `runs/demo_eval.json` with precision/recall metrics.
 
-## Reproduce Core Study
+## What It Does
 
-```bash
-# Canonical claim bundle (annotations, matrices, reports, prereg lock)
-make reviewer-bundle
+ContextRAG evaluates chunking strategies for retrieval-augmented generation:
+
+```
+Dataset -> Chunk -> Embed -> ChromaDB Index -> Query -> Metrics -> Compare
 ```
 
-Primary artifacts:
-- `runs/reviewer_bundle/matrix_eval_expanded_local/matrix_summary.json`
-- `runs/reviewer_bundle/matrix_eval_external_local/matrix_summary.json`
-- `runs/reviewer_bundle/matrix_eval_scifact_local/matrix_summary.json`
-- `docs/matrix_eval_expanded_local.md`
-- `docs/matrix_eval_external_local.md`
-- `docs/matrix_eval_scifact_local.md`
-- `docs/preregistration_lock.json`
-- `docs/paper_tables.md`
-
-## Build Reviewer Bundle
-
-```bash
-make reviewer-bundle
-```
-
-This one command regenerates:
-- expanded local matrix artifacts and comparisons
-- external holdout matrix artifacts and comparisons
-- public SciFact transfer matrix artifacts and comparisons
-- core annotation rounds + agreement artifacts (`eval-expanded`, `eval-external`)
-- preregistration lock metadata (`docs/preregistration_lock.json`)
-- `docs/paper_tables.md` (paper-ready aggregate + inference tables)
-- `docs/reviewer_bundle.md` (review checklist/report index)
-
-## Exploratory Extensions
-
-Exploratory commands and datasets are documented in
-[`docs/exploratory.md`](docs/exploratory.md).
-
-## Dev Helpers
-
-```bash
-# Install deps
-make install
-
-# Lint, typecheck, tests
-make all
-```
+1. Load a dataset (documents + queries with ground-truth relevance)
+2. Chunk documents using a configurable strategy (uniform, adaptive router, semantic)
+3. Embed chunks via [chromaroute](https://github.com/seanbrar/chromaroute) (OpenRouter or local models)
+4. Index into ChromaDB and run queries
+5. Calculate precision@k, recall@k, nDCG@k, MRR@k, hit@k
+6. Compare strategies with statistical tests (bootstrap CI, randomization, effect sizes)
 
 ## CLI Commands
 
 | Command | Description |
 |---------|-------------|
-| `contextrag core eval` | Claim-aligned single eval (`uniform/router + dense`, core datasets) |
-| `contextrag core matrix` | Claim-aligned matrix (`uniform/router × k`, dense, core datasets) |
-| `contextrag eval` | Core evaluation (`uniform/router + dense`) with optional exploratory modes |
+| `contextrag eval` | Run a single evaluation (supports YAML configs) |
 | `contextrag demo` | Offline evaluation with local embeddings |
-| `contextrag matrix` | Run matrix experiments (core and exploratory) |
-| `contextrag compare` | Compare two run directories with per-query deltas + inference |
-| `contextrag validate-dataset` | Validate dataset/query schema before eval |
-| `contextrag artifact-eval` | Rebuild/verify committed artifact checksums |
+| `contextrag matrix` | Run baseline-by-k experiment matrix |
+| `contextrag compare` | Compare two runs with per-query deltas |
+| `contextrag validate-dataset` | Validate dataset/query schema |
 | `contextrag doctor` | Check configuration health |
 | `contextrag db index` | Build vector index from documents |
 | `contextrag db query` | Query the vector index |
 
-### Example: Core Evaluation
+## Case Study: Adaptive vs Uniform Chunking
 
-```bash
-# Core eval path (recommended)
-uv run contextrag core eval \
-    --dataset data/eval-expanded \
-    --baseline uniform \
-    --k 5 \
-    --embed-provider local \
-    --output runs/core_eval_uniform_k5.json
+We used this framework to test whether routing documents to different chunk sizes based on length improves retrieval quality. The adaptive router classifies documents by token count:
+
+| Category | Token Range | Chunking |
+|----------|-------------|----------|
+| Short | <=3,500 | None (full document) |
+| Medium | 3,500-15,000 | 2,000-token chunks |
+| Long | >15,000 | 1,000-token chunks |
+
+**Finding: no benefit.** Across three datasets and multiple k values, the router never outperforms uniform 1,000-token chunking -- and sometimes underperforms it. Modern embedding models appear robust to simple length-based chunk routing.
+
+See [docs/results.md](docs/results.md) for the full matrix and discussion.
+
+## Dataset Format
+
+```
+dataset/
+├── documents/      # one text file per document
+└── queries.jsonl   # {"query": "...", "relevant_ids": ["doc1", "doc2"]}
 ```
 
-### Example: Build and Query Index
-
-```bash
-# Build index
-uv run contextrag db index \
-    --input data/demo/documents \
-    --collection my_docs \
-    --persist ./runs/chroma
-
-# Query
-uv run contextrag db query \
-    --collection my_docs \
-    --persist ./runs/chroma \
-    --query "HTTP caching headers"
-```
+Five datasets are included: `data/demo`, `data/eval-mixed`, `data/eval-expanded`, `data/eval-external`, `data/eval-scifact-mini`.
 
 ## Configuration
 
-Set environment variables or use `.env`:
+YAML configs drive reproducible experiments:
 
 ```bash
-# Embeddings (via chromaroute)
-OPENROUTER_API_KEY=sk-or-...        # For hosted embeddings
-EMBED_PROVIDER=auto                  # auto | openrouter | local
-OPENROUTER_EMBEDDINGS_MODEL=openai/text-embedding-3-small
-LOCAL_EMBEDDINGS_MODEL=sentence-transformers/all-MiniLM-L6-v2
-
-# Chat (for future semantic chunking research)
-OPENAI_API_KEY=sk-...               # For OpenAI chat
-OPENAI_CHAT_MODEL=gpt-4o-mini
-CONTEXTRAG_CHAT_PROVIDER=auto       # auto | openai | openrouter
+uv run contextrag eval --config experiments/eval_expanded_uniform_local.yaml
 ```
 
-Note: direct `embed_provider=openai` is intentionally unsupported for embeddings.
-Use OpenAI embedding models through OpenRouter model IDs (for example,
-`openai/text-embedding-3-small`).
+Environment variables (or `.env`):
 
-## Historical Context
+```bash
+OPENROUTER_API_KEY=sk-or-...        # For hosted embeddings
+EMBED_PROVIDER=auto                  # auto | openrouter | local
+LOCAL_EMBEDDINGS_MODEL=sentence-transformers/all-MiniLM-L6-v2
+```
 
-This project evolved over 2022–2025:
+## Reproduce the Comparison
 
-**2022–2023**: Cost-based model routing. GPT-3.5 (4K context) was significantly cheaper than GPT-3.5-16K, motivating intelligent routing.
+```bash
+make reproduce
+```
 
-**2024**: Context windows expanded to 128K–2M tokens. Focus shifted to chunking strategies.
-
-**2025**: Rigorous evaluation infrastructure revealed the null result. The embedding abstraction was extracted into [chromaroute](https://github.com/seanbrar/chromaroute).
-
-See [docs/evolution.md](docs/evolution.md) for the full journey.
+This runs the uniform-vs-router matrix on `data/eval-expanded` with local embeddings.
 
 ## Architecture
 
@@ -208,29 +111,21 @@ flowchart LR
     H --> I[Evaluate]
 ```
 
-ContextRAG is a CLI tool built on [chromaroute](https://github.com/seanbrar/chromaroute), a provider-agnostic embedding library for ChromaDB.
+Built on [chromaroute](https://github.com/seanbrar/chromaroute), a provider-agnostic embedding library for ChromaDB.
 
-## Testing
+## Development
 
 ```bash
-make test-cov
+make install    # uv sync --all-extras
+make all        # lint + typecheck + tests
+make test-cov   # pytest with coverage (90% gate)
 ```
-
-Target: high test coverage with CI gate (`--cov-fail-under=90`).
 
 ## Docs
 
-- [docs/paper.md](docs/paper.md) - Full research methodology and results
-- [docs/preregistration.md](docs/preregistration.md) - Locked hypotheses, endpoints, and decision rules
-- [docs/annotation_protocol.md](docs/annotation_protocol.md) - Dual-annotation and agreement workflow
-- [docs/matrix_eval_expanded_local.md](docs/matrix_eval_expanded_local.md) - Latest local matrix dashboard
-- [docs/matrix_eval_external_local.md](docs/matrix_eval_external_local.md) - External holdout matrix dashboard
-- [docs/matrix_eval_scifact_local.md](docs/matrix_eval_scifact_local.md) - Public SciFact transfer dashboard
-- [docs/baseline_study.md](docs/baseline_study.md) - Expanded baseline fairness study
-- [docs/paper_tables.md](docs/paper_tables.md) - Generated paper-ready tables
-- [docs/reviewer_bundle.md](docs/reviewer_bundle.md) - Reviewer-oriented artifact index
-- [docs/preregistration_lock.json](docs/preregistration_lock.json) - Preregistration hash + commit lock
-- [docs/evolution.md](docs/evolution.md) - Project history 2022–2025
+- [docs/results.md](docs/results.md) - Evaluation results and discussion
+- [docs/reproducibility.md](docs/reproducibility.md) - How to reproduce evaluations
+- [docs/evolution.md](docs/evolution.md) - Project history (2022-2025)
 - [docs/design-decisions.md](docs/design-decisions.md) - Architecture rationale
 
 ## Related Work

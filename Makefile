@@ -1,4 +1,4 @@
-.PHONY: install test test-cov lint typecheck format clean build all core-matrix repro-local core-annotations reviewer-bundle baseline-study artifact-eval
+.PHONY: install test test-cov lint typecheck format clean build all reproduce
 
 # Development setup
 install:
@@ -37,32 +37,12 @@ build: clean
 # Run all checks (lint, typecheck, test)
 all: lint typecheck test
 
-# Reproducible core local matrix run
-core-matrix:
-	uv run contextrag core matrix \
+# Run a local matrix comparison (uniform vs router)
+reproduce:
+	uv run contextrag matrix \
 		--dataset data/eval-expanded \
+		--baselines uniform,router \
 		--k-values 3,5,10 \
 		--embed-provider local \
 		--run-root runs/matrix_eval_expanded_local \
 		--persist-root runs/chroma-matrix-eval-expanded-local
-
-# Reproducible local matrix run
-repro-local:
-	$(MAKE) core-matrix
-
-# Build annotation rounds/agreement artifacts for core datasets
-core-annotations:
-	uv run python scripts/build_core_annotations.py
-
-# Build a reviewer-ready artifact bundle (expanded + external matrices and paper tables)
-reviewer-bundle:
-	uv run python scripts/build_core_annotations.py
-	uv run python scripts/build_reviewer_bundle.py
-
-# Run expanded baseline matrix (chunk-size sweep, overlap, semantic, bm25/hybrid/rerank)
-baseline-study:
-	uv run python scripts/build_baseline_study.py
-
-# Rebuild artifacts and verify checksum manifest
-artifact-eval:
-	uv run contextrag artifact-eval

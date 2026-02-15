@@ -7,7 +7,6 @@
   "seed": 42,
   "selected_queries": 40,
   "selected_documents": 220,
-  "annotation_protocol_version": 1,
   "annotation_rounds": {
     "annotator_a": "data/eval-scifact-mini/annotations/annotator_a.jsonl",
     "annotator_b": "data/eval-scifact-mini/annotations/annotator_b.jsonl",

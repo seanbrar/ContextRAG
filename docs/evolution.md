@@ -1,8 +1,8 @@
-# ContextRAG Evolution (2022–2025)
+# ContextRAG Evolution (2022-2025)
 
-This document traces the project's journey from cost-based model routing to rigorous RAG evaluation.
+This document traces the project's journey from cost-based model routing to RAG evaluation tool.
 
-## 2022–2023: The Cost Routing Era
+## 2022-2023: The Cost Routing Era
 
 ### The Original Problem
 
@@ -19,7 +19,7 @@ For workloads with variable document sizes, this created an optimization opportu
 
 The system classified documents into buckets:
 - **Short** (< 500 tokens): Use GPT-3.5-turbo (cheapest)
-- **Medium** (500–3500 tokens): Use GPT-3.5-turbo (still fits)
+- **Medium** (500-3500 tokens): Use GPT-3.5-turbo (still fits)
 - **Long** (> 3500 tokens): Use GPT-3.5-turbo-16K (required)
 
 This achieved measurable cost savings on mixed workloads.
@@ -46,7 +46,7 @@ The research question shifted:
 
 The hypothesis was that document length should inform chunk size:
 - Short documents (<1K tokens): Keep whole
-- Medium documents (1K–4K): Standard chunks (2K)
+- Medium documents (1K-4K): Standard chunks (2K)
 - Long documents (>4K): Smaller chunks (1K)
 
 ### Evaluation Infrastructure
@@ -60,19 +60,7 @@ This pivot required proper evaluation infrastructure:
 
 ### Rigorous Testing
 
-With proper infrastructure, we tested the adaptive chunking hypothesis with reproducible CLI configs:
-
-```yaml
-# experiments/cost_comparison_openrouter_openai_small.yaml
-dataset: data/eval-mixed
-baseline: uniform
-k: 5
-embed_provider: openrouter
-embedding_model: openai/text-embedding-3-small
-
-# router baseline (same dataset/model)
-baseline: router
-```
+With proper infrastructure, we tested the adaptive chunking hypothesis with reproducible CLI configs and local matrix comparisons across multiple datasets.
 
 ### The Finding
 
@@ -94,7 +82,7 @@ Modern embedding models appear robust to simple length-based routing. In this pr
 The embedding abstraction proved independently useful. We extracted it into [chromaroute](https://github.com/seanbrar/chromaroute):
 
 - Provider-agnostic ChromaDB embedding functions
-- OpenRouter → Local fallback chain
+- OpenRouter -> Local fallback chain
 - Production-ready error handling
 
 ContextRAG now depends on chromaroute for embeddings, keeping only the evaluation infrastructure.
@@ -109,19 +97,21 @@ ContextRAG now depends on chromaroute for embeddings, keeping only the evaluatio
 
 4. **Document the journey.** Code history shows what was tried; documentation explains why.
 
-## Current State (2025)
+## Current State
 
-ContextRAG is now a focused evaluation CLI:
+ContextRAG is a focused evaluation CLI:
 
 ```bash
 # Primary commands
-contextrag eval      # Full evaluation with configurable providers
+contextrag eval      # Full evaluation with configurable strategies
 contextrag demo      # Offline evaluation with local embeddings
 contextrag doctor    # Check configuration health
+contextrag matrix    # Run baseline-by-k experiment matrix
+contextrag compare   # Compare two evaluation runs
 
 # Database operations
 contextrag db index  # Build vector index
 contextrag db query  # Query index
 ```
 
-The routing and ingest commands were removed—they represented historical complexity, not current value. Embedding functionality is now delegated to [chromaroute](https://github.com/seanbrar/chromaroute).
+The routing and ingest commands were removed -- they represented historical complexity, not current value. Embedding functionality is now delegated to [chromaroute](https://github.com/seanbrar/chromaroute).

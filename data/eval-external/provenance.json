@@ -2,7 +2,6 @@
   "dataset": "eval-external",
   "source_documents": "RFC texts from rfc-editor.org",
   "query_builder_script": "scripts/build_eval_external.py",
-  "annotation_protocol_version": 1,
   "annotation_status": "retrospective_dual_pass",
   "adjudication_status": "completed",
   "annotation_rounds": {

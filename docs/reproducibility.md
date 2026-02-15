@@ -2,15 +2,6 @@
 
 This document describes how to reproduce ContextRAG evaluations and interpret artifacts.
 
-Analysis expectations are preregistered in `docs/preregistration.md`.
-
-Core claim boundary:
-- Compare `uniform` vs `router`
-- Use `retrieval_mode=dense`
-- Use `data/eval-expanded`, `data/eval-external`, and `data/eval-scifact-mini`
-
-Other baselines/retrieval modes are exploratory extensions.
-
 ## Datasets
 
 The evaluation runner expects:
@@ -63,7 +54,7 @@ The first run downloads the local embedding model
 For larger evals with saved artifacts:
 
 ```bash
-uv run contextrag eval --config experiments/eval_rfc.yaml --run-dir runs/eval_rfc
+uv run contextrag eval --config experiments/eval_expanded_uniform_local.yaml --run-dir runs/eval_expanded
 ```
 
 Embedding-provider note:
@@ -73,15 +64,16 @@ Embedding-provider note:
 
 ## Matrix Runs (Recommended)
 
-Run a claim-aligned matrix with local embeddings (example dataset shown):
+Run a matrix comparison with local embeddings:
 
 ```bash
-uv run contextrag core matrix \
+uv run contextrag matrix \
   --dataset data/eval-expanded \
+  --baselines uniform,router \
   --k-values 3,5,10 \
   --embed-provider local \
-  --run-root runs/reviewer_bundle/matrix_eval_expanded_local \
-  --persist-root runs/chroma-reviewer-bundle/matrix_eval_expanded_local
+  --run-root runs/matrix_eval_expanded_local \
+  --persist-root runs/chroma-matrix-eval-expanded-local
 ```
 
 This writes:
@@ -89,35 +81,19 @@ This writes:
 - `matrix_summary.json` and `matrix_summary.md`
 - per-`k` uniform-vs-router comparisons under `comparisons/`
 
+Or use the Makefile shortcut:
+
+```bash
+make reproduce
+```
+
 Optional dashboard rendering:
 
 ```bash
 python3 scripts/render_matrix_report.py \
-  --input runs/reviewer_bundle/matrix_eval_expanded_local/matrix_summary.json \
+  --input runs/matrix_eval_expanded_local/matrix_summary.json \
   --output docs/matrix_eval_expanded_local.md
 ```
-
-## Reviewer Bundle (Recommended)
-
-Build all reviewer-facing local artifacts in one command:
-
-```bash
-make reviewer-bundle
-```
-
-This regenerates:
-- annotation rounds + agreement artifacts for `data/eval-expanded` and `data/eval-external`
-- expanded local matrix (`runs/reviewer_bundle/matrix_eval_expanded_local`)
-- external holdout matrix (`runs/reviewer_bundle/matrix_eval_external_local`)
-- SciFact transfer matrix (`runs/reviewer_bundle/matrix_eval_scifact_local`)
-- markdown dashboards under `docs/`
-- paper-ready tables at `docs/paper_tables.md`
-- preregistration lock metadata at `docs/preregistration_lock.json`
-
-## Exploratory Extensions
-
-See `docs/exploratory.md` for baseline sweeps, alternate retrieval modes, and
-public transfer-slice workflows.
 
 ## Artifacts
 

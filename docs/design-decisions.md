@@ -149,21 +149,3 @@ class Config:
 **Tradeoffs**:
 - Requires chromaroute as a dependency (acceptable since it's our extracted library)
 
-## Chat Providers (Future Work)
-
-**Decision**: Preserve chat provider abstractions for planned semantic chunking research.
-
-**Context**: The `providers/` module contains `ChatProvider` abstractions for OpenAI and OpenRouter. These were originally used for dataset creation and document categorization. Current evaluation uses embedding-only retrieval.
-
-**Future direction**: Semantic chunking research.
-
-**Hypothesis**: LLM-guided semantic boundaries may improve retrieval quality compared to fixed-token chunking.
-
-**Approach**:
-```
-Document → LLM identifies semantic breaks → Chunk at boundaries → Embed → Evaluate
-```
-
-This extends the current evaluation framework to test whether intelligent segmentation outperforms the null result found with adaptive token-based chunking. The chat providers enable this research path without requiring new infrastructure.
-
-**Status**: Preserved, not currently active in CLI. Will be integrated when semantic chunking experiments begin.

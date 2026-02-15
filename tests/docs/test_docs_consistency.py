@@ -15,5 +15,5 @@ def test_architecture_doc_has_current_artifacts():
 
 def test_results_doc_scopes_claim():
     content = _read("docs/results.md")
-    assert "in this benchmark setup" in content
+    assert "does not outperform uniform chunking" in content
     assert "not as a universal statement" in content
