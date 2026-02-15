@@ -20,11 +20,11 @@ Each `queries.jsonl` line contains:
 
 Included datasets:
 
-- `data/demo` — small RFC-based dataset for offline demo runs
-- `data/eval-mixed` — mixed corpus used in the main evaluation (larger)
-- `data/eval-expanded` — expanded mixed corpus with multi-relevance and hard negatives
-- `data/eval-external` — external RFC holdout split for transfer checks
-- `data/eval-scifact-mini` — public BEIR SciFact slice for non-RFC transfer checks
+- `data/demo` -- small RFC-based dataset for offline demo runs
+- `data/eval-mixed` -- mixed corpus used in the main evaluation (larger)
+- `data/eval-expanded` -- expanded mixed corpus with multi-relevance and hard negatives
+- `data/eval-external` -- external RFC holdout split for transfer checks
+- `data/eval-scifact-mini` -- public BEIR SciFact slice for non-RFC transfer checks
 
 To rebuild the SciFact slice:
 
@@ -57,10 +57,7 @@ For larger evals with saved artifacts:
 uv run contextrag eval --config experiments/eval_expanded_uniform_local.yaml --run-dir runs/eval_expanded
 ```
 
-Embedding-provider note:
-- Embeddings support `openrouter` and `local` providers.
-- OpenAI model families can be selected through OpenRouter model IDs
-  (for example, `openai/text-embedding-3-small`).
+Embeddings support `openrouter` and `local` providers. OpenAI model families can be selected through OpenRouter model IDs (e.g., `openai/text-embedding-3-small`).
 
 ## Matrix Runs (Recommended)
 

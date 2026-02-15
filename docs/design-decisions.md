@@ -57,7 +57,7 @@ Auto provider selection with explicit overrides:
 - Chunk boundaries may split semantic units
 - No overlap implemented (could improve retrieval at boundary regions)
 
-**Evaluation outcome**: Testing showed no accuracy improvement over uniform chunking. On hosted mixed-corpus runs the strategies tied on precision/recall, while on the expanded local matrix router underperformed uniform across tested `k` values. This suggests modern embedding models are robust to simple length-based routing and that extra routing complexity is not justified here. See `docs/results.md` for full analysis.
+**Evaluation outcome**: Testing showed no accuracy improvement over uniform chunking. On hosted mixed-corpus runs the strategies tied on precision/recall, while on the expanded local matrix router underperformed uniform across tested `k` values. Modern embedding models handle chunk-size variation well enough that the extra routing complexity doesn't pay off here. See `docs/results.md` for full analysis.
 
 ## ChromaDB as Vector Store
 

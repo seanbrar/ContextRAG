@@ -28,7 +28,7 @@ This achieved measurable cost savings on mixed workloads.
 
 ### The Landscape Changed
 
-By late 2023/early 2024, context windows expanded dramatically:
+By late 2023/early 2024, context windows grew fast:
 
 | Model | Context | Released |
 |-------|---------|----------|
@@ -58,9 +58,9 @@ This pivot required proper evaluation infrastructure:
 
 ## 2025: The Null Result
 
-### Rigorous Testing
+### Testing the Hypothesis
 
-With proper infrastructure, we tested the adaptive chunking hypothesis with reproducible CLI configs and local matrix comparisons across multiple datasets.
+We tested adaptive chunking with reproducible CLI configs and local matrix comparisons across multiple datasets.
 
 ### The Finding
 
@@ -73,13 +73,13 @@ This held across:
 
 ### Interpretation
 
-Modern embedding models appear robust to simple length-based routing. In this project, routing complexity did not produce better retrieval quality than uniform chunking.
+In this project, routing by document length did not produce better retrieval than uniform chunking. The embedding models we tested were indifferent to chunk size differences, so the routing logic just added complexity for nothing.
 
 ## The chromaroute Extraction
 
 ### Clean Separation
 
-The embedding abstraction proved independently useful. We extracted it into [chromaroute](https://github.com/seanbrar/chromaroute):
+The embedding layer turned out to be useful on its own, so we extracted it into [chromaroute](https://github.com/seanbrar/chromaroute):
 
 - Provider-agnostic ChromaDB embedding functions
 - OpenRouter -> Local fallback chain
@@ -89,13 +89,11 @@ ContextRAG now depends on chromaroute for embeddings, keeping only the evaluatio
 
 ## Lessons Learned
 
-1. **Negative results are valuable.** The null finding simplifies production RAG: use uniform chunking.
+1. **Negative results are valuable.** The null finding simplifies production RAG: just use uniform chunking.
 
-2. **Infrastructure enables discovery.** The evaluation framework made the null result visible.
+2. **Build evaluation early.** Without the benchmarking framework, this result would have stayed invisible.
 
-3. **Extract reusable components.** chromaroute emerged from ContextRAG's embedding abstraction.
-
-4. **Document the journey.** Code history shows what was tried; documentation explains why.
+3. **Extract reusable components.** chromaroute emerged from ContextRAG's embedding abstraction and now stands on its own.
 
 ## Current State
 

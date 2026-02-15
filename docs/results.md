@@ -28,21 +28,19 @@ Observed across local matrices (`k={3,5,10}`):
 
 ## What This Means
 
-This negative result is itself informative:
-- **Simplicity wins**: Uniform chunking is equal or better with less complexity
-- **Skip adaptive routing**: No accuracy benefit to justify the added code
-- **Focus elsewhere**: Retrieval improvements likely come from better embeddings or reranking, not chunk routing
+- Uniform chunking matches or beats routing with less complexity. There's no reason to add the routing code.
+- Better retrieval probably means better embeddings or reranking, not chunk routing.
 
 ## Limitations
 
 - Primary corpus is standards-domain focused (RFCs + literary texts)
 - Length thresholds are heuristic, not learned
-- Hosted-provider reproducibility can drift over time
+- Hosted provider results may shift as upstream models update
 - SciFact transfer slice confirms the null effect on a public benchmark, but remains a small sample
 
 ## Scope Notes
 
-- Mixed hosted runs (`data/eval-mixed`) remain useful context but are not the primary evidence
+- Mixed hosted runs (`data/eval-mixed`) are worth reviewing but are not the primary evidence
 - This finding applies to this protocol and these datasets, not as a universal statement about all adaptive chunking methods
 
 ## Related Artifacts
