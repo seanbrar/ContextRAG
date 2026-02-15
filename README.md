@@ -25,7 +25,7 @@ Output: `runs/demo_eval.json` with precision/recall metrics.
 
 ## What It Does
 
-ContextRAG loads a dataset, chunks documents using a configurable strategy, embeds via [chromaroute](https://github.com/seanbrar/chromaroute), indexes into ChromaDB, runs queries, and computes retrieval metrics:
+ContextRAG loads a dataset, chunks documents using a configurable strategy, embeds them with [chromaroute](https://github.com/seanbrar/chromaroute), indexes into ChromaDB, and scores retrieval against ground-truth queries:
 
 - **Metrics**: precision@k, recall@k, nDCG@k, MRR@k, hit@k
 - **Statistical comparison**: bootstrap confidence intervals, randomization tests, paired TOST equivalence testing, Cohen's d effect sizes
@@ -46,7 +46,7 @@ ContextRAG loads a dataset, chunks documents using a configurable strategy, embe
 
 ## Case Study: Adaptive vs Uniform Chunking
 
-We used this framework to test whether routing documents to different chunk sizes based on length improves retrieval quality. The adaptive router classifies documents by token count:
+The adaptive router classifies documents by token count and assigns chunk sizes accordingly:
 
 | Category | Token Range | Chunking |
 |----------|-------------|----------|
@@ -54,7 +54,7 @@ We used this framework to test whether routing documents to different chunk size
 | Medium | 3,500-15,000 | 2,000-token chunks |
 | Long | >15,000 | 1,000-token chunks |
 
-**Finding: no benefit.** Across three datasets and multiple k values, the router never outperforms uniform 1,000-token chunking -- and sometimes underperforms it. Modern embedding models appear robust to simple length-based chunk routing.
+**Finding: no benefit.** Across three datasets and multiple k values, the router never outperforms uniform 1,000-token chunking -- and sometimes underperforms it. Modern embedding models handle chunk-size variation well enough that length-based routing adds complexity without improving retrieval.
 
 To reproduce: `make reproduce` runs the uniform-vs-router matrix on `data/eval-expanded` with local embeddings.
 
