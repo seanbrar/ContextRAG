@@ -302,17 +302,13 @@ def doctor() -> None:
     click.echo(
         f"OPENROUTER_API_KEY: {'ok' if config.embed.openrouter_api_key else 'missing'}"
     )
-    click.echo(f"OPENAI_API_KEY: {'ok' if config.openai_api_key else 'missing'}")
 
     click.echo("\n=== Providers ===")
     click.echo(f"embed_provider: {config.resolve_embed_provider()}")
-    click.echo(f"chat_provider: {config.chat_provider}")
 
     click.echo("\n=== Models ===")
     click.echo(f"openrouter_embeddings: {config.embed.openrouter_embeddings_model}")
     click.echo(f"local_embeddings: {config.embed.local_embeddings_model}")
-    click.echo(f"openai_chat: {config.openai_chat_model}")
-    click.echo(f"openrouter_chat: {config.openrouter_chat_model}")
 
     click.echo("\n=== Dependencies ===")
     deps = [
@@ -324,7 +320,7 @@ def doctor() -> None:
     for name, module in deps:
         click.echo(f"{name}: {'ok' if find_spec(module) else 'missing'}")
 
-    if not config.embed.openrouter_api_key and not config.openai_api_key:
+    if not config.embed.openrouter_api_key:
         click.echo("\nnote: Set OPENROUTER_API_KEY for hosted embeddings")
 
 

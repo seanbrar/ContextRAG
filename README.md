@@ -7,6 +7,8 @@
 
 RAG evaluation framework for comparing chunking strategies.
 
+ContextRAG is a reproducible benchmarking harness built to answer a specific question: does routing documents to different chunk sizes based on length improve retrieval quality? It grew out of a 2022 chatbot project and evolved into a focused evaluation tool with statistical comparison infrastructure. The answer, on the benchmarks tested, is no -- adaptive chunking does not outperform uniform chunking.
+
 ## Quickstart
 
 ```bash
@@ -23,18 +25,11 @@ Output: `runs/demo_eval.json` with precision/recall metrics.
 
 ## What It Does
 
-ContextRAG evaluates chunking strategies for retrieval-augmented generation:
+ContextRAG loads a dataset, chunks documents using a configurable strategy, embeds via [chromaroute](https://github.com/seanbrar/chromaroute), indexes into ChromaDB, runs queries, and computes retrieval metrics:
 
-```
-Dataset -> Chunk -> Embed -> ChromaDB Index -> Query -> Metrics -> Compare
-```
-
-1. Load a dataset (documents + queries with ground-truth relevance)
-2. Chunk documents using a configurable strategy (uniform, adaptive router, semantic)
-3. Embed chunks via [chromaroute](https://github.com/seanbrar/chromaroute) (OpenRouter or local models)
-4. Index into ChromaDB and run queries
-5. Calculate precision@k, recall@k, nDCG@k, MRR@k, hit@k
-6. Compare strategies with statistical tests (bootstrap CI, randomization, effect sizes)
+- **Metrics**: precision@k, recall@k, nDCG@k, MRR@k, hit@k
+- **Statistical comparison**: bootstrap confidence intervals, randomization tests, paired TOST equivalence testing, Cohen's d effect sizes
+- **Experiment matrix**: sweep baselines and k values in one command, get per-cell and aggregate reports
 
 ## CLI Commands
 
@@ -61,6 +56,8 @@ We used this framework to test whether routing documents to different chunk size
 
 **Finding: no benefit.** Across three datasets and multiple k values, the router never outperforms uniform 1,000-token chunking -- and sometimes underperforms it. Modern embedding models appear robust to simple length-based chunk routing.
 
+To reproduce: `make reproduce` runs the uniform-vs-router matrix on `data/eval-expanded` with local embeddings.
+
 See [docs/results.md](docs/results.md) for the full matrix and discussion.
 
 ## Dataset Format
@@ -71,7 +68,13 @@ dataset/
 └── queries.jsonl   # {"query": "...", "relevant_ids": ["doc1", "doc2"]}
 ```
 
-Five datasets are included: `data/demo`, `data/eval-mixed`, `data/eval-expanded`, `data/eval-external`, `data/eval-scifact-mini`.
+Five datasets are included:
+
+- **`data/demo`** -- minimal 3-document set for smoke testing
+- **`data/eval-mixed`** -- mixed-domain corpus with varied document lengths
+- **`data/eval-expanded`** -- larger multi-domain corpus used for the primary comparison
+- **`data/eval-external`** -- external documents not seen during development
+- **`data/eval-scifact-mini`** -- subset of the SciFact benchmark for external validation
 
 ## Configuration
 
@@ -89,14 +92,6 @@ EMBED_PROVIDER=auto                  # auto | openrouter | local
 LOCAL_EMBEDDINGS_MODEL=sentence-transformers/all-MiniLM-L6-v2
 ```
 
-## Reproduce the Comparison
-
-```bash
-make reproduce
-```
-
-This runs the uniform-vs-router matrix on `data/eval-expanded` with local embeddings.
-
 ## Architecture
 
 ```mermaid
@@ -111,7 +106,7 @@ flowchart LR
     H --> I[Evaluate]
 ```
 
-Built on [chromaroute](https://github.com/seanbrar/chromaroute), a provider-agnostic embedding library for ChromaDB.
+Built on [chromaroute](https://github.com/seanbrar/chromaroute), a provider-agnostic embedding library for ChromaDB. For the project's evolution from a 2022 chatbot to this evaluation framework, see [docs/evolution.md](docs/evolution.md).
 
 ## Development
 
@@ -125,7 +120,6 @@ make test-cov   # pytest with coverage (90% gate)
 
 - [docs/results.md](docs/results.md) - Evaluation results and discussion
 - [docs/reproducibility.md](docs/reproducibility.md) - How to reproduce evaluations
-- [docs/evolution.md](docs/evolution.md) - Project history (2022-2025)
 - [docs/design-decisions.md](docs/design-decisions.md) - Architecture rationale
 
 ## Related Work

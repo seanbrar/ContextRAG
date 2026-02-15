@@ -29,19 +29,10 @@ def _config(**overrides: str | None) -> Config:
         ) or "sentence-transformers/all-MiniLM-L6-v2",
         embed_provider=_get("embed_provider", "auto") or "auto",
     )
-    return Config(
-        embed=embed,
-        openai_api_key=_get("openai_api_key", "ok"),
-        chat_provider=_get("chat_provider", "openai") or "openai",
-        openai_chat_model=_get("openai_chat_model", "gpt-4o-mini") or "gpt-4o-mini",
-        openrouter_chat_model=_get(
-            "openrouter_chat_model", "mistralai/devstral-2512:free"
-        ) or "mistralai/devstral-2512:free",
-    )
+    return Config(embed=embed)
 
 def test_build_embedding_function_openrouter_json(monkeypatch):
     config = _config(
-        openai_api_key=None,
         openrouter_provider_json=json.dumps({"order": ["x"]}),
         embed_provider="openrouter",
     )
@@ -64,7 +55,7 @@ def test_build_embedding_function_openrouter_json(monkeypatch):
     assert captured["config"].openrouter_provider_json == config.embed.openrouter_provider_json
 
 def test_build_embedding_function_openrouter_env(monkeypatch):
-    config = _config(openai_api_key=None, embed_provider="openrouter")
+    config = _config(embed_provider="openrouter")
     captured = {}
 
     def fake_build(config, model):
@@ -85,7 +76,6 @@ def test_build_embedding_function_local(monkeypatch):
     # Setup config with no OR key but local model
     config = _config(
         openrouter_api_key=None,
-        openai_api_key=None,
         local_embeddings_model="local-model",
         embed_provider="local",
     )

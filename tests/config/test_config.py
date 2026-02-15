@@ -6,10 +6,8 @@ from contextrag.config import Config
 
 def _config(
     *,
-    openai_key: str | None = None,
     openrouter_key: str | None = None,
     embed_provider: str = "auto",
-    chat_provider: str = "openai",
     openrouter_provider_json: str | None = None,
 ) -> Config:
     embed = EmbedConfig(
@@ -22,13 +20,7 @@ def _config(
         local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
         embed_provider=embed_provider,
     )
-    return Config(
-        embed=embed,
-        openai_api_key=openai_key,
-        chat_provider=chat_provider,
-        openai_chat_model="gpt-4o-mini",
-        openrouter_chat_model="mistralai/devstral-2512:free",
-    )
+    return Config(embed=embed)
 
 
 def test_resolve_embed_provider_auto_falls_back_to_openrouter():
@@ -37,15 +29,13 @@ def test_resolve_embed_provider_auto_falls_back_to_openrouter():
 
 
 def test_resolve_embed_provider_auto_falls_back_to_local():
-    config = _config(openai_key=None, openrouter_key=None)
+    config = _config(openrouter_key=None)
     assert config.resolve_embed_provider() == "local"
 
 
 def test_resolve_embed_provider_explicit_override():
     config = _config(openrouter_key="ok")
     assert config.resolve_embed_provider("openrouter") == "openrouter"
-
-
 
 
 def test_openrouter_embed_provider_config_none():
@@ -59,10 +49,8 @@ def test_openrouter_embed_provider_config_invalid_json():
         config.embed.openrouter_provider_config()
 
 
-
-
 def test_require_embedding_provider_openrouter_errors():
-    config = _config(openai_key=None, openrouter_key=None)
+    config = _config(openrouter_key=None)
     with pytest.raises(ValueError, match="--embed-provider openrouter"):
         config.require_embed_provider(
             resolved_provider="openrouter",
@@ -70,23 +58,7 @@ def test_require_embedding_provider_openrouter_errors():
         )
 
 
-def test_resolve_chat_provider_auto_prefers_openai_key():
-    config = _config(openai_key="ok", openrouter_key="alt", chat_provider="auto")
-    assert config.resolve_chat_provider() == "openai"
-
-
-def test_resolve_chat_provider_auto_falls_back_to_openrouter():
-    config = _config(openai_key=None, openrouter_key="ok", chat_provider="auto")
-    assert config.resolve_chat_provider() == "openrouter"
-
-
-def test_resolve_chat_provider_auto_requires_key():
-    config = _config(openai_key=None, openrouter_key=None, chat_provider="auto")
-    with pytest.raises(ValueError, match="No API key available for chat"):
-        config.resolve_chat_provider()
-
-
 def test_require_embedding_provider_openrouter_implicit_error():
-    config = _config(openai_key=None, openrouter_key=None)
+    config = _config(openrouter_key=None)
     with pytest.raises(ValueError, match="OpenRouter embeddings"):
         config.require_embed_provider(resolved_provider="openrouter")

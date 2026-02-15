@@ -132,10 +132,6 @@ def test_run_eval_with_fake_vector_db(monkeypatch, tmp_path):
             local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
             embed_provider="local",
         ),
-        openai_api_key=None,
-        openai_chat_model="gpt-4o-mini",
-        openrouter_chat_model="mistralai/devstral-2512:free",
-        chat_provider="openai",
     )
 
     monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)
@@ -205,10 +201,6 @@ def test_run_eval_costs_with_openrouter_provider(monkeypatch, tmp_path):
             local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
             embed_provider="openrouter",
         ),
-        openai_api_key="key",
-        openai_chat_model="gpt-4o-mini",
-        openrouter_chat_model="mistralai/devstral-2512:free",
-        chat_provider="openai",
     )
 
     monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)
@@ -283,10 +275,6 @@ def test_run_eval_dense_rerank_mode(monkeypatch, tmp_path):
             local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
             embed_provider="local",
         ),
-        openai_api_key=None,
-        openai_chat_model="gpt-4o-mini",
-        openrouter_chat_model="mistralai/devstral-2512:free",
-        chat_provider="openai",
     )
 
     monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)
@@ -334,10 +322,6 @@ def test_run_eval_dense_mode_skips_lexical_index(monkeypatch, tmp_path):
             local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
             embed_provider="local",
         ),
-        openai_api_key=None,
-        openai_chat_model="gpt-4o-mini",
-        openrouter_chat_model="mistralai/devstral-2512:free",
-        chat_provider="openai",
     )
 
     monkeypatch.setattr(runner, "VectorStore", FakeVectorDB)

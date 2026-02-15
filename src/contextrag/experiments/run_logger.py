@@ -56,7 +56,6 @@ def _collect_versions() -> dict[str, str | None]:
         "contextrag": _package_version("ContextRAG") or _package_version("contextrag"),
         "python": platform.python_version(),
         "chromadb": _package_version("chromadb"),
-        "openai": _package_version("openai"),
         "tiktoken": _package_version("tiktoken"),
         "sentence_transformers": _package_version("sentence-transformers"),
     }

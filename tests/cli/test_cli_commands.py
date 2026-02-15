@@ -29,8 +29,7 @@ def test_index_command_chunks(monkeypatch, tmp_path):
 
     monkeypatch.setattr("contextrag.cli.VectorStore", FakeVectorDB)
     monkeypatch.setattr("contextrag.cli.load_config", lambda: make_test_config(
-        openai_api_key=None,
-        openrouter_api_key=None,
+                openrouter_api_key=None,
         embed_provider="local",
     ))
 
@@ -77,8 +76,7 @@ def test_index_command_defaults_openrouter_chunk_words(monkeypatch, tmp_path):
     monkeypatch.setattr("contextrag.cli.VectorStore", FakeVectorDB)
     monkeypatch.setattr("contextrag.cli.chunk_text_by_words", fake_chunk_words)
     monkeypatch.setattr("contextrag.cli.load_config", lambda: make_test_config(
-        openai_api_key=None,
-        embed_provider="auto",
+                embed_provider="auto",
     ))
 
     runner = CliRunner()
@@ -277,7 +275,7 @@ def test_eval_command_dry_run_does_not_execute_eval(monkeypatch, tmp_path):
     monkeypatch.setattr("contextrag.cli.run_eval", fake_run_eval)
     monkeypatch.setattr(
         "contextrag.cli.load_config",
-        lambda: make_test_config(openrouter_api_key=None, openai_api_key="ok", embed_provider="local"),
+        lambda: make_test_config(openrouter_api_key=None,  embed_provider="local"),
     )
 
     runner = CliRunner()
@@ -354,7 +352,7 @@ def test_demo_command_uses_local_provider(monkeypatch, tmp_path):
 
 
 def test_doctor_reports_status(monkeypatch):
-    config = make_test_config(openai_api_key=None)
+    config = make_test_config()
     monkeypatch.setattr("contextrag.cli.load_config", lambda: config)
 
     runner = CliRunner()
@@ -365,14 +363,13 @@ def test_doctor_reports_status(monkeypatch):
 
 
 def test_doctor_reports_missing_keys(monkeypatch):
-    config = make_test_config(openai_api_key=None, openrouter_api_key=None)
+    config = make_test_config(openrouter_api_key=None)
     monkeypatch.setattr("contextrag.cli.load_config", lambda: config)
 
     runner = CliRunner()
     result = runner.invoke(main, ["doctor"])
     assert result.exit_code == 0
     assert "OPENROUTER_API_KEY: missing" in result.output
-    assert "OPENAI_API_KEY: missing" in result.output
     assert "embed_provider: local" in result.output
 
 

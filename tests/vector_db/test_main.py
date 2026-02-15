@@ -80,13 +80,7 @@ class TestVectorStore:
             local_embeddings_model="sentence-transformers/all-MiniLM-L6-v2",
             embed_provider="openrouter",
         )
-        config = Config(
-            embed=embed,
-            openai_api_key=None,
-            openai_chat_model="gpt-4o-mini",
-            openrouter_chat_model="mistralai/devstral-2512:free",
-            chat_provider="openai",
-        )
+        config = Config(embed=embed)
         with pytest.raises(ValueError, match="OPENROUTER_API_KEY is required"):
             build_embedding_function(
                 config=config.embed,
